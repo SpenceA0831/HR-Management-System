@@ -4,7 +4,7 @@
  * Use these from the browser console: window.debugApi
  */
 
-import { apiClient, checkApiHealth } from './apiClient';
+import { checkApiHealth } from './apiClient';
 import * as ptoApi from './ptoApi';
 
 export const debugApi = {

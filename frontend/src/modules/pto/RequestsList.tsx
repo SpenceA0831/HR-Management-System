@@ -12,6 +12,7 @@ import {
   Tooltip,
 } from '@mui/material';
 import { DataGrid, type GridColDef, type GridRenderCellParams } from '@mui/x-data-grid';
+import { DatePicker } from '@mui/x-date-pickers';
 import { Plus, Edit, X, ArrowLeft } from 'lucide-react';
 import * as ptoApi from '../../services/api/ptoApi';
 import { useStore } from '../../store/useStore';
@@ -26,16 +27,18 @@ export default function RequestsList() {
   const [requests, setRequests] = useState<PtoRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<PtoStatus | 'ALL'>('ALL');
+  const [nameFilter, setNameFilter] = useState('');
+  const [startDateFilter, setStartDateFilter] = useState<Date | null>(null);
+  const [endDateFilter, setEndDateFilter] = useState<Date | null>(null);
 
   useEffect(() => {
     loadRequests();
-  }, [statusFilter]);
+  }, []);
 
   const loadRequests = async () => {
     try {
       setLoading(true);
-      const filters = statusFilter !== 'ALL' ? { status: statusFilter } : undefined;
-      const response = await ptoApi.getPtoRequests(filters);
+      const response = await ptoApi.getPtoRequests();
       setRequests(response.data || []);
     } catch (error) {
       console.error('Failed to load PTO requests:', error);
@@ -43,6 +46,35 @@ export default function RequestsList() {
       setLoading(false);
     }
   };
+
+  // Client-side filtering
+  const filteredRequests = requests.filter((req) => {
+    // Status filter
+    if (statusFilter !== 'ALL' && req.status !== statusFilter) {
+      return false;
+    }
+
+    // Name filter (case insensitive)
+    if (nameFilter && !req.userName.toLowerCase().includes(nameFilter.toLowerCase())) {
+      return false;
+    }
+
+    // Date range filter
+    if (startDateFilter) {
+      const reqStartDate = new Date(req.startDate);
+      if (reqStartDate < startDateFilter) {
+        return false;
+      }
+    }
+    if (endDateFilter) {
+      const reqEndDate = new Date(req.endDate);
+      if (reqEndDate > endDateFilter) {
+        return false;
+      }
+    }
+
+    return true;
+  });
 
   const handleCancel = async (id: string) => {
     if (!confirm('Are you sure you want to cancel this request?')) return;
@@ -81,6 +113,8 @@ export default function RequestsList() {
       field: 'type',
       headerName: 'Type',
       width: 120,
+      headerAlign: 'center',
+      align: 'center',
       renderCell: (params: GridRenderCellParams) => (
         <TypeChip type={params.value} />
       ),
@@ -89,6 +123,8 @@ export default function RequestsList() {
       field: 'dates',
       headerName: 'Dates',
       width: 200,
+      headerAlign: 'center',
+      align: 'center',
       valueGetter: (_value, row) =>
         formatPtoDates(row.startDate, row.endDate),
     },
@@ -97,11 +133,15 @@ export default function RequestsList() {
       headerName: 'Hours',
       width: 100,
       type: 'number',
+      headerAlign: 'center',
+      align: 'center',
     },
     {
       field: 'status',
       headerName: 'Status',
       width: 150,
+      headerAlign: 'center',
+      align: 'center',
       renderCell: (params: GridRenderCellParams) => (
         <StatusChip status={params.value} />
       ),
@@ -110,6 +150,8 @@ export default function RequestsList() {
       field: 'submittedDate',
       headerName: 'Submitted',
       width: 120,
+      headerAlign: 'center',
+      align: 'center',
       valueFormatter: (value) => (value ? new Date(value).toLocaleDateString() : '-'),
     },
     {
@@ -117,22 +159,25 @@ export default function RequestsList() {
       headerName: 'Reason',
       flex: 1,
       minWidth: 200,
+      headerAlign: 'left',
+      align: 'left',
     },
     {
       field: 'actions',
       headerName: 'Actions',
       width: 180,
       sortable: false,
+      headerAlign: 'center',
+      align: 'center',
       renderCell: (params: GridRenderCellParams) => {
         const request = params.row as PtoRequest;
         const isOwner = request.userId === currentUser?.id;
         const isManager = currentUser?.userRole === 'MANAGER' || currentUser?.userRole === 'ADMIN';
-        const canEdit = isOwner && ['Draft', 'ChangesRequested'].includes(request.status);
         const canCancel = isOwner && ['Draft', 'Submitted', 'Pending'].includes(request.status);
         const canApprove = isManager && request.status === 'Pending';
 
         return (
-          <Stack direction="row" spacing={0.5}>
+          <Stack direction="row" spacing={0.5} alignItems="center"  justifyContent="center">
             <Tooltip title="Edit">
               <IconButton
                 size="small"
@@ -214,33 +259,80 @@ export default function RequestsList() {
       </Stack>
 
       <Paper sx={{ p: 2, mb: 2 }}>
-        <Stack direction="row" spacing={2} alignItems="center">
-          <TextField
-            select
-            label="Status"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as PtoStatus | 'ALL')}
-            sx={{ minWidth: 200 }}
-          >
-            <MenuItem value="ALL">All Statuses</MenuItem>
-            <MenuItem value="Draft">Draft</MenuItem>
-            <MenuItem value="Submitted">Submitted</MenuItem>
-            <MenuItem value="Pending">Pending</MenuItem>
-            <MenuItem value="Approved">Approved</MenuItem>
-            <MenuItem value="Denied">Denied</MenuItem>
-            <MenuItem value="Cancelled">Cancelled</MenuItem>
-            <MenuItem value="ChangesRequested">Changes Requested</MenuItem>
-          </TextField>
+        <Stack spacing={2}>
+          <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
+            <TextField
+              select
+              label="Status"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as PtoStatus | 'ALL')}
+              sx={{ minWidth: 180 }}
+              size="small"
+            >
+              <MenuItem value="ALL">All Statuses</MenuItem>
+              <MenuItem value="Draft">Draft</MenuItem>
+              <MenuItem value="Submitted">Submitted</MenuItem>
+              <MenuItem value="Pending">Pending</MenuItem>
+              <MenuItem value="Approved">Approved</MenuItem>
+              <MenuItem value="Denied">Denied</MenuItem>
+              <MenuItem value="Cancelled">Cancelled</MenuItem>
+              <MenuItem value="ChangesRequested">Changes Requested</MenuItem>
+            </TextField>
+
+            <TextField
+              label="User Name"
+              value={nameFilter}
+              onChange={(e) => setNameFilter(e.target.value)}
+              placeholder="Search by name..."
+              sx={{ minWidth: 200 }}
+              size="small"
+            />
+
+            <DatePicker
+              label="Start Date From"
+              value={startDateFilter}
+              onChange={(newValue) => setStartDateFilter(newValue)}
+              slotProps={{
+                textField: { size: 'small', sx: { minWidth: 160 } },
+                actionBar: { actions: ['clear'] },
+              }}
+            />
+
+            <DatePicker
+              label="Start Date To"
+              value={endDateFilter}
+              onChange={(newValue) => setEndDateFilter(newValue)}
+              slotProps={{
+                textField: { size: 'small', sx: { minWidth: 160 } },
+                actionBar: { actions: ['clear'] },
+              }}
+            />
+
+            {(statusFilter !== 'ALL' || nameFilter || startDateFilter || endDateFilter) && (
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => {
+                  setStatusFilter('ALL');
+                  setNameFilter('');
+                  setStartDateFilter(null);
+                  setEndDateFilter(null);
+                }}
+              >
+                Clear Filters
+              </Button>
+            )}
+          </Stack>
 
           <Typography variant="body2" color="text.secondary">
-            {requests.length} request{requests.length !== 1 ? 's' : ''}
+            Showing {filteredRequests.length} of {requests.length} request{requests.length !== 1 ? 's' : ''}
           </Typography>
         </Stack>
       </Paper>
 
       <Paper>
         <DataGrid
-          rows={requests}
+          rows={filteredRequests}
           columns={columns}
           loading={loading}
           pageSizeOptions={[10, 25, 50]}

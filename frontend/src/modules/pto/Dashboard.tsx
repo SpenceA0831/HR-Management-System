@@ -23,7 +23,6 @@ export default function PtoDashboard() {
     const location = useLocation();
     const theme = useTheme();
 
-    const [requests, setRequests] = useState<PtoRequest[]>([]);
     const [myRequests, setMyRequests] = useState<PtoRequest[]>([]);
     const [teamRequests, setTeamRequests] = useState<PtoRequest[]>([]);
     const [balance, setBalance] = useState<PtoBalance | null>(null);
@@ -48,16 +47,15 @@ export default function PtoDashboard() {
 
                 if (reqsResponse.success && reqsResponse.data) {
                     const allRequests = reqsResponse.data;
-                    setRequests(allRequests.slice(0, 5));
 
                     // Split requests for managers: their own vs team's
                     if (isManager) {
-                        // Match by email (more reliable) or userId as fallback
+                        // Match by userId
                         const myReqs = allRequests.filter(r =>
-                            r.userEmail === user.email || r.userId === user.id
+                            r.userId === user.id
                         ).slice(0, 5);
                         const teamReqs = allRequests.filter(r =>
-                            r.userEmail !== user.email && r.userId !== user.id
+                            r.userId !== user.id
                         ).slice(0, 5);
                         setMyRequests(myReqs);
                         setTeamRequests(teamReqs);
@@ -406,7 +404,7 @@ export default function PtoDashboard() {
                                                 <Box
                                                     key={req.id}
                                                     sx={{
-                                                        p: 3,
+                                                        p: 2,
                                                         display: 'flex',
                                                         alignItems: 'flex-start',
                                                         justifyContent: 'space-between',
@@ -426,12 +424,12 @@ export default function PtoDashboard() {
                                                 >
                                                     <Stack direction="row" spacing={2} alignItems="flex-start" flex={1}>
                                                         <Box sx={{
-                                                            width: 48, height: 48, borderRadius: 2,
+                                                            width: 40, height: 40, borderRadius: 2,
                                                             bgcolor: needsApproval ? 'warning.main' : 'secondary.light',
                                                             color: needsApproval ? 'warning.contrastText' : 'secondary.main',
                                                             display: 'flex', alignItems: 'center', justifyContent: 'center'
                                                         }}>
-                                                            {needsApproval ? <Clock size={24} /> : <CalendarIcon size={24} />}
+                                                            {needsApproval ? <Clock size={20} /> : <CalendarIcon size={20} />}
                                                         </Box>
                                                         <Box flex={1}>
                                                             <Stack direction="row" spacing={1} alignItems="center" mb={0.5}>

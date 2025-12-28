@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-    Grid2 as Grid, Typography, Button, Card, CardContent,
+    Grid, Typography, Button, Card, CardContent,
     Box, Divider, Stack, Skeleton, useTheme
 } from '@mui/material';
 import {
@@ -91,11 +91,11 @@ export default function PtoDashboard() {
     if (loading) {
         return (
             <Grid container spacing={3}>
-                <Grid size={{ xs: 12, md: 8 }}>
+                <Grid item xs={12} md={8}>
                     <Skeleton variant="rectangular" height={200} sx={{ borderRadius: 4, mb: 3 }} />
                     <Skeleton variant="rectangular" height={400} sx={{ borderRadius: 4 }} />
                 </Grid>
-                <Grid size={{ xs: 12, md: 4 }}>
+                <Grid item xs={12} md={4}>
                     <Skeleton variant="rectangular" height={300} sx={{ borderRadius: 4 }} />
                 </Grid>
             </Grid>
@@ -128,7 +128,7 @@ export default function PtoDashboard() {
 
             <Grid container spacing={3}>
                 {/* Left Column */}
-                <Grid size={{ xs: 12, lg: 8 }}>
+                <Grid item xs={12} lg={8}>
                     <Stack spacing={3}>
                         {/* Balance Card for Employee / Team Summary for Manager */}
                         {!isManager ? (() => {
@@ -236,7 +236,7 @@ export default function PtoDashboard() {
                             );
                         })() : (
                             <Grid container spacing={2}>
-                                <Grid size={{ xs: 12, sm: 4 }}>
+                                <Grid item xs={12} sm={4}>
                                     <Card sx={{ borderRadius: 3, textAlign: 'center', p: 1 }}>
                                         <CardContent>
                                             <Typography color="text.secondary" variant="subtitle2" gutterBottom>Pending Approval</Typography>
@@ -246,7 +246,7 @@ export default function PtoDashboard() {
                                         </CardContent>
                                     </Card>
                                 </Grid>
-                                <Grid size={{ xs: 12, sm: 4 }}>
+                                <Grid item xs={12} sm={4}>
                                     <Card sx={{ borderRadius: 3, textAlign: 'center', p: 1 }}>
                                         <CardContent>
                                             <Typography color="text.secondary" variant="subtitle2" gutterBottom>Total Requests</Typography>
@@ -254,7 +254,7 @@ export default function PtoDashboard() {
                                         </CardContent>
                                     </Card>
                                 </Grid>
-                                <Grid size={{ xs: 12, sm: 4 }}>
+                                <Grid item xs={12} sm={4}>
                                     <Card sx={{ borderRadius: 3, textAlign: 'center', p: 1 }}>
                                         <CardContent>
                                             <Typography color="text.secondary" variant="subtitle2" gutterBottom>Upcoming PTO</Typography>
@@ -324,7 +324,7 @@ export default function PtoDashboard() {
                 </Grid>
 
                 {/* Right Column */}
-                <Grid size={{ xs: 12, lg: 4 }}>
+                <Grid item xs={12} lg={4}>
                     <Stack spacing={3}>
                         {/* Quick Actions */}
                         <Card sx={{ borderRadius: 4, bgcolor: 'background.paper' }}>

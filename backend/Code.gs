@@ -22,6 +22,16 @@ function doPost(e) {
 }
 
 /**
+ * Handle OPTIONS requests (CORS preflight)
+ */
+function doOptions(e) {
+  return ContentService
+    .createTextOutput()
+    .setMimeType(ContentService.MimeType.JSON)
+    .setContent('{}');
+}
+
+/**
  * Main request handler
  * @param {Object} e - Event object
  * @param {string} method - HTTP method (GET or POST)
@@ -197,14 +207,23 @@ function handleRequest(e, method) {
         result = errorResponse('Unknown action: ' + action, 'UNKNOWN_ACTION');
     }
 
-    return output.setContent(JSON.stringify(result));
+    // Set CORS headers and return response
+    return output
+      .setContent(JSON.stringify(result))
+      .setHeader('Access-Control-Allow-Origin', '*')
+      .setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+      .setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   } catch (error) {
     Logger.log('Error in handleRequest: ' + error.message);
     Logger.log('Stack trace: ' + error.stack);
 
-    return output.setContent(JSON.stringify(
-      errorResponse('Internal server error: ' + error.message, 'INTERNAL_ERROR')
-    ));
+    return output
+      .setContent(JSON.stringify(
+        errorResponse('Internal server error: ' + error.message, 'INTERNAL_ERROR')
+      ))
+      .setHeader('Access-Control-Allow-Origin', '*')
+      .setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+      .setHeader('Access-Control-Allow-Headers', 'Content-Type');
   }
 }

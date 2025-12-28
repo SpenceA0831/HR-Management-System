@@ -10,8 +10,11 @@ import SignIn from './pages/SignIn';
 import ModuleSelector from './pages/ModuleSelector';
 import Layout from './components/Layout';
 
-// PTO Module Pages (placeholders - to be created)
+// PTO Module Pages
 import PtoDashboard from './modules/pto/Dashboard';
+import PtoRequestsList from './modules/pto/RequestsList';
+import PtoNewRequest from './modules/pto/NewRequest';
+import PtoRequestDetail from './modules/pto/RequestDetail';
 
 // Evaluation Module Pages (placeholders - to be created)
 import EvaluationDashboard from './modules/evaluations/Dashboard';
@@ -38,7 +41,9 @@ function App() {
                 {/* PTO Module Routes */}
                 <Route path="pto">
                   <Route index element={<PtoDashboard />} />
-                  {/* More routes will be added */}
+                  <Route path="requests" element={<PtoRequestsList />} />
+                  <Route path="requests/new" element={<PtoNewRequest />} />
+                  <Route path="requests/:id" element={<PtoRequestDetail />} />
                 </Route>
 
                 {/* Evaluation Module Routes */}

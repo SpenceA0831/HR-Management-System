@@ -24,28 +24,48 @@ export class ApiClient {
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
     try {
-      const url = `${this.baseUrl}?action=${action}`;
+      // Add demo mode email for local development
+      const demoEmail = 'demo@example.com';
+      const url = `${this.baseUrl}?action=${action}&demoEmail=${encodeURIComponent(demoEmail)}`;
       const options: RequestInit = {
         method,
         headers: {
-          'Content-Type': 'application/json',
+          // Use text/plain to avoid CORS preflight OPTIONS request
+          // Apps Script will still parse this as JSON on the backend
+          'Content-Type': 'text/plain;charset=utf-8',
         },
         signal: controller.signal,
-        credentials: 'include', // Include cookies for session
       };
 
-      if (method === 'POST' && body) {
-        options.body = JSON.stringify(body);
+      if (method === 'POST') {
+        // Merge demoEmail into the body payload for demo mode
+        const payload = body ? { ...body as object, demoEmail } : { demoEmail };
+        options.body = JSON.stringify(payload);
       }
 
       const response = await fetch(url, options);
       clearTimeout(timeoutId);
 
       if (!response.ok) {
+        console.error(`API Error: ${method} ${action}`, {
+          status: response.status,
+          statusText: response.statusText,
+          url,
+        });
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data: ApiResponse<T> = await response.json();
+
+      // Log API errors for debugging
+      if (!data.success) {
+        console.error(`API Response Error: ${method} ${action}`, {
+          error: data.error,
+          code: data.code,
+          url,
+        });
+      }
+
       return data;
     } catch (error) {
       clearTimeout(timeoutId);

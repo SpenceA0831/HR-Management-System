@@ -50,3 +50,10 @@ export const formatPtoDates = (start: string | Date, end: string | Date): string
 
     return `${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d, yyyy')}`;
 };
+
+export const isShortNotice = (startDate: Date, thresholdDays: number = 14): boolean => {
+    const now = new Date();
+    const diffTime = startDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays < thresholdDays && diffDays >= 0;
+};

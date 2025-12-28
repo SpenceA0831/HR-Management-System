@@ -40,6 +40,7 @@ export async function createPtoRequest(data: {
   isHalfDayEnd: boolean;
   reason?: string;
   attachment?: string;
+  status?: string;
 }): Promise<ApiResponse<PtoRequest>> {
   return apiClient.post<PtoRequest>('createPtoRequest', data);
 }

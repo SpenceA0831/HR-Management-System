@@ -1,29 +1,112 @@
-import { Box, Button, Typography, Paper, Container } from '@mui/material';
-// import { GoogleLogin } from '@react-oauth/google';
+import { useState } from 'react';
+import { Box, Button, Typography, Paper, Container, Alert, Menu, MenuItem } from '@mui/material';
+import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
 import { useStore } from '../store/useStore';
 import type { User } from '../types';
 
+const DEMO_USERS: User[] = [
+  {
+    id: 'demo-user-1',
+    name: 'Demo User',
+    email: 'demo@example.com',
+    userRole: 'STAFF',
+    teamId: 'team_eng_001',
+    employmentType: 'Full Time',
+    hireDate: '2024-01-01',
+    roleType: 'ORGANIZER',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'usr_aaron_001',
+    name: 'Aaron Spence',
+    email: 'aaronhspence@gmail.com',
+    userRole: 'MANAGER',
+    teamId: 'team_eng_001',
+    employmentType: 'Full Time',
+    hireDate: '2024-01-01',
+    roleType: 'ORGANIZER',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'usr_test_001',
+    name: 'Test Employee',
+    email: 'test@example.com',
+    userRole: 'STAFF',
+    teamId: 'team_eng_001',
+    employmentType: 'Full Time',
+    hireDate: '2024-01-15',
+    roleType: 'ORGANIZER',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'usr_ceo_001',
+    name: 'Jane CEO',
+    email: 'ceo@example.com',
+    userRole: 'ADMIN',
+    teamId: 'team_exec_001',
+    employmentType: 'Full Time',
+    hireDate: '2024-01-01',
+    roleType: 'ORGANIZER',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+];
+
 export default function SignIn() {
   const { setCurrentUser, setIsAuthenticated } = useStore();
+  const [error, setError] = useState<string | null>(null);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
 
-  const handleGoogleSuccess = async () => {
-    // TODO: Call backend to validate and get user
-    // For now, create a mock user
-    const mockUser: User = {
-      id: '1',
-      name: 'Demo User',
-      email: 'demo@example.com',
-      userRole: 'STAFF',
-      teamId: 'team1',
-      employmentType: 'Full Time',
-      hireDate: '2024-01-01',
-      roleType: 'ORGANIZER',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+  const handleGoogleSuccess = async (_credentialResponse: CredentialResponse) => {
+    try {
+      setError(null);
 
-    setCurrentUser(mockUser);
+      // TODO: Call backend to validate token and get user
+      // const response = await fetch(`${import.meta.env.VITE_APPS_SCRIPT_URL}?action=validateToken`, {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ token: credentialResponse.credential }),
+      // });
+      // const userData = await response.json();
+
+      // For now, create a mock user (remove this when backend is ready)
+      const mockUser: User = {
+        id: 'demo-user-1',
+        name: 'Demo User',
+        email: 'demo@example.com',
+        userRole: 'STAFF',
+        teamId: 'team_eng_001',
+        employmentType: 'Full Time',
+        hireDate: '2024-01-01',
+        roleType: 'ORGANIZER',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      setCurrentUser(mockUser);
+      setIsAuthenticated(true);
+    } catch (err) {
+      console.error('Authentication error:', err);
+      setError('Failed to sign in. Please try again.');
+    }
+  };
+
+  const handleDemoLogin = (user: User) => {
+    setCurrentUser(user);
     setIsAuthenticated(true);
+    setAnchorEl(null);
+  };
+
+  const handleOpenMenu = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleCloseMenu = () => {
+    setAnchorEl(null);
   };
 
   return (
@@ -73,23 +156,66 @@ export default function SignIn() {
             PTO Tracking & Staff Evaluations
           </Typography>
 
-          <Box sx={{ mb: 3 }}>
-            {/* TODO: Configure Google OAuth */}
-            {/* <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={() => console.error('Google Sign-In failed')}
-            /> */}
+          {error && (
+            <Alert severity="error" sx={{ mb: 3 }}>
+              {error}
+            </Alert>
+          )}
 
-            {/* Temporary demo button */}
+          <Box sx={{ mb: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {import.meta.env.VITE_GOOGLE_CLIENT_ID &&
+             import.meta.env.VITE_GOOGLE_CLIENT_ID !== 'YOUR_CLIENT_ID.apps.googleusercontent.com' ? (
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => setError('Google Sign-In failed')}
+                useOneTap
+              />
+            ) : (
+              <Alert severity="info" sx={{ textAlign: 'left' }}>
+                Google OAuth not configured. Using demo mode.
+              </Alert>
+            )}
+
             <Button
-              variant="contained"
+              variant="outlined"
               size="large"
               fullWidth
-              onClick={() => handleGoogleSuccess()}
+              onClick={handleOpenMenu}
               sx={{ py: 1.5 }}
             >
               Sign In (Demo Mode)
             </Button>
+            <Menu
+              anchorEl={anchorEl}
+              open={open}
+              onClose={handleCloseMenu}
+              anchorOrigin={{
+                vertical: 'bottom',
+                horizontal: 'center',
+              }}
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'center',
+              }}
+              PaperProps={{
+                sx: { minWidth: anchorEl?.offsetWidth || 200 }
+              }}
+            >
+              {DEMO_USERS.map((user) => (
+                <MenuItem
+                  key={user.id}
+                  onClick={() => handleDemoLogin(user)}
+                  sx={{ flexDirection: 'column', alignItems: 'flex-start', py: 1.5 }}
+                >
+                  <Typography variant="body1" fontWeight={600}>
+                    {user.name}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {user.userRole} • {user.email}
+                  </Typography>
+                </MenuItem>
+              ))}
+            </Menu>
           </Box>
 
           <Typography variant="caption" color="text.secondary">

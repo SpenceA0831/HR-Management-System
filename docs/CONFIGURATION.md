@@ -16,18 +16,20 @@ This document tracks all the IDs, URLs, and configuration values for the HR Mana
 
 ## Google Apps Script Backend
 
-**Deployment URL**: _Not yet deployed_
+**Deployment URL**: `https://script.google.com/macros/s/AKfycbwj82dsrljnu0laDRDKq3Qmvf_YqE72yZwtYUqnmvbC5TE_fREw_gGRk5w4GtQ2aGgz5Q/exec`
 
-**Script Project**: _Not yet created_
+**Script Project**: Attached to Sheet `1wlKItUe5wK9PfLwQrLlOY64A_Df9ZcJ_Gl0d8q5fitQ`
 
-**Status**: ⏳ Pending (Phase 2)
+**Access Control**: Anyone with Google account (requires authentication)
 
-**Next Steps**:
-1. Open your Google Sheet
-2. Go to Extensions → Apps Script
-3. Create backend files (Code.gs, Config.gs, etc.)
-4. Deploy as Web App
-5. Copy deployment URL to frontend/.env
+**Status**: ✅ Deployed (Phase 2 complete)
+
+**Deployed Files**: 15 backend service files
+- Code.gs (main router)
+- Config.gs, Utils.gs, Auth.gs (foundation)
+- UserService.gs
+- PtoService.gs, PtoBalanceService.gs, HolidayService.gs, ConfigService.gs (PTO module)
+- EvaluationService.gs, RatingService.gs, GoalService.gs, PeerReviewService.gs, CycleService.gs, CompetencyService.gs (Evaluation module)
 
 ---
 
@@ -67,7 +69,7 @@ This document tracks all the IDs, URLs, and configuration values for the HR Mana
 Current configuration in `frontend/.env`:
 
 ```env
-VITE_APPS_SCRIPT_URL=https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec
+VITE_APPS_SCRIPT_URL=https://script.google.com/macros/s/AKfycbwj82dsrljnu0laDRDKq3Qmvf_YqE72yZwtYUqnmvbC5TE_fREw_gGRk5w4GtQ2aGgz5Q/exec
 VITE_GOOGLE_CLIENT_ID=YOUR_CLIENT_ID.apps.googleusercontent.com
 VITE_GEMINI_API_KEY=your_gemini_api_key_here
 VITE_SHEET_ID=1wlKItUe5wK9PfLwQrLlOY64A_Df9ZcJ_Gl0d8q5fitQ
@@ -83,11 +85,11 @@ VITE_SHEET_ID=1wlKItUe5wK9PfLwQrLlOY64A_Df9ZcJ_Gl0d8q5fitQ
   - [x] Document Sheet ID
   - [x] Add to .env file
 
-- [ ] **Phase 2: Google Apps Script Backend**
-  - [ ] Create Apps Script project
-  - [ ] Build API endpoints
-  - [ ] Deploy as Web App
-  - [ ] Add deployment URL to .env
+- [x] **Phase 2: Google Apps Script Backend**
+  - [x] Create Apps Script project
+  - [x] Build API endpoints (32 endpoints, 15 service files)
+  - [x] Deploy as Web App
+  - [x] Add deployment URL to .env
 
 - [ ] **Phase 3: Authentication Setup**
   - [ ] Create OAuth Client ID

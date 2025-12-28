@@ -44,14 +44,15 @@ const COLUMN_MAPS = {
     name: 1,
     email: 2,
     userRole: 3,          // STAFF | MANAGER | ADMIN
-    teamId: 4,
-    managerId: 5,
-    employmentType: 6,    // Full Time | Part Time
-    hireDate: 7,          // yyyy-MM-dd
-    roleType: 8,          // For evaluations
-    avatar: 9,
-    createdAt: 10,
-    updatedAt: 11
+    department: 4,
+    teamId: 5,
+    managerId: 6,
+    employmentType: 7,    // Full Time | Part Time
+    hireDate: 8,          // yyyy-MM-dd
+    roleType: 9,          // For evaluations
+    avatar: 10,
+    createdAt: 11,
+    updatedAt: 12
   },
 
   PTO_REQUESTS: {

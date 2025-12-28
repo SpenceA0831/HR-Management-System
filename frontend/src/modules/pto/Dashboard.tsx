@@ -18,7 +18,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { format, parseISO, addDays, isAfter, isBefore, startOfDay } from 'date-fns';
 
 export default function PtoDashboard() {
-    const { user } = useStore();
+    const { currentUser: user } = useStore();
     const navigate = useNavigate();
     const theme = useTheme();
 

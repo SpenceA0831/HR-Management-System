@@ -141,14 +141,14 @@ export default function RequestsList() {
     {
       field: 'userName',
       headerName: 'Employee',
-      width: 160,
+      width: 150,
       headerAlign: 'center',
       align: 'center',
     },
     {
       field: 'type',
       headerName: 'Type',
-      width: 120,
+      width: 100,
       headerAlign: 'center',
       align: 'center',
       renderCell: (params: GridRenderCellParams) => (
@@ -158,7 +158,7 @@ export default function RequestsList() {
     {
       field: 'dates',
       headerName: 'Dates',
-      width: 200,
+      width: 180,
       headerAlign: 'center',
       align: 'center',
       valueGetter: (_value, row) =>
@@ -167,7 +167,7 @@ export default function RequestsList() {
     {
       field: 'totalHours',
       headerName: 'Hours',
-      width: 100,
+      width: 80,
       type: 'number',
       headerAlign: 'center',
       align: 'center',
@@ -175,7 +175,7 @@ export default function RequestsList() {
     {
       field: 'status',
       headerName: 'Status',
-      width: 150,
+      width: 130,
       headerAlign: 'center',
       align: 'center',
       renderCell: (params: GridRenderCellParams) => (
@@ -183,18 +183,17 @@ export default function RequestsList() {
       ),
     },
     {
-      field: 'submittedDate',
-      headerName: 'Submitted',
-      width: 120,
+      field: 'createdAt',
+      headerName: 'Created',
+      width: 110,
       headerAlign: 'center',
       align: 'center',
-      valueFormatter: (value) => (value ? new Date(value).toLocaleDateString() : '-'),
+      valueFormatter: (value) => value ? new Date(value).toLocaleDateString() : '-',
     },
     {
       field: 'reason',
       headerName: 'Reason',
-      flex: 1,
-      minWidth: 200,
+      width: 250,
       headerAlign: 'left',
       align: 'left',
     },

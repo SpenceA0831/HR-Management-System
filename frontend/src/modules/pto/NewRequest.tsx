@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -39,6 +39,7 @@ type FormData = z.infer<typeof ptoRequestSchema>;
 export default function NewRequest() {
   const navigate = useNavigate();
   const { currentUser } = useStore();
+  const [balance, setBalance] = useState<{ availableHours: number; usedHours: number; pendingHours: number } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitAction, setSubmitAction] = useState<'draft' | 'submit' | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -70,6 +71,20 @@ export default function NewRequest() {
     : 0;
 
   const showShortNoticeWarning = startDate ? isShortNotice(startDate) : false;
+
+  useEffect(() => {
+    const loadBalance = async () => {
+      try {
+        const response = await ptoApi.getPtoBalance();
+        if (response.success && response.data) {
+          setBalance(response.data);
+        }
+      } catch (error) {
+        console.error('Failed to load PTO balance:', error);
+      }
+    };
+    loadBalance();
+  }, []);
 
   const onSubmit = async (data: FormData, submit: boolean = false) => {
     if (!currentUser) return;
@@ -119,6 +134,50 @@ export default function NewRequest() {
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
           {error}
+        </Alert>
+      )}
+
+      {balance && totalHours > 0 && (
+        <Alert
+          severity="info"
+          sx={{ mb: 3 }}
+          icon={false}
+        >
+          <Stack direction="row" spacing={3} alignItems="center" flexWrap="wrap">
+            <Box>
+              <Typography variant="caption" color="text.secondary" display="block">
+                Available PTO
+              </Typography>
+              <Typography variant="h6" fontWeight={600}>
+                {balance.availableHours}h
+              </Typography>
+            </Box>
+            <Box>
+              <Typography variant="caption" color="text.secondary" display="block">
+                This Request
+              </Typography>
+              <Typography variant="h6" fontWeight={600}>
+                {totalHours}h
+              </Typography>
+            </Box>
+            <Box>
+              <Typography variant="caption" color="text.secondary" display="block">
+                Remaining After
+              </Typography>
+              <Typography
+                variant="h6"
+                fontWeight={600}
+                color={balance.availableHours - totalHours < 0 ? 'error.main' : 'success.main'}
+              >
+                {balance.availableHours - totalHours}h
+              </Typography>
+            </Box>
+          </Stack>
+          {balance.availableHours - totalHours < 0 && (
+            <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
+              ⚠️ This request exceeds your available PTO balance
+            </Typography>
+          )}
         </Alert>
       )}
 

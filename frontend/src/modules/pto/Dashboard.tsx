@@ -200,7 +200,7 @@ export default function PtoDashboard() {
     const pieData = [
         { name: 'Remaining', value: remaining, color: '#22c55e' },
         { name: 'Used', value: used, color: '#ef4444' },
-        { name: 'Submitted', value: pending, color: '#f59e0b' },
+        { name: 'Awaiting Approval', value: pending, color: '#f59e0b' },
     ].filter(d => d.value > 0);
 
     return (
@@ -275,7 +275,7 @@ export default function PtoDashboard() {
                                                     <Box>
                                                         <Stack direction="row" spacing={0.5} alignItems="center">
                                                             <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#f59e0b' }} />
-                                                            <Typography variant="caption" sx={{ opacity: 0.7 }}>Submitted</Typography>
+                                                            <Typography variant="caption" sx={{ opacity: 0.7 }}>Awaiting Approval</Typography>
                                                         </Stack>
                                                         <Typography variant="h6">{pending}h</Typography>
                                                     </Box>

@@ -29,7 +29,9 @@ export class ApiClient {
       const currentUser = useStore.getState().currentUser;
       const demoEmail = currentUser?.email || 'demo@example.com';
 
-      const url = `${this.baseUrl}?action=${action}&demoEmail=${encodeURIComponent(demoEmail)}`;
+      // Add cache-busting parameter for GET requests to prevent stale data
+      const cacheBuster = method === 'GET' ? `&_t=${Date.now()}` : '';
+      const url = `${this.baseUrl}?action=${action}&demoEmail=${encodeURIComponent(demoEmail)}${cacheBuster}`;
       const options: RequestInit = {
         method,
         headers: {

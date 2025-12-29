@@ -9,7 +9,7 @@ interface StatusChipProps extends Omit<ChipProps, 'color'> {
 
 const statusColorMap: Record<PtoStatus, any> = {
     'Draft': 'default',
-    'Submitted': 'info',
+    'Submitted': 'warning',
     'Pending': 'warning',
     'Approved': 'success',
     'Denied': 'error',
@@ -17,10 +17,20 @@ const statusColorMap: Record<PtoStatus, any> = {
     'Cancelled': 'default'
 };
 
+const statusLabelMap: Record<PtoStatus, string> = {
+    'Draft': 'Draft',
+    'Submitted': 'Awaiting Approval',
+    'Pending': 'Pending',
+    'Approved': 'Approved',
+    'Denied': 'Denied',
+    'ChangesRequested': 'Changes Requested',
+    'Cancelled': 'Cancelled'
+};
+
 export const StatusChip: React.FC<StatusChipProps> = ({ status, ...props }) => {
     return (
         <Chip
-            label={status}
+            label={statusLabelMap[status]}
             color={statusColorMap[status]}
             size="small"
             sx={{

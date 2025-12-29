@@ -16,9 +16,11 @@ import {
   Alert,
   CircularProgress,
   Divider,
+  Collapse,
+  IconButton,
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
-import { ArrowLeft, Save, Send, X, Check, XCircle } from 'lucide-react';
+import { ArrowLeft, Save, Send, X, Check, XCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import * as ptoApi from '../../services/api/ptoApi';
 import { useStore } from '../../store/useStore';
 import { calculatePtoHours, isShortNotice, formatPtoDates } from '../../utils/ptoUtils';
@@ -45,11 +47,13 @@ export default function RequestDetail() {
   const navigate = useNavigate();
   const { currentUser } = useStore();
   const [request, setRequest] = useState<PtoRequest | null>(null);
+  const [balance, setBalance] = useState<{ availableHours: number; usedHours: number; pendingHours: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [submitAction, setSubmitAction] = useState<'draft' | 'submit' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [historyExpanded, setHistoryExpanded] = useState(false);
 
   const {
     control,
@@ -72,14 +76,25 @@ export default function RequestDetail() {
 
     try {
       setLoading(true);
-      const response = await ptoApi.getPtoRequest(id);
-      if (!response.data) {
+      const [requestResponse, balanceResponse] = await Promise.all([
+        ptoApi.getPtoRequest(id),
+        ptoApi.getPtoBalance()
+      ]);
+
+      console.log('📥 Loaded request from backend:', requestResponse);
+
+      if (!requestResponse.data) {
         setError('Request not found');
         return;
       }
 
-      const data = response.data;
+      const data = requestResponse.data;
+      console.log('📋 Setting request state with status:', data.status);
       setRequest(data);
+
+      if (balanceResponse.success && balanceResponse.data) {
+        setBalance(balanceResponse.data);
+      }
 
       // Populate form with existing data
       reset({
@@ -128,7 +143,7 @@ export default function RequestDetail() {
       setSubmitAction(submit ? 'submit' : 'draft');
       setError(null);
 
-      await ptoApi.updatePtoRequest(id, {
+      const updateData = {
         type: data.type,
         startDate: data.startDate.toISOString().split('T')[0],
         endDate: data.endDate.toISOString().split('T')[0],
@@ -137,7 +152,19 @@ export default function RequestDetail() {
         reason: data.reason,
         totalHours,
         status: submit ? 'Submitted' : request.status,
+      };
+
+      console.log('🔍 Submitting PTO request update:', {
+        submit,
+        requestId: id,
+        currentStatus: request.status,
+        newStatus: updateData.status,
+        fullUpdateData: updateData
       });
+
+      const response = await ptoApi.updatePtoRequest(id, updateData);
+
+      console.log('✅ PTO request update response:', response);
 
       await loadRequest();
       setIsEditing(false);
@@ -247,6 +274,50 @@ export default function RequestDetail() {
         </Alert>
       )}
 
+      {balance && request && (request.status === 'Draft' || request.status === 'Submitted') && (
+        <Alert
+          severity="info"
+          sx={{ mb: 3 }}
+          icon={false}
+        >
+          <Stack direction="row" spacing={3} alignItems="center" flexWrap="wrap">
+            <Box>
+              <Typography variant="caption" color="text.secondary" display="block">
+                Available PTO
+              </Typography>
+              <Typography variant="h6" fontWeight={600}>
+                {balance.availableHours}h
+              </Typography>
+            </Box>
+            <Box>
+              <Typography variant="caption" color="text.secondary" display="block">
+                This Request
+              </Typography>
+              <Typography variant="h6" fontWeight={600}>
+                {request.totalHours}h
+              </Typography>
+            </Box>
+            <Box>
+              <Typography variant="caption" color="text.secondary" display="block">
+                Remaining After
+              </Typography>
+              <Typography
+                variant="h6"
+                fontWeight={600}
+                color={balance.availableHours - request.totalHours < 0 ? 'error.main' : 'success.main'}
+              >
+                {balance.availableHours - request.totalHours}h
+              </Typography>
+            </Box>
+          </Stack>
+          {balance.availableHours - request.totalHours < 0 && (
+            <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
+              ⚠️ This request exceeds your available PTO balance
+            </Typography>
+          )}
+        </Alert>
+      )}
+
       <Paper sx={{ p: 3 }}>
         {!isEditing ? (
           <Stack spacing={3}>
@@ -286,19 +357,47 @@ export default function RequestDetail() {
               </Typography>
             </Box>
 
-            {request.history && request.history.length > 0 && (
+            {request.approverName && (
               <Box>
                 <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                  History
+                  Assigned Approver
                 </Typography>
-                <Stack spacing={1}>
-                  {request.history.map((entry, idx) => (
-                    <Typography key={idx} variant="body2" color="text.secondary">
-                      {new Date(entry.timestamp).toLocaleString()} - {entry.action} by {entry.actorName}
-                      {entry.note && `: ${entry.note}`}
-                    </Typography>
-                  ))}
+                <Typography variant="body1" sx={{ color: 'primary.main', fontWeight: 500 }}>
+                  {request.approverName}
+                </Typography>
+              </Box>
+            )}
+
+            {request.history && request.history.length > 0 && (
+              <Box>
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  justifyContent="space-between"
+                  sx={{
+                    cursor: 'pointer',
+                    '&:hover': { opacity: 0.7 },
+                    mb: historyExpanded ? 1 : 0
+                  }}
+                  onClick={() => setHistoryExpanded(!historyExpanded)}
+                >
+                  <Typography variant="subtitle2" color="text.secondary">
+                    History ({request.history.length})
+                  </Typography>
+                  <IconButton size="small">
+                    {historyExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                  </IconButton>
                 </Stack>
+                <Collapse in={historyExpanded}>
+                  <Stack spacing={1}>
+                    {request.history.map((entry, idx) => (
+                      <Typography key={idx} variant="body2" color="text.secondary">
+                        {new Date(entry.timestamp).toLocaleString()} - {entry.action} by {entry.actorName}
+                        {entry.note && `: ${entry.note}`}
+                      </Typography>
+                    ))}
+                  </Stack>
+                </Collapse>
               </Box>
             )}
 

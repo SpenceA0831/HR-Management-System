@@ -38,6 +38,7 @@ npm run preview
 - **Demo mode**: All requests include `demoEmail` parameter for local development without Google OAuth
   - Demo email is added to both URL query params AND POST body
   - Backend checks for `demoEmail` parameter and uses it when no Google session exists
+- **Cache-busting**: GET requests include `&_t=${Date.now()}` parameter to prevent Google Apps Script from serving stale cached data
 
 ### State Management
 
@@ -129,7 +130,9 @@ Use `utils/ptoUtils.ts` functions:
 ### Status and Type Chips
 
 Reusable components in `src/components/`:
-- `<StatusChip status={request.status} />`: Color-coded status badges
+- `<StatusChip status={request.status} />`: Color-coded status badges with user-friendly labels
+  - Uses `statusLabelMap` to display "Awaiting Approval" instead of "Submitted"
+  - Maps status values to colors: Draft=default, Submitted=warning (orange), Approved=success, Denied=error
 - `<TypeChip type={request.type} />`: PTO type badges (Vacation, Sick, Other)
 
 ### Dashboard Auto-Refresh
@@ -161,6 +164,60 @@ const onSubmit = async (data: FormData, submit: boolean = false) => {
 <Button type="submit">Submit Request</Button>
 ```
 
+### Real-Time PTO Balance Display
+
+NewRequest and RequestDetail forms show live balance calculations as the user fills out the form:
+```typescript
+const [balance, setBalance] = useState<{ availableHours: number; usedHours: number; pendingHours: number } | null>(null);
+
+// Load balance on mount
+useEffect(() => {
+  const loadBalance = async () => {
+    const response = await ptoApi.getPtoBalance();
+    if (response.success && response.data) {
+      setBalance(response.data);
+    }
+  };
+  loadBalance();
+}, []);
+
+// Watch form fields for real-time calculation
+const startDate = watch('startDate');
+const endDate = watch('endDate');
+const isHalfDayStart = watch('isHalfDayStart');
+const isHalfDayEnd = watch('isHalfDayEnd');
+
+const totalHours = startDate && endDate
+  ? calculatePtoHours(startDate, endDate, isHalfDayStart, isHalfDayEnd)
+  : 0;
+
+// Display shows: Available PTO, This Request, Remaining After
+// Warning shown when balance.availableHours - totalHours < 0
+```
+
+### Collapsible UI Sections
+
+Use Material-UI Collapse component for sections that should be hidden by default:
+```typescript
+import { Collapse, IconButton } from '@mui/material';
+import { ChevronDown, ChevronUp } from 'lucide-react';
+
+const [historyExpanded, setHistoryExpanded] = useState(false);
+
+// Clickable header
+<Stack onClick={() => setHistoryExpanded(!historyExpanded)}>
+  <Typography>History ({request.history.length})</Typography>
+  <IconButton>
+    {historyExpanded ? <ChevronUp /> : <ChevronDown />}
+  </IconButton>
+</Stack>
+
+// Collapsible content
+<Collapse in={historyExpanded}>
+  {/* content here */}
+</Collapse>
+```
+
 ## Environment Variables
 
 Copy `.env.example` to `.env` and configure:
@@ -183,3 +240,6 @@ If you see TypeScript errors about Grid props, you're likely using the old v6 AP
 
 ### Dashboard Not Refreshing
 If the dashboard doesn't update after creating/editing requests, ensure `location.key` is in the useEffect dependency array.
+
+### Stale Data After Updates
+If data doesn't update after submitting/editing (e.g., status stays as "Draft" after submit), this is due to Google Apps Script caching GET requests. The fix is already in place: `apiClient.ts` adds a cache-busting timestamp parameter (`&_t=${Date.now()}`) to all GET requests.

@@ -6,9 +6,21 @@ Last Updated: 2025-12-28
 
 **Status**: All tasks completed and committed
 **Branch**: main
-**Last Action**: Completed RequestsList improvements
+**Last Action**: Completed PTO workflow enhancements
 
 ## Recently Completed (Latest Session)
+
+### PTO Workflow Enhancements (✅ Complete - Commit: 3b9e20f)
+- [x] Status label mapping: "Submitted" now displays as "Awaiting Approval"
+- [x] Changed Submitted status color from blue to orange (warning)
+- [x] Real-time PTO balance display on NewRequest and RequestDetail forms
+- [x] Balance shows: Available PTO, This Request, and Remaining After
+- [x] Warning indicator when request exceeds available balance
+- [x] Display assigned approver information on request details
+- [x] Made history section collapsible to reduce UI clutter
+- [x] Cache-busting for GET requests to prevent stale data
+- [x] Updated Dashboard pie chart legend to show "Awaiting Approval"
+- [x] Optimized RequestsList column widths and added Created date
 
 ### RequestsList Improvements (✅ Complete - Commit: ddeebda)
 - [x] Center data in DataGrid columns
@@ -63,6 +75,11 @@ Last Updated: 2025-12-28
 - Users must sign out and back in after changing user data to see updates
 - Can clear with: `localStorage.removeItem('hr-management-storage')`
 
+### Google Apps Script Caching
+- GET requests are cached by Apps Script, causing stale data
+- **Fixed**: Cache-busting implemented in `apiClient.ts` with `&_t=${Date.now()}` parameter
+- If you see old data after updates, verify cache-busting is enabled
+
 ### MUI v7 Breaking Changes
 - Must use `<Grid size={{ xs: 12 }}>` instead of `<Grid item xs={12}>`
 - TypeScript will error if using old API
@@ -83,7 +100,9 @@ The evaluations module has foundation files but is not functional:
 - [ ] System configuration UI (admin only)
 - [ ] Email notifications
 - [ ] File attachments for PTO requests
-- [ ] Manager comments/change requests workflow
+- [ ] Manager comments/change requests workflow (status exists but UI incomplete)
+- [ ] Export requests to PDF/CSV
+- [ ] Bulk approve/deny actions for managers
 
 ### General Features
 - [ ] User profile management
@@ -133,12 +152,16 @@ npm run lint         # Run ESLint
 
 ### PTO Request Workflow
 1. **Draft**: User creates request, saves without submitting
-2. **Submitted**: User submits request for approval
+2. **Submitted**: User submits request for approval (displays as "Awaiting Approval" in UI)
 3. **Pending**: Same as Submitted (backend uses interchangeably)
 4. **Approved**: Manager approves, hours deducted from balance
 5. **Denied**: Manager denies with reason
 6. **ChangesRequested**: Manager asks employee to modify (not fully implemented)
 7. **Cancelled**: Employee cancels their own request
+
+**Status Label Mapping**: The UI displays user-friendly labels while maintaining technical status values internally:
+- `StatusChip` component uses `statusLabelMap` to show "Awaiting Approval" instead of "Submitted"
+- Dashboard pie chart and all status displays use the mapped labels
 
 ### Permission Model
 - **STAFF**: Can create/edit own requests, view own balance
@@ -170,23 +193,32 @@ npm run lint         # Run ESLint
 
 ### Shared Components
 - **Layout**: `src/components/Layout.tsx`
-- **StatusChip**: `src/components/StatusChip.tsx`
+- **StatusChip**: `src/components/StatusChip.tsx` (includes status label mapping)
 - **TypeChip**: `src/components/TypeChip.tsx`
+
+### Key UX Features
+- **Real-time Balance Display**: NewRequest and RequestDetail show Available PTO, Request Hours, and Remaining After as user fills form
+- **Collapsible Sections**: History section in RequestDetail uses Material-UI Collapse component
+- **Assigned Approver**: Request details show who will review the request (highlighted in blue)
+- **Cache-Busting**: All GET requests include timestamp to prevent stale data from Apps Script cache
 
 ## Resume From Here
 
 When resuming this session:
 
 1. **First thing**: Check git status with `git status`
-2. **If changes uncommitted**: Create the commit with the message above
-3. **If commit done**: User can push to GitHub themselves
-4. **Next feature work**: Likely RequestsList improvements or Evaluations module
-5. **Check**: Read CLAUDE.md for architecture overview
-6. **Environment**: Ensure `.env` is configured for local development
+2. **Last commit**: 3b9e20f - "Enhance PTO workflow with clearer status labels and balance visibility"
+3. **All work committed**: PTO workflow enhancements are complete
+4. **Read CLAUDE.md**: For comprehensive architecture overview and implementation patterns
+5. **Environment**: Ensure `.env` is configured for local development
 
-## Questions to Ask User (when resuming)
+## Potential Next Steps
 
-- Are the changes committed and pushed?
-- Do you want to continue with RequestsList improvements?
-- Should we start implementing the Evaluations module?
-- Are there any bugs or issues with the current PTO module?
+The PTO module is now feature-complete for the core workflow. Possible next areas:
+
+1. **Calendar View**: Implement visual calendar showing team PTO requests
+2. **Conflict Detection**: Warn when multiple people request same dates
+3. **Evaluations Module**: Start implementing the evaluation creation and review workflow
+4. **Admin Features**: User management, team configuration, system settings
+5. **Reporting**: Export capabilities, analytics, PTO usage reports
+6. **Mobile Optimization**: Improve responsive design for mobile devices

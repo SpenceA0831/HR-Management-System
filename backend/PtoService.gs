@@ -201,6 +201,7 @@ function handleUpdatePtoRequest(currentUser, payload) {
     if (updates.reason !== undefined) rowData[colMap.reason] = updates.reason;
     if (updates.attachment !== undefined) rowData[colMap.attachment] = updates.attachment;
     if (updates.employeeComment !== undefined) rowData[colMap.employeeComment] = updates.employeeComment;
+    if (updates.status) rowData[colMap.status] = updates.status;
 
     // Recalculate total hours if dates changed
     if (updates.startDate || updates.endDate || updates.isHalfDayStart !== undefined || updates.isHalfDayEnd !== undefined) {

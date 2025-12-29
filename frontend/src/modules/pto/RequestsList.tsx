@@ -201,7 +201,7 @@ export default function RequestsList() {
     {
       field: 'actions',
       headerName: 'Actions',
-      width: 180,
+      width: 250,
       sortable: false,
       headerAlign: 'center',
       align: 'center',

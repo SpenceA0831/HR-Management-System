@@ -1,4 +1,5 @@
 import type { ApiResponse } from '../../types';
+import { useStore } from '../../store/useStore';
 
 const API_BASE_URL = import.meta.env.VITE_APPS_SCRIPT_URL;
 
@@ -24,8 +25,10 @@ export class ApiClient {
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
     try {
-      // Add demo mode email for local development
-      const demoEmail = 'demo@example.com';
+      // Get current user email from store for demo mode authentication
+      const currentUser = useStore.getState().currentUser;
+      const demoEmail = currentUser?.email || 'demo@example.com';
+
       const url = `${this.baseUrl}?action=${action}&demoEmail=${encodeURIComponent(demoEmail)}`;
       const options: RequestInit = {
         method,

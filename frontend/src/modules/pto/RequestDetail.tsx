@@ -117,8 +117,8 @@ export default function RequestDetail() {
   const isOwner = request?.userId === currentUser?.id;
   const isManager = currentUser?.userRole === 'MANAGER' || currentUser?.userRole === 'ADMIN';
   const canEdit = isOwner && request && ['Draft', 'ChangesRequested'].includes(request.status);
-  const canCancel = isOwner && request && ['Draft', 'Submitted', 'Pending'].includes(request.status);
-  const canApprove = isManager && request?.status === 'Pending';
+  const canCancel = isOwner && request && ['Draft', 'Submitted'].includes(request.status);
+  const canApprove = isManager && request?.status === 'Submitted';
 
   const onSubmit = async (data: FormData, submit: boolean = false) => {
     if (!id || !request) return;

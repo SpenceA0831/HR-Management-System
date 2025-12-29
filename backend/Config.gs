@@ -210,7 +210,6 @@ const PTO_TYPES = {
 const PTO_STATUSES = {
   DRAFT: 'Draft',
   SUBMITTED: 'Submitted',
-  PENDING: 'Pending',
   APPROVED: 'Approved',
   DENIED: 'Denied',
   CHANGES_REQUESTED: 'ChangesRequested',

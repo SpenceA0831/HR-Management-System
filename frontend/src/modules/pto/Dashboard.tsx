@@ -29,24 +29,24 @@ export default function PtoDashboard() {
     const [loading, setLoading] = useState(true);
     const [holidays, setHolidays] = useState<Holiday[]>([]);
     const [upcomingTeamPto, setUpcomingTeamPto] = useState<PtoRequest[]>([]);
+    const [teamOutToday, setTeamOutToday] = useState<PtoRequest[]>([]);
 
-    useEffect(() => {
+    const fetchData = async () => {
         if (!user) return;
 
-        const fetchData = async () => {
-            setLoading(true);
-            try {
-                const isManager = user.userRole === 'MANAGER' || user.userRole === 'ADMIN';
+        setLoading(true);
+        try {
+            const isManager = user.userRole === 'MANAGER' || user.userRole === 'ADMIN';
 
-                // Fetch requests, balance, and holidays
-                const [reqsResponse, balResponse, holidaysResponse] = await Promise.all([
-                    ptoApi.getPtoRequests({}), // Backend will filter by current user appropriately
-                    ptoApi.getPtoBalance(), // Let backend determine current user's balance
-                    ptoApi.getHolidays()
-                ]);
+            // Fetch requests, balance, and holidays
+            const [reqsResponse, balResponse, holidaysResponse] = await Promise.all([
+                ptoApi.getPtoRequests({}), // Backend will filter by current user appropriately
+                ptoApi.getPtoBalance(), // Let backend determine current user's balance
+                ptoApi.getHolidays()
+            ]);
 
-                if (reqsResponse.success && reqsResponse.data) {
-                    const allRequests = reqsResponse.data;
+            if (reqsResponse.success && reqsResponse.data) {
+                const allRequests = reqsResponse.data;
 
                     // Split requests for managers: their own vs team's
                     if (isManager) {
@@ -54,8 +54,10 @@ export default function PtoDashboard() {
                         const myReqs = allRequests.filter(r =>
                             r.userId === user.id
                         ).slice(0, 5);
+                        // Team requests: only show submitted requests that need approval
                         const teamReqs = allRequests.filter(r =>
-                            r.userId !== user.id
+                            r.userId !== user.id &&
+                            r.status === 'Submitted'
                         ).slice(0, 5);
                         setMyRequests(myReqs);
                         setTeamRequests(teamReqs);
@@ -77,13 +79,25 @@ export default function PtoDashboard() {
                     setHolidays(upcomingHolidays);
                 }
 
-                // For managers: get upcoming team PTO (next 2 weeks)
+                // For managers: get team PTO data (exclude own requests)
                 if (isManager && reqsResponse.success && reqsResponse.data) {
                     const today = startOfDay(new Date());
+                    const todayStr = format(today, 'yyyy-MM-dd');
                     const twoWeeksFromNow = addDays(today, 14);
-                    const upcoming = reqsResponse.data
+
+                    const teamApprovedRequests = reqsResponse.data.filter(r =>
+                        r.userId !== user.id && r.status === 'Approved'
+                    );
+
+                    // Team out today
+                    const outToday = teamApprovedRequests.filter(r =>
+                        r.startDate <= todayStr && r.endDate >= todayStr
+                    );
+                    setTeamOutToday(outToday);
+
+                    // Upcoming team PTO (next 2 weeks)
+                    const upcoming = teamApprovedRequests
                         .filter(r =>
-                            r.status === 'Approved' &&
                             isAfter(parseISO(r.startDate), today) &&
                             isBefore(parseISO(r.startDate), twoWeeksFromNow)
                         )
@@ -91,13 +105,63 @@ export default function PtoDashboard() {
                         .slice(0, 5);
                     setUpcomingTeamPto(upcoming);
                 }
-            } catch (error) {
-                console.error('Error fetching dashboard data:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
+        } catch (error) {
+            console.error('Error fetching dashboard data:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
+    const handleApprove = async (requestId: string) => {
+        try {
+            console.log('Approving request:', requestId);
+            const response = await ptoApi.approvePtoRequest(requestId);
+            console.log('Approve response:', response);
+
+            if (response.success) {
+                alert('Request approved successfully!');
+                // Refresh data after approval
+                if (user) {
+                    fetchData();
+                }
+            } else {
+                alert(`Failed to approve: ${response.error || 'Unknown error'}`);
+            }
+        } catch (error) {
+            console.error('Failed to approve request:', error);
+            alert('Failed to approve request. Please check console for details.');
+        }
+    };
+
+    const handleDeny = async (requestId: string) => {
+        const reason = prompt('Enter reason for denial:');
+        if (reason === null) return; // User cancelled
+        if (!reason.trim()) {
+            alert('Reason is required when denying a request');
+            return;
+        }
+
+        try {
+            console.log('Denying request:', requestId, 'with reason:', reason);
+            const response = await ptoApi.denyPtoRequest(requestId, reason);
+            console.log('Deny response:', response);
+
+            if (response.success) {
+                alert('Request denied successfully!');
+                // Refresh data after denial
+                if (user) {
+                    fetchData();
+                }
+            } else {
+                alert(`Failed to deny: ${response.error || 'Unknown error'}`);
+            }
+        } catch (error) {
+            console.error('Failed to deny request:', error);
+            alert('Failed to deny request. Please check console for details.');
+        }
+    };
+
+    useEffect(() => {
         fetchData();
     }, [user, location.key]); // Refetch when navigating back to dashboard
 
@@ -153,7 +217,7 @@ export default function PtoDashboard() {
                             const pieData = [
                                 { name: 'Remaining', value: remaining, color: '#22c55e' },
                                 { name: 'Used', value: used, color: '#ef4444' },
-                                { name: 'Pending', value: pending, color: '#f59e0b' },
+                                { name: 'Submitted', value: pending, color: '#f59e0b' },
                             ].filter(d => d.value > 0);
 
                             return (
@@ -191,7 +255,7 @@ export default function PtoDashboard() {
                                                     <Box>
                                                         <Stack direction="row" spacing={0.5} alignItems="center">
                                                             <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#f59e0b' }} />
-                                                            <Typography variant="caption" sx={{ opacity: 0.7 }}>Pending</Typography>
+                                                            <Typography variant="caption" sx={{ opacity: 0.7 }}>Submitted</Typography>
                                                         </Stack>
                                                         <Typography variant="h6">{pending}h</Typography>
                                                     </Box>
@@ -256,7 +320,7 @@ export default function PtoDashboard() {
                                                 Team Requests
                                             </Typography>
                                             <Typography variant="h3" sx={{ fontWeight: 700 }}>
-                                                {teamRequests.filter(r => r.status === 'Pending' || r.status === 'Submitted').length}
+                                                {teamRequests.filter(r => r.status === 'Submitted').length}
                                             </Typography>
                                             <Typography variant="caption" sx={{ opacity: 0.8 }}>
                                                 Awaiting Your Approval
@@ -286,10 +350,7 @@ export default function PtoDashboard() {
                                                 Team Out Today
                                             </Typography>
                                             <Typography variant="h3" sx={{ fontWeight: 700, color: 'info.main' }}>
-                                                {upcomingTeamPto.filter(r => {
-                                                    const today = new Date().toISOString().split('T')[0];
-                                                    return r.startDate <= today && r.endDate >= today;
-                                                }).length}
+                                                {teamOutToday.length}
                                             </Typography>
                                             <Typography variant="caption" color="text.secondary">
                                                 On PTO Right Now
@@ -380,10 +441,10 @@ export default function PtoDashboard() {
                                             Team PTO Requests
                                         </Typography>
                                         <Typography variant="caption" color="text.secondary">
-                                            {teamRequests.filter(r => r.status === 'Pending' || r.status === 'Submitted').length} pending your review
+                                            {teamRequests.filter(r => r.status === 'Submitted').length} awaiting your review
                                         </Typography>
                                     </Box>
-                                    <Button onClick={() => navigate('/pto/requests')} endIcon={<FileText size={16} />}>
+                                    <Button onClick={() => navigate('/pto/requests?status=Submitted')} endIcon={<FileText size={16} />}>
                                         View All
                                     </Button>
                                 </Box>
@@ -399,7 +460,7 @@ export default function PtoDashboard() {
                                         </Box>
                                     ) : (
                                         teamRequests.map((req, idx) => {
-                                            const needsApproval = req.status === 'Pending' || req.status === 'Submitted';
+                                            const needsApproval = req.status === 'Submitted';
                                             return (
                                                 <Box
                                                     key={req.id}
@@ -456,14 +517,14 @@ export default function PtoDashboard() {
                                                         </Box>
                                                     </Stack>
                                                     {needsApproval && (
-                                                        <Stack direction="row" spacing={1}>
+                                                        <Stack direction="row" spacing={1} sx={{ alignSelf: 'center' }}>
                                                             <Button
                                                                 size="small"
                                                                 variant="outlined"
                                                                 color="error"
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
-                                                                    navigate(`/pto/requests/${req.id}`);
+                                                                    handleDeny(req.id);
                                                                 }}
                                                                 sx={{ minWidth: 70 }}
                                                             >
@@ -475,7 +536,7 @@ export default function PtoDashboard() {
                                                                 color="success"
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
-                                                                    navigate(`/pto/requests/${req.id}`);
+                                                                    handleApprove(req.id);
                                                                 }}
                                                                 sx={{ minWidth: 80 }}
                                                             >
@@ -503,8 +564,8 @@ export default function PtoDashboard() {
                                 <Stack spacing={1.5}>
                                     {isManager ? (
                                         <>
-                                            <Button fullWidth variant="outlined" startIcon={<CheckCircle2 size={18} />} sx={{ justifyContent: 'flex-start', py: 1.5 }} onClick={() => navigate('/pto/requests')}>
-                                                Review Pending
+                                            <Button fullWidth variant="outlined" startIcon={<CheckCircle2 size={18} />} sx={{ justifyContent: 'flex-start', py: 1.5 }} onClick={() => navigate('/pto/requests?status=Submitted')}>
+                                                Review Submitted
                                             </Button>
                                             <Button fullWidth variant="outlined" startIcon={<CalendarIcon size={18} />} sx={{ justifyContent: 'flex-start', py: 1.5 }} onClick={() => navigate('/pto/calendar')}>
                                                 Team Calendar

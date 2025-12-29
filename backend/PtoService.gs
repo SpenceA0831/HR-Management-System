@@ -275,6 +275,15 @@ function handleApprovePtoRequest(currentUser, payload) {
 
     updateRow(SHEET_NAMES.PTO_REQUESTS, rowIndex, rowData);
 
+    // Sync balance to sheet after approval
+    try {
+      const requestYear = new Date(request.startDate).getFullYear();
+      syncBalanceToSheet(request.userId, requestYear);
+    } catch (balanceError) {
+      Logger.log('Failed to sync balance after approval: ' + balanceError.message);
+      // Continue - don't fail the approval if balance sync fails
+    }
+
     const updatedRequest = rowToPtoRequest(colMap, rowData);
     return successResponse(updatedRequest);
   } catch (error) {
@@ -326,6 +335,15 @@ function handleDenyPtoRequest(currentUser, payload) {
     rowData[colMap.history] = addAuditEntry(history, currentUser.id, currentUser.name, 'Denied', comment);
 
     updateRow(SHEET_NAMES.PTO_REQUESTS, rowIndex, rowData);
+
+    // Sync balance to sheet after denial (to update pending hours)
+    try {
+      const requestYear = new Date(request.startDate).getFullYear();
+      syncBalanceToSheet(request.userId, requestYear);
+    } catch (balanceError) {
+      Logger.log('Failed to sync balance after denial: ' + balanceError.message);
+      // Continue - don't fail the denial if balance sync fails
+    }
 
     const updatedRequest = rowToPtoRequest(colMap, rowData);
     return successResponse(updatedRequest);

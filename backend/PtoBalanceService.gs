@@ -77,7 +77,7 @@ function calculatePtoBalance(userId, year) {
     if (requestYear === year) {
       if (request.status === PTO_STATUSES.APPROVED) {
         usedHours += request.totalHours;
-      } else if (request.status === PTO_STATUSES.PENDING || request.status === PTO_STATUSES.SUBMITTED) {
+      } else if (request.status === PTO_STATUSES.SUBMITTED) {
         pendingHours += request.totalHours;
       }
     }
@@ -90,4 +90,96 @@ function calculatePtoBalance(userId, year) {
     usedHours,
     pendingHours
   };
+}
+
+/**
+ * Sync calculated balance to the PtoBalances sheet
+ * @param {string} userId - User ID
+ * @param {number} year - Year
+ * @returns {Object} The synced balance
+ */
+function syncBalanceToSheet(userId, year) {
+  const balance = calculatePtoBalance(userId, year);
+  const sheet = SpreadsheetApp.openById(getSpreadsheetId()).getSheetByName(SHEET_NAMES.PTO_BALANCES);
+
+  if (!sheet) {
+    throw new Error('PtoBalances sheet not found');
+  }
+
+  const colMap = COLUMN_MAPS.PTO_BALANCES;
+  const data = sheet.getDataRange().getValues();
+
+  // Find existing balance record
+  let rowIndex = -1;
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][colMap.userId] === userId && data[i][colMap.year] === year) {
+      rowIndex = i + 1; // 1-indexed for sheet
+      break;
+    }
+  }
+
+  const rowData = new Array(Object.keys(colMap).length);
+  rowData[colMap.userId] = balance.userId;
+  rowData[colMap.year] = balance.year;
+  rowData[colMap.availableHours] = balance.availableHours;
+  rowData[colMap.usedHours] = balance.usedHours;
+  rowData[colMap.pendingHours] = balance.pendingHours;
+
+  if (rowIndex > 0) {
+    // Update existing record
+    sheet.getRange(rowIndex, 1, 1, rowData.length).setValues([rowData]);
+  } else {
+    // Append new record
+    sheet.appendRow(rowData);
+  }
+
+  return balance;
+}
+
+/**
+ * Initialize balances for all users for a given year
+ * @param {number} year - Year to initialize (defaults to current year)
+ * @returns {Object} Success response with count of initialized balances
+ */
+function initializeAllBalances(year) {
+  year = year || new Date().getFullYear();
+
+  // Get all users
+  const users = getSheetData(SHEET_NAMES.USERS, COLUMN_MAPS.USERS, rowToUser);
+
+  let count = 0;
+  for (const user of users) {
+    try {
+      syncBalanceToSheet(user.id, year);
+      count++;
+    } catch (error) {
+      Logger.log('Failed to initialize balance for user ' + user.id + ': ' + error.message);
+    }
+  }
+
+  return successResponse({
+    message: 'Initialized balances for ' + count + ' users',
+    count: count,
+    year: year
+  });
+}
+
+/**
+ * Handler to manually initialize all balances (admin only)
+ * @param {Object} currentUser - The authenticated user
+ * @param {Object} payload - {year (optional)}
+ * @returns {Object} Success or error response
+ */
+function handleInitializeBalances(currentUser, payload) {
+  if (!isAdmin(currentUser)) {
+    return errorResponse('Unauthorized: Admin access required', 'UNAUTHORIZED');
+  }
+
+  try {
+    const year = payload.year || new Date().getFullYear();
+    return initializeAllBalances(year);
+  } catch (error) {
+    Logger.log('Error in handleInitializeBalances: ' + error.message);
+    return errorResponse('Failed to initialize balances', 'INIT_BALANCES_ERROR');
+  }
 }

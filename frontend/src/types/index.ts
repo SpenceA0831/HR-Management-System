@@ -50,7 +50,6 @@ export type PtoType = 'Vacation' | 'Sick' | 'Other';
 export type PtoStatus =
   | 'Draft'
   | 'Submitted'
-  | 'Pending'
   | 'Approved'
   | 'Denied'
   | 'ChangesRequested'

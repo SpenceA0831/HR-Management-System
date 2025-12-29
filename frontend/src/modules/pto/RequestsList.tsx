@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Box,
   Button,
@@ -23,10 +23,14 @@ import { formatPtoDates } from '../../utils/ptoUtils';
 
 export default function RequestsList() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { currentUser } = useStore();
   const [requests, setRequests] = useState<PtoRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<PtoStatus | 'ALL'>('ALL');
+
+  // Initialize filters from URL params
+  const initialStatus = searchParams.get('status') as PtoStatus | null;
+  const [statusFilter, setStatusFilter] = useState<PtoStatus | 'ALL'>(initialStatus || 'ALL');
   const [nameFilter, setNameFilter] = useState('');
   const [startDateFilter, setStartDateFilter] = useState<Date | null>(null);
   const [endDateFilter, setEndDateFilter] = useState<Date | null>(null);
@@ -47,6 +51,9 @@ export default function RequestsList() {
     }
   };
 
+  // Get unique user names for filter dropdown
+  const uniqueUsers = Array.from(new Set(requests.map(r => r.userName))).sort();
+
   // Client-side filtering
   const filteredRequests = requests.filter((req) => {
     // Status filter
@@ -54,8 +61,8 @@ export default function RequestsList() {
       return false;
     }
 
-    // Name filter (case insensitive)
-    if (nameFilter && !req.userName.toLowerCase().includes(nameFilter.toLowerCase())) {
+    // Employee filter (exact match)
+    if (nameFilter && req.userName !== nameFilter) {
       return false;
     }
 
@@ -89,26 +96,55 @@ export default function RequestsList() {
 
   const handleApprove = async (id: string) => {
     try {
-      await ptoApi.approvePtoRequest(id);
-      await loadRequests();
+      console.log('Approving request:', id);
+      const response = await ptoApi.approvePtoRequest(id);
+      console.log('Approve response:', response);
+
+      if (response.success) {
+        alert('Request approved successfully!');
+        await loadRequests();
+      } else {
+        alert(`Failed to approve: ${response.error || 'Unknown error'}`);
+      }
     } catch (error) {
       console.error('Failed to approve request:', error);
+      alert('Failed to approve request. Please check console for details.');
     }
   };
 
   const handleDeny = async (id: string) => {
-    const reason = prompt('Enter reason for denial (optional):');
+    const reason = prompt('Enter reason for denial:');
     if (reason === null) return; // User cancelled
+    if (!reason.trim()) {
+      alert('Reason is required when denying a request');
+      return;
+    }
 
     try {
-      await ptoApi.denyPtoRequest(id, reason);
-      await loadRequests();
+      console.log('Denying request:', id, 'with reason:', reason);
+      const response = await ptoApi.denyPtoRequest(id, reason);
+      console.log('Deny response:', response);
+
+      if (response.success) {
+        alert('Request denied successfully!');
+        await loadRequests();
+      } else {
+        alert(`Failed to deny: ${response.error || 'Unknown error'}`);
+      }
     } catch (error) {
       console.error('Failed to deny request:', error);
+      alert('Failed to deny request. Please check console for details.');
     }
   };
 
   const columns: GridColDef[] = [
+    {
+      field: 'userName',
+      headerName: 'Employee',
+      width: 160,
+      headerAlign: 'center',
+      align: 'center',
+    },
     {
       field: 'type',
       headerName: 'Type',
@@ -173,8 +209,8 @@ export default function RequestsList() {
         const request = params.row as PtoRequest;
         const isOwner = request.userId === currentUser?.id;
         const isManager = currentUser?.userRole === 'MANAGER' || currentUser?.userRole === 'ADMIN';
-        const canCancel = isOwner && ['Draft', 'Submitted', 'Pending'].includes(request.status);
-        const canApprove = isManager && request.status === 'Pending';
+        const canCancel = isOwner && ['Draft', 'Submitted'].includes(request.status);
+        const canApprove = isManager && request.status === 'Submitted';
 
         return (
           <Stack direction="row" spacing={0.5} alignItems="center"  justifyContent="center">
@@ -272,7 +308,6 @@ export default function RequestsList() {
               <MenuItem value="ALL">All Statuses</MenuItem>
               <MenuItem value="Draft">Draft</MenuItem>
               <MenuItem value="Submitted">Submitted</MenuItem>
-              <MenuItem value="Pending">Pending</MenuItem>
               <MenuItem value="Approved">Approved</MenuItem>
               <MenuItem value="Denied">Denied</MenuItem>
               <MenuItem value="Cancelled">Cancelled</MenuItem>
@@ -280,13 +315,20 @@ export default function RequestsList() {
             </TextField>
 
             <TextField
-              label="User Name"
+              select
+              label="Employee"
               value={nameFilter}
               onChange={(e) => setNameFilter(e.target.value)}
-              placeholder="Search by name..."
               sx={{ minWidth: 200 }}
               size="small"
-            />
+            >
+              <MenuItem value="">All Employees</MenuItem>
+              {uniqueUsers.map((userName) => (
+                <MenuItem key={userName} value={userName}>
+                  {userName}
+                </MenuItem>
+              ))}
+            </TextField>
 
             <DatePicker
               label="Start Date From"
@@ -308,7 +350,7 @@ export default function RequestsList() {
               }}
             />
 
-            {(statusFilter !== 'ALL' || nameFilter || startDateFilter || endDateFilter) && (
+            {(statusFilter !== 'ALL' || nameFilter !== '' || startDateFilter || endDateFilter) && (
               <Button
                 variant="outlined"
                 size="small"
@@ -345,6 +387,10 @@ export default function RequestsList() {
           disableRowSelectionOnClick
           autoHeight
           sx={{
+            '& .MuiDataGrid-cell': {
+              display: 'flex',
+              alignItems: 'center',
+            },
             '& .MuiDataGrid-cell:focus': {
               outline: 'none',
             },

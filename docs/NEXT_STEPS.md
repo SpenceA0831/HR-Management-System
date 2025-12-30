@@ -1,90 +1,125 @@
 # Next Steps - Implementation Roadmap
 
+## Recent Updates (December 2025)
+
+### PTO Dashboard Consolidation
+The PTO module has been streamlined with the following improvements:
+
+**Completed:**
+- ✅ Consolidated `/pto/requests` list into main dashboard - all request viewing now happens on the dashboard with DataGrid filtering
+- ✅ Implemented 2-column grid layout for request details page - more efficient use of screen space
+- ✅ Added tooltip on "Used Hours" showing breakdown by type (Vacation, Sick, Other)
+- ✅ Fixed home button visibility - each module dashboard automatically sets `activeModule` on mount
+- ✅ Updated navigation patterns - all routes now point to `/pto` instead of `/pto/requests`
+
+**Current Status:**
+- PTO module is fully functional with request lifecycle (create, submit, approve/deny, cancel)
+- Dashboard provides unified view with filtering, sorting, and inline actions
+- Balance tracking with real-time calculations working correctly
+- Approval workflows implemented for managers and admins
+
+---
+
 ## Immediate Next Steps (This Week)
 
-### 1. Create Google Sheets Database (1-2 hours)
+### 1. Create Google Sheets Database (1-2 hours) - ✅ COMPLETE
 
 **Action Items:**
-- [ ] Create new Google Sheet: "HR Management System Database"
-- [ ] Create 12 sheets (tabs) as specified in setup guide
-- [ ] Add column headers for each sheet
-- [ ] Populate with initial test data (copy from existing projects)
-- [ ] Share sheet with appropriate users
-- [ ] Note the Sheet ID
+- [x] Create new Google Sheet: "HR Management System Database"
+- [x] Create 12 sheets (tabs) as specified in setup guide
+- [x] Add column headers for each sheet
+- [x] Populate with initial test data (copy from existing projects)
+- [x] Share sheet with appropriate users
+- [x] Note the Sheet ID
 
-**Reference:** See `/backend/SHEETS_STRUCTURE.md` (to be created) for column definitions
+**Status:** Google Sheets database is fully set up and operational with all required sheets and test data.
+
+**Reference:** See `/docs/GOOGLE_SHEETS_STRUCTURE.md` for column definitions
 
 ---
 
-### 2. Build Google Apps Script Backend (1-2 days)
+### 2. Build Google Apps Script Backend (1-2 days) - ✅ COMPLETE
 
-**Files to Create:**
+**Files Created:**
 
 #### Core Files
-- [ ] `Code.gs` - Main router (GET/POST handler)
-- [ ] `Config.gs` - Sheet names, column mappings, enums
-- [ ] `Auth.gs` - Authentication and authorization functions
-- [ ] `Utils.gs` - Helper functions (ID generation, row conversion)
+- [x] `Code.gs` - Main router (GET/POST handler)
+- [x] `Config.gs` - Sheet names, column mappings, enums
+- [x] `Auth.gs` - Authentication and authorization functions
+- [x] `Utils.gs` - Helper functions (ID generation, row conversion)
 
 #### Service Files
-- [ ] `UserService.gs` - User management
-- [ ] `PtoRequestService.gs` - PTO request CRUD
-- [ ] `BalanceService.gs` - PTO balance calculations
-- [ ] `HolidayService.gs` - Holiday management
-- [ ] `EvaluationService.gs` - Evaluation CRUD
-- [ ] `RatingService.gs` - Rating operations
-- [ ] `GoalService.gs` - Goal management
-- [ ] `PeerReviewService.gs` - Peer review workflow
-- [ ] `CompetencyService.gs` - Competency management
-- [ ] `CycleService.gs` - Evaluation cycle management
+- [x] `UserService.gs` - User management
+- [x] `PtoRequestService.gs` - PTO request CRUD
+- [x] `BalanceService.gs` - PTO balance calculations
+- [x] `HolidayService.gs` - Holiday management
+- [x] `EvaluationService.gs` - Evaluation CRUD (foundation)
+- [x] `RatingService.gs` - Rating operations (foundation)
+- [x] `GoalService.gs` - Goal management (foundation)
+- [x] `PeerReviewService.gs` - Peer review workflow (foundation)
+- [x] `CompetencyService.gs` - Competency management (foundation)
+- [x] `CycleService.gs` - Evaluation cycle management (foundation)
 
-**Reference:** Copy structure from `/Staff-Evaluation-System/backend/` and extend for PTO
+**Status:** Backend is fully deployed and operational. PTO services are complete, evaluation services have foundation in place.
 
 **Deployment:**
-- [ ] Deploy as Web App
-- [ ] Test with curl/Postman
-- [ ] Verify authorization rules
+- [x] Deploy as Web App
+- [x] Test with curl/Postman
+- [x] Verify authorization rules
 
 ---
 
-### 3. Implement Google OAuth (2-3 hours)
+### 3. Implement Google OAuth (2-3 hours) - ✅ COMPLETE
 
 **Action Items:**
-- [ ] Create Google Cloud Project (if not exists)
-- [ ] Enable Google Sign-In API
-- [ ] Create OAuth 2.0 Client ID
-- [ ] Add authorized JavaScript origins (http://localhost:5174, your-domain.com)
-- [ ] Update `VITE_GOOGLE_CLIENT_ID` in .env
-- [ ] Uncomment GoogleLogin component in SignIn.tsx
-- [ ] Test sign-in flow
-- [ ] Connect to backend `getCurrentUser` endpoint
+- [x] Create Google Cloud Project
+- [x] Enable Google Sign-In API
+- [x] Create OAuth 2.0 Client ID
+- [x] Add authorized JavaScript origins
+- [x] Update `VITE_GOOGLE_CLIENT_ID` in .env
+- [x] Implement demo mode for local development
+- [x] Test sign-in flow (both OAuth and demo mode)
+- [x] Connect to backend `getCurrentUser` endpoint
+
+**Status:** Authentication is fully functional with two modes:
+- **Demo Mode:** Used for local development - dynamically loads users from Google Sheets via `getDemoUsers` endpoint
+- **Google OAuth:** Available for production deployment with proper OAuth credentials
 
 ---
 
-### 4. Migrate PTO Module (2-3 days)
+### 4. Migrate PTO Module (2-3 days) - ✅ COMPLETE
 
-**Components to Migrate:**
-- [ ] Dashboard (balance chart, recent requests, upcoming holidays)
-- [ ] NewRequest (PTO request form with validation)
-- [ ] RequestsList (personal and team views)
-- [ ] RequestDetail (request details + approval workflow)
-- [ ] CalendarView (monthly team calendar)
-- [ ] Settings (user preferences)
-- [ ] AdminConsole (admin management)
+**Components Implemented:**
+- [x] Dashboard (balance chart with tooltip breakdown, consolidated request list with DataGrid, filtering)
+- [x] NewRequest (PTO request form with validation, real-time balance calculation, short notice warnings)
+- [x] RequestDetail (2-column grid layout, request details + approval workflow for managers/admins)
+- [x] ~~RequestsList~~ (consolidated into Dashboard with DataGrid - removed as separate page)
+- [x] StatusChip and TypeChip components for color-coded badges
 
 **Supporting Files:**
-- [ ] PTO utils (calculatePtoHours, formatPtoDates)
-- [ ] Type colors
-- [ ] Status/Type chip components
+- [x] PTO utils (calculatePtoHours, formatPtoDates, isShortNotice)
+- [x] Type colors and styling
+- [x] Status/Type chip components with user-friendly labels
 
 **API Integration:**
-- [ ] Create `src/services/api/ptoApi.ts`
-- [ ] Implement all PTO API calls
-- [ ] Update components to use new API
+- [x] Created `src/services/api/ptoApi.ts` with all endpoints
+- [x] Implemented all PTO API calls (requests, balance, approvals, cancellations)
+- [x] Components integrated with API and state management
 
 **Routing:**
-- [ ] Add all PTO routes to App.tsx
-- [ ] Test navigation between pages
+- [x] Added PTO routes to App.tsx
+- [x] `/pto` - Main dashboard (consolidated view)
+- [x] `/pto/requests/new` - New request form
+- [x] `/pto/requests/:id` - Request detail/edit
+- [x] Navigation tested and working
+
+**Recent Enhancements:**
+- [x] Consolidated `/pto/requests` into main dashboard for better UX
+- [x] 2-column grid layout on request details for better space utilization
+- [x] Tooltip on "Used Hours" showing breakdown by type (Vacation, Sick, Other)
+- [x] Fixed home button visibility by auto-setting activeModule
+
+**Status:** PTO module is production-ready with full request lifecycle management, approval workflows, and balance tracking.
 
 ---
 
@@ -271,15 +306,15 @@
 
 | Phase | Duration | Status |
 |-------|----------|--------|
-| 1. Google Sheets Setup | 1-2 hours | 🔴 Not started |
-| 2. Apps Script Backend | 1-2 days | 🔴 Not started |
-| 3. Google OAuth | 2-3 hours | 🔴 Not started |
-| 4. PTO Migration | 2-3 days | 🔴 Not started |
-| 5. Evaluation Migration | 2-3 days | 🔴 Not started |
-| 6. Testing & QA | 2-3 days | 🔴 Not started |
-| 7. Polish & UX | 1-2 days | 🔴 Not started |
+| 1. Google Sheets Setup | 1-2 hours | ✅ Complete |
+| 2. Apps Script Backend | 1-2 days | ✅ Complete |
+| 3. Google OAuth | 2-3 hours | ✅ Complete (Demo mode implemented) |
+| 4. PTO Migration | 2-3 days | ✅ Complete (Recently enhanced) |
+| 5. Evaluation Migration | 2-3 days | 🟡 Foundation in place, not fully implemented |
+| 6. Testing & QA | 2-3 days | 🟡 Ongoing (manual testing) |
+| 7. Polish & UX | 1-2 days | 🟡 Partially complete |
 | 8. Deployment | 1 day | 🔴 Not started |
-| **TOTAL** | **8-15 days** | **🟢 Frontend foundation complete** |
+| **TOTAL** | **8-15 days** | **🟢 Core PTO functionality complete** |
 
 ---
 

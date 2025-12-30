@@ -117,12 +117,16 @@ The application has a module selector pattern:
 ```
 Unauthenticated → SignIn page
 Authenticated → ModuleSelector → Choose PTO or Evaluations
-              → /pto → PTO Dashboard & features
+              → /pto → PTO Dashboard (consolidated view with all requests)
+              → /pto/requests/new → New PTO Request form
+              → /pto/requests/:id → PTO Request detail/edit
               → /evaluations → Evaluations Dashboard & features
               → /admin → Admin settings (ADMIN role only)
 ```
 
-Active module is stored in Zustand state (`activeModule: 'pto' | 'evaluations' | 'admin'`).
+**Important**: The `/pto/requests` list page was removed - all request viewing is consolidated into the main `/pto` dashboard with DataGrid, filters, and inline actions.
+
+Active module is stored in Zustand state (`activeModule: 'pto' | 'evaluations' | 'admin'`). Each module dashboard automatically sets its `activeModule` on mount to ensure the home button appears in the navigation.
 
 ### 5. Backend Service Layer Organization
 

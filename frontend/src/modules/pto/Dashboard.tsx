@@ -55,16 +55,16 @@ export default function PtoDashboard() {
                         // Match by userId
                         const myReqs = allRequests.filter(r =>
                             r.userId === user.id
-                        ).slice(0, 5);
+                        );
                         // Team requests: only show submitted requests that need approval
                         const teamReqs = allRequests.filter(r =>
                             r.userId !== user.id &&
                             r.status === 'Submitted'
-                        ).slice(0, 5);
+                        );
                         setMyRequests(myReqs);
                         setTeamRequests(teamReqs);
                     } else {
-                        setMyRequests(allRequests.slice(0, 5));
+                        setMyRequests(allRequests);
                     }
                 }
 
@@ -255,183 +255,108 @@ export default function PtoDashboard() {
                     </Typography>
                 )}
 
-                <Grid container spacing={3}>
-                    {/* Left Column */}
+                {/* Row 1: Balance + Quick Actions */}
+                <Grid container spacing={3} sx={{ mb: 3 }}>
                     <Grid size={{ xs: 12, lg: 8 }}>
-                        <Stack spacing={3}>
-                            {/* Personal Balance Card */}
-                            {(() => {
-                                return (
-                                <Card sx={{
-                                    bgcolor: theme.palette.mode === 'light' ? 'primary.main' : 'primary.dark',
-                                    color: 'white',
-                                    borderRadius: 3,
-                                    position: 'relative',
-                                    overflow: 'hidden'
-                                }}>
-                                    <CardContent sx={{ p: 2.5 }}>
-                                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
-                                            {/* Left side - Stats */}
-                                            <Box sx={{ flex: 1 }}>
-                                                <Typography variant="h6" sx={{ opacity: 0.9, mb: 1.5, fontWeight: 600 }}>PTO Balance</Typography>
-                                                <Stack direction="row" spacing={2.5} flexWrap="wrap">
-                                                    <Box>
-                                                        <Stack direction="row" spacing={0.5} alignItems="center">
-                                                            <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#22c55e' }} />
-                                                            <Typography variant="caption" sx={{ opacity: 0.7 }}>Available</Typography>
-                                                        </Stack>
-                                                        <Typography variant="h5" fontWeight={700}>{remaining}h</Typography>
-                                                    </Box>
-                                                    <Box>
-                                                        <Stack direction="row" spacing={0.5} alignItems="center">
-                                                            <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#ef4444' }} />
-                                                            <Typography variant="caption" sx={{ opacity: 0.7 }}>Used</Typography>
-                                                        </Stack>
-                                                        <Typography variant="h5" fontWeight={700}>{used}h</Typography>
-                                                    </Box>
-                                                    <Box>
-                                                        <Stack direction="row" spacing={0.5} alignItems="center">
-                                                            <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#f59e0b' }} />
-                                                            <Typography variant="caption" sx={{ opacity: 0.7 }}>Pending</Typography>
-                                                        </Stack>
-                                                        <Typography variant="h5" fontWeight={700}>{pending}h</Typography>
-                                                    </Box>
-                                                    <Box>
-                                                        <Typography variant="caption" sx={{ opacity: 0.7, display: 'block' }}>Total</Typography>
-                                                        <Typography variant="h5" fontWeight={700}>{total}h</Typography>
-                                                    </Box>
+                        <Card sx={{
+                            bgcolor: theme.palette.mode === 'light' ? 'primary.main' : 'primary.dark',
+                            color: 'white',
+                            borderRadius: 3,
+                            position: 'relative',
+                            overflow: 'hidden'
+                        }}>
+                            <CardContent sx={{ p: 2.5 }}>
+                                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
+                                    <Box sx={{ flex: 1 }}>
+                                        <Typography variant="h6" sx={{ opacity: 0.9, mb: 1.5, fontWeight: 600 }}>PTO Balance</Typography>
+                                        <Stack direction="row" spacing={2.5} flexWrap="wrap">
+                                            <Box>
+                                                <Stack direction="row" spacing={0.5} alignItems="center">
+                                                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#22c55e' }} />
+                                                    <Typography variant="caption" sx={{ opacity: 0.7 }}>Available</Typography>
                                                 </Stack>
+                                                <Typography variant="h5" fontWeight={700}>{remaining}h</Typography>
                                             </Box>
-                                            {/* Right side - Pie Chart */}
-                                            <Box sx={{ width: 120, height: 120 }}>
-                                                <ResponsiveContainer width="100%" height="100%">
-                                                    <PieChart>
-                                                        <Pie
-                                                            data={pieData}
-                                                            cx="50%"
-                                                            cy="50%"
-                                                            innerRadius={30}
-                                                            outerRadius={50}
-                                                            paddingAngle={2}
-                                                            dataKey="value"
-                                                            stroke="none"
-                                                        >
-                                                            {pieData.map((entry, index) => (
-                                                                <Cell key={`cell-${index}`} fill={entry.color} />
-                                                            ))}
-                                                        </Pie>
-                                                        <Tooltip
-                                                            content={({ active, payload }) => {
-                                                                if (active && payload && payload.length) {
-                                                                    const data = payload[0].payload;
-                                                                    return (
-                                                                        <Box sx={{
-                                                                            bgcolor: 'background.paper',
-                                                                            color: 'text.primary',
-                                                                            p: 1.5,
-                                                                            borderRadius: 1,
-                                                                            boxShadow: 2
-                                                                        }}>
-                                                                            <Typography variant="body2" fontWeight={600}>
-                                                                                {data.name}: {data.value}h
-                                                                            </Typography>
-                                                                        </Box>
-                                                                    );
-                                                                }
-                                                                return null;
-                                                            }}
-                                                        />
-                                                    </PieChart>
-                                                </ResponsiveContainer>
+                                            <Box>
+                                                <Stack direction="row" spacing={0.5} alignItems="center">
+                                                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#ef4444' }} />
+                                                    <Typography variant="caption" sx={{ opacity: 0.7 }}>Used</Typography>
+                                                </Stack>
+                                                <Typography variant="h5" fontWeight={700}>{used}h</Typography>
+                                            </Box>
+                                            <Box>
+                                                <Stack direction="row" spacing={0.5} alignItems="center">
+                                                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#f59e0b' }} />
+                                                    <Typography variant="caption" sx={{ opacity: 0.7 }}>Pending</Typography>
+                                                </Stack>
+                                                <Typography variant="h5" fontWeight={700}>{pending}h</Typography>
+                                            </Box>
+                                            <Box>
+                                                <Typography variant="caption" sx={{ opacity: 0.7, display: 'block' }}>Total</Typography>
+                                                <Typography variant="h5" fontWeight={700}>{total}h</Typography>
                                             </Box>
                                         </Stack>
-                                    </CardContent>
-                                </Card>
-                            );
-                        })()}
-
-                        {/* My PTO Requests */}
-                        <Card sx={{ borderRadius: 4 }}>
-                            <Box sx={{ p: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                                    My PTO Requests
-                                </Typography>
-                                <Button onClick={() => navigate('/pto/requests')} endIcon={<FileText size={16} />}>
-                                    View All
-                                </Button>
-                            </Box>
-                            <Divider />
-                            <Box>
-                                {myRequests.length === 0 ? (
-                                    <Box sx={{ p: 6, textAlign: 'center' }}>
-                                        <Typography color="text.secondary">No requests found.</Typography>
                                     </Box>
-                                ) : (
-                                    myRequests.map((req, idx) => (
-                                        <Box
-                                            key={req.id}
-                                            sx={{
-                                                p: 3,
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'space-between',
-                                                cursor: 'pointer',
-                                                '&:hover': { bgcolor: 'action.hover' },
-                                                borderBottom: idx !== myRequests.length - 1 ? '1px solid' : 'none',
-                                                borderColor: 'divider'
-                                            }}
-                                            onClick={() => navigate(`/pto/requests/${req.id}`)}
-                                        >
-                                            <Stack direction="row" spacing={2} alignItems="center">
-                                                <Box sx={{
-                                                    width: 48, height: 48, borderRadius: 2,
-                                                    bgcolor: 'secondary.light', color: 'secondary.main',
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'center'
-                                                }}>
-                                                    <CalendarIcon size={24} />
-                                                </Box>
-                                                <Box>
-                                                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                                                        {req.type}
-                                                    </Typography>
-                                                    <Typography variant="caption" color="text.secondary">
-                                                        {formatPtoDates(req.startDate, req.endDate)} • {req.totalHours} hours
-                                                    </Typography>
-                                                </Box>
-                                            </Stack>
-                                            <StatusChip status={req.status} />
-                                        </Box>
-                                    ))
-                                )}
-                            </Box>
-                        </Card>
-                    </Stack>
-                </Grid>
-
-                {/* Right Column */}
-                <Grid size={{ xs: 12, lg: 4 }}>
-                    <Stack spacing={3}>
-                        {/* Quick Actions */}
-                        <Card sx={{ borderRadius: 4, bgcolor: 'background.paper' }}>
-                            <CardContent sx={{ p: 3 }}>
-                                <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>Quick Actions</Typography>
-                                <Stack spacing={1.5}>
-                                    <Button fullWidth variant="outlined" startIcon={<Clock size={18} />} sx={{ justifyContent: 'flex-start', py: 1.5 }} onClick={() => navigate('/pto/requests/new')}>
-                                        New Request
-                                    </Button>
-                                    <Button fullWidth variant="outlined" startIcon={<CalendarIcon size={18} />} sx={{ justifyContent: 'flex-start', py: 1.5 }} onClick={() => navigate('/pto/calendar')}>
-                                        View Calendar
-                                    </Button>
+                                    <Box sx={{ width: 120, height: 120 }}>
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <PieChart>
+                                                <Pie
+                                                    data={pieData}
+                                                    cx="50%"
+                                                    cy="50%"
+                                                    innerRadius={30}
+                                                    outerRadius={50}
+                                                    paddingAngle={2}
+                                                    dataKey="value"
+                                                    stroke="none"
+                                                >
+                                                    {pieData.map((entry, index) => (
+                                                        <Cell key={`cell-${index}`} fill={entry.color} />
+                                                    ))}
+                                                </Pie>
+                                                <Tooltip content={({ active, payload }) => {
+                                                    if (active && payload && payload.length) {
+                                                        const data = payload[0].payload;
+                                                        return (
+                                                            <Box sx={{ bgcolor: 'background.paper', color: 'text.primary', p: 1.5, borderRadius: 1, boxShadow: 2 }}>
+                                                                <Typography variant="body2" fontWeight={600}>{data.name}: {data.value}h</Typography>
+                                                            </Box>
+                                                        );
+                                                    }
+                                                    return null;
+                                                }} />
+                                            </PieChart>
+                                        </ResponsiveContainer>
+                                    </Box>
                                 </Stack>
                             </CardContent>
                         </Card>
+                    </Grid>
 
-                        {/* Upcoming Key Dates */}
+                    <Grid size={{ xs: 12, lg: 4 }}>
+                        <Card sx={{ borderRadius: 4, bgcolor: 'background.paper' }}>
+                            <CardContent sx={{ p: 3 }}>
+                                <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>Quick Actions</Typography>
+                                <Button
+                                    fullWidth
+                                    variant="outlined"
+                                    startIcon={<FileText size={18} />}
+                                    sx={{ justifyContent: 'flex-start', py: 1.5 }}
+                                    onClick={() => window.open('/lev-policy.pdf', '_blank')}
+                                >
+                                    LEV Policy
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    </Grid>
+                </Grid>
+
+                {/* Row 2: Upcoming Key Dates */}
+                <Grid container spacing={3} sx={{ mb: 3 }}>
+                    <Grid size={{ xs: 12, md: 6, lg: 4 }}>
                         <Card sx={{ borderRadius: 4 }}>
                             <CardContent sx={{ p: 3 }}>
                                 <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>Upcoming Key Dates</Typography>
-
-                                {/* Legend */}
                                 <Stack direction="row" spacing={2} sx={{ mb: 2, pb: 2, borderBottom: 1, borderColor: 'divider' }}>
                                     <Stack direction="row" spacing={0.5} alignItems="center">
                                         <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'success.main' }} />
@@ -442,11 +367,8 @@ export default function PtoDashboard() {
                                         <Typography variant="caption" color="text.secondary">Blackout Dates</Typography>
                                     </Stack>
                                 </Stack>
-
                                 {holidays.length === 0 && blackoutDates.length === 0 ? (
-                                    <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
-                                        No upcoming key dates
-                                    </Typography>
+                                    <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>No upcoming key dates</Typography>
                                 ) : (
                                     <Stack spacing={2}>
                                         {holidays.map((h) => (
@@ -475,9 +397,53 @@ export default function PtoDashboard() {
                                 )}
                             </CardContent>
                         </Card>
-                    </Stack>
+                    </Grid>
                 </Grid>
-            </Grid>
+
+                {/* Row 3: My PTO Requests - Full Width */}
+                <Card sx={{ borderRadius: 4 }}>
+                    <Box sx={{ p: 3 }}>
+                        <Typography variant="h6" sx={{ fontWeight: 700 }}>My PTO Requests</Typography>
+                    </Box>
+                    <Divider />
+                    <Box>
+                        {myRequests.length === 0 ? (
+                            <Box sx={{ p: 6, textAlign: 'center' }}>
+                                <Typography color="text.secondary">No requests found.</Typography>
+                            </Box>
+                        ) : (
+                            myRequests.map((req, idx) => (
+                                <Box
+                                    key={req.id}
+                                    sx={{
+                                        p: 3,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        cursor: 'pointer',
+                                        '&:hover': { bgcolor: 'action.hover' },
+                                        borderBottom: idx !== myRequests.length - 1 ? '1px solid' : 'none',
+                                        borderColor: 'divider'
+                                    }}
+                                    onClick={() => navigate(`/pto/requests/${req.id}`)}
+                                >
+                                    <Stack direction="row" spacing={2} alignItems="center">
+                                        <Box sx={{ width: 48, height: 48, borderRadius: 2, bgcolor: 'secondary.light', color: 'secondary.main', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <CalendarIcon size={24} />
+                                        </Box>
+                                        <Box>
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{req.type}</Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                {formatPtoDates(req.startDate, req.endDate)} • {req.totalHours} hours
+                                            </Typography>
+                                        </Box>
+                                    </Stack>
+                                    <StatusChip status={req.status} />
+                                </Box>
+                            ))
+                        )}
+                    </Box>
+                </Card>
         </Box>
 
         {/* Team Management Section - Managers Only */}

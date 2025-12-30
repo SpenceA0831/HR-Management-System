@@ -51,13 +51,30 @@ export default function PtoSettings() {
   const [holidayDialogOpen, setHolidayDialogOpen] = useState(false);
   const [blackoutDialogOpen, setBlackoutDialogOpen] = useState(false);
   const [newHolidayDate, setNewHolidayDate] = useState<Date | null>(null);
+  const [newHolidayEndDate, setNewHolidayEndDate] = useState<Date | null>(null);
   const [newHolidayName, setNewHolidayName] = useState('');
   const [newBlackoutDate, setNewBlackoutDate] = useState<Date | null>(null);
+  const [newBlackoutEndDate, setNewBlackoutEndDate] = useState<Date | null>(null);
   const [newBlackoutName, setNewBlackoutName] = useState('');
 
   useEffect(() => {
     loadData();
   }, []);
+
+  // Helper to format date range display
+  const formatDateRange = (startDate: string, endDate?: string) => {
+    const start = parseISO(startDate);
+    if (!endDate) {
+      return format(start, 'EEEE, MMMM d, yyyy');
+    }
+    const end = parseISO(endDate);
+    // Same month and year
+    if (format(start, 'MMMM yyyy') === format(end, 'MMMM yyyy')) {
+      return `${format(start, 'EEEE, MMMM d')} - ${format(end, 'd, yyyy')}`;
+    }
+    // Different months or years
+    return `${format(start, 'MMM d, yyyy')} - ${format(end, 'MMM d, yyyy')}`;
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -121,6 +138,7 @@ export default function PtoSettings() {
     try {
       const response = await createHoliday({
         date: format(newHolidayDate, 'yyyy-MM-dd'),
+        endDate: newHolidayEndDate ? format(newHolidayEndDate, 'yyyy-MM-dd') : undefined,
         name: newHolidayName,
       });
 
@@ -128,6 +146,7 @@ export default function PtoSettings() {
         setHolidays([...holidays, response.data]);
         setHolidayDialogOpen(false);
         setNewHolidayDate(null);
+        setNewHolidayEndDate(null);
         setNewHolidayName('');
         setSuccess('Holiday added successfully!');
         setTimeout(() => setSuccess(null), 3000);
@@ -163,6 +182,7 @@ export default function PtoSettings() {
     try {
       const response = await createBlackoutDate({
         date: format(newBlackoutDate, 'yyyy-MM-dd'),
+        endDate: newBlackoutEndDate ? format(newBlackoutEndDate, 'yyyy-MM-dd') : undefined,
         name: newBlackoutName,
       });
 
@@ -170,6 +190,7 @@ export default function PtoSettings() {
         setBlackoutDates([...blackoutDates, response.data]);
         setBlackoutDialogOpen(false);
         setNewBlackoutDate(null);
+        setNewBlackoutEndDate(null);
         setNewBlackoutName('');
         setSuccess('Blackout date added successfully!');
         setTimeout(() => setSuccess(null), 3000);
@@ -400,7 +421,7 @@ export default function PtoSettings() {
                     >
                       <ListItemText
                         primary={holiday.name}
-                        secondary={format(parseISO(holiday.date), 'EEEE, MMMM d, yyyy')}
+                        secondary={formatDateRange(holiday.date, holiday.endDate)}
                       />
                       <ListItemSecondaryAction>
                         <IconButton
@@ -458,7 +479,7 @@ export default function PtoSettings() {
                     >
                       <ListItemText
                         primary={blackout.name}
-                        secondary={format(parseISO(blackout.date), 'EEEE, MMMM d, yyyy')}
+                        secondary={formatDateRange(blackout.date, blackout.endDate)}
                       />
                       <ListItemSecondaryAction>
                         <IconButton
@@ -481,12 +502,6 @@ export default function PtoSettings() {
           <DialogTitle>Add Company Holiday</DialogTitle>
           <DialogContent sx={{ pt: 2, minWidth: 400 }}>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <DatePicker
-                label="Holiday Date"
-                value={newHolidayDate}
-                onChange={(date) => setNewHolidayDate(date)}
-                slotProps={{ textField: { fullWidth: true } }}
-              />
               <TextField
                 label="Holiday Name"
                 value={newHolidayName}
@@ -494,10 +509,35 @@ export default function PtoSettings() {
                 placeholder="e.g., New Year's Day"
                 fullWidth
               />
+              <DatePicker
+                label="Start Date"
+                value={newHolidayDate}
+                onChange={(date) => setNewHolidayDate(date)}
+                slotProps={{ textField: { fullWidth: true } }}
+              />
+              <DatePicker
+                label="End Date (Optional)"
+                value={newHolidayEndDate}
+                onChange={(date) => setNewHolidayEndDate(date)}
+                minDate={newHolidayDate || undefined}
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    helperText: 'Leave empty for single-day holiday'
+                  }
+                }}
+              />
             </Box>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setHolidayDialogOpen(false)}>Cancel</Button>
+            <Button onClick={() => {
+              setHolidayDialogOpen(false);
+              setNewHolidayDate(null);
+              setNewHolidayEndDate(null);
+              setNewHolidayName('');
+            }}>
+              Cancel
+            </Button>
             <Button
               variant="contained"
               onClick={handleAddHoliday}
@@ -513,12 +553,6 @@ export default function PtoSettings() {
           <DialogTitle>Add Blackout Date</DialogTitle>
           <DialogContent sx={{ pt: 2, minWidth: 400 }}>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <DatePicker
-                label="Blackout Date"
-                value={newBlackoutDate}
-                onChange={(date) => setNewBlackoutDate(date)}
-                slotProps={{ textField: { fullWidth: true } }}
-              />
               <TextField
                 label="Reason"
                 value={newBlackoutName}
@@ -526,10 +560,35 @@ export default function PtoSettings() {
                 placeholder="e.g., Annual Company Meeting"
                 fullWidth
               />
+              <DatePicker
+                label="Start Date"
+                value={newBlackoutDate}
+                onChange={(date) => setNewBlackoutDate(date)}
+                slotProps={{ textField: { fullWidth: true } }}
+              />
+              <DatePicker
+                label="End Date (Optional)"
+                value={newBlackoutEndDate}
+                onChange={(date) => setNewBlackoutEndDate(date)}
+                minDate={newBlackoutDate || undefined}
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    helperText: 'Leave empty for single-day blackout'
+                  }
+                }}
+              />
             </Box>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setBlackoutDialogOpen(false)}>Cancel</Button>
+            <Button onClick={() => {
+              setBlackoutDialogOpen(false);
+              setNewBlackoutDate(null);
+              setNewBlackoutEndDate(null);
+              setNewBlackoutName('');
+            }}>
+              Cancel
+            </Button>
             <Button
               variant="contained"
               onClick={handleAddBlackoutDate}

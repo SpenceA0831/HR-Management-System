@@ -5,9 +5,29 @@
 
 /**
  * Get the currently authenticated user's email
+ * Supports demo mode via demoEmail parameter
+ * @param {Object} e - Event object with parameters (optional)
  * @returns {string} User email or null
  */
-function getCurrentUserEmail() {
+function getCurrentUserEmail(e) {
+  // Demo mode: Check for demoEmail parameter first
+  if (e && e.parameter && e.parameter.demoEmail) {
+    return e.parameter.demoEmail;
+  }
+
+  // POST request: Check postData for demoEmail
+  if (e && e.postData && e.postData.contents) {
+    try {
+      const payload = JSON.parse(e.postData.contents);
+      if (payload.demoEmail) {
+        return payload.demoEmail;
+      }
+    } catch (parseError) {
+      // Continue to Google session if parsing fails
+    }
+  }
+
+  // Production mode: Use Google session
   try {
     const userEmail = Session.getActiveUser().getEmail();
     return userEmail || null;

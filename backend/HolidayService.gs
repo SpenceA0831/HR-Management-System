@@ -29,7 +29,7 @@ function handleCreateHoliday(currentUser, payload) {
     return errorResponse('Unauthorized: Admin access required', 'UNAUTHORIZED');
   }
 
-  const { date, name } = payload;
+  const { date, endDate, name } = payload;
 
   if (!date || !name) {
     return errorResponse('Missing required fields: date, name', 'MISSING_PARAMETERS');
@@ -42,11 +42,12 @@ function handleCreateHoliday(currentUser, payload) {
     const rowData = Array(Object.keys(colMap).length).fill('');
     rowData[colMap.id] = id;
     rowData[colMap.date] = date;
+    rowData[colMap.endDate] = endDate || '';  // Optional end date for multi-day holidays
     rowData[colMap.name] = name;
 
     appendRow(SHEET_NAMES.HOLIDAYS, rowData);
 
-    const holiday = { id, date, name };
+    const holiday = { id, date, endDate: endDate || undefined, name };
     return successResponse(holiday);
   } catch (error) {
     Logger.log('Error in handleCreateHoliday: ' + error.message);
@@ -114,7 +115,7 @@ function handleCreateBlackoutDate(currentUser, payload) {
     return errorResponse('Unauthorized: Admin access required', 'UNAUTHORIZED');
   }
 
-  const { date, name } = payload;
+  const { date, endDate, name } = payload;
 
   if (!date || !name) {
     return errorResponse('Missing required fields: date, name', 'MISSING_PARAMETERS');
@@ -127,6 +128,7 @@ function handleCreateBlackoutDate(currentUser, payload) {
     const rowData = Array(Object.keys(colMap).length).fill('');
     rowData[colMap.id] = id;
     rowData[colMap.date] = date;
+    rowData[colMap.endDate] = endDate || '';  // Optional end date for multi-day blackout periods
     rowData[colMap.name] = name;
     rowData[colMap.createdBy] = currentUser.id;
     rowData[colMap.createdAt] = getCurrentTimestamp();
@@ -136,6 +138,7 @@ function handleCreateBlackoutDate(currentUser, payload) {
     const blackoutDate = {
       id,
       date,
+      endDate: endDate || undefined,
       name,
       createdBy: currentUser.id,
       createdAt: rowData[colMap.createdAt]

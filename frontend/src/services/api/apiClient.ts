@@ -2,9 +2,10 @@ import type { ApiResponse } from '../../types';
 import { useStore } from '../../store/useStore';
 
 const API_BASE_URL = import.meta.env.VITE_APPS_SCRIPT_URL;
+const USE_MOCK_DATA = !API_BASE_URL || API_BASE_URL.includes('YOUR_DEPLOYMENT_ID');
 
-if (!API_BASE_URL) {
-  console.warn('VITE_APPS_SCRIPT_URL not configured. API calls will fail.');
+if (USE_MOCK_DATA) {
+  console.info('🎭 Mock mode enabled - using local mock data instead of backend API');
 }
 
 export class ApiClient {
@@ -68,6 +69,7 @@ export class ApiClient {
           error: data.error,
           code: data.code,
           url,
+          fullResponse: data,
         });
       }
 

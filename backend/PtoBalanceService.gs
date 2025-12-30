@@ -86,7 +86,8 @@ function calculatePtoBalance(userId, year) {
   return {
     userId,
     year,
-    availableHours: baseHours,
+    totalHours: baseHours,
+    availableHours: baseHours, // Deprecated: keeping for backwards compatibility
     usedHours,
     pendingHours
   };
@@ -121,7 +122,8 @@ function syncBalanceToSheet(userId, year) {
   const rowData = new Array(Object.keys(colMap).length);
   rowData[colMap.userId] = balance.userId;
   rowData[colMap.year] = balance.year;
-  rowData[colMap.availableHours] = balance.availableHours;
+  rowData[colMap.totalHours] = balance.totalHours;
+  rowData[colMap.availableHours] = balance.availableHours;  // Deprecated but keeping for compatibility
   rowData[colMap.usedHours] = balance.usedHours;
   rowData[colMap.pendingHours] = balance.pendingHours;
 

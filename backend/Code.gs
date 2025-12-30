@@ -56,8 +56,13 @@ function handleRequest(e, method) {
       ));
     }
 
-    // Get authenticated user
-    const userEmail = getCurrentUserEmail();
+    // Demo users endpoint for login page (no auth required)
+    if (action === 'getDemoUsers') {
+      return output.setContent(JSON.stringify(handleGetDemoUsers()));
+    }
+
+    // Get authenticated user (pass event object for demo mode support)
+    const userEmail = getCurrentUserEmail(e);
     if (!userEmail) {
       return output.setContent(JSON.stringify(
         errorResponse('Authentication required', 'UNAUTHORIZED')

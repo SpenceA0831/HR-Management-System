@@ -193,11 +193,18 @@ function rowToPtoBalance(colMap, row) {
  * @returns {Object} Holiday object
  */
 function rowToHoliday(colMap, row) {
-  return {
+  const holiday = {
     id: row[colMap.id] || '',
     date: row[colMap.date] || null,
     name: row[colMap.name] || ''
   };
+
+  // Include endDate if present (for multi-day holidays)
+  if (row[colMap.endDate]) {
+    holiday.endDate = row[colMap.endDate];
+  }
+
+  return holiday;
 }
 
 /**
@@ -207,13 +214,20 @@ function rowToHoliday(colMap, row) {
  * @returns {Object} BlackoutDate object
  */
 function rowToBlackoutDate(colMap, row) {
-  return {
+  const blackout = {
     id: row[colMap.id] || '',
     date: row[colMap.date] || null,
     name: row[colMap.name] || '',
     createdBy: row[colMap.createdBy] || '',
     createdAt: row[colMap.createdAt] || null
   };
+
+  // Include endDate if present (for multi-day blackout periods)
+  if (row[colMap.endDate]) {
+    blackout.endDate = row[colMap.endDate];
+  }
+
+  return blackout;
 }
 
 /**

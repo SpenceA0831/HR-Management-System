@@ -80,23 +80,26 @@ const COLUMN_MAPS = {
   PTO_BALANCES: {
     userId: 0,
     year: 1,
-    availableHours: 2,
-    usedHours: 3,
-    pendingHours: 4
+    totalHours: 2,
+    availableHours: 3,  // Deprecated, keeping for backwards compatibility
+    usedHours: 4,
+    pendingHours: 5
   },
 
   HOLIDAYS: {
     id: 0,
-    date: 1,              // yyyy-MM-dd
-    name: 2
+    date: 1,              // yyyy-MM-dd (start date)
+    endDate: 2,           // yyyy-MM-dd (optional end date for multi-day holidays)
+    name: 3
   },
 
   BLACKOUT_DATES: {
     id: 0,
-    date: 1,              // yyyy-MM-dd
-    name: 2,
-    createdBy: 3,
-    createdAt: 4
+    date: 1,              // yyyy-MM-dd (start date)
+    endDate: 2,           // yyyy-MM-dd (optional end date for multi-day blackout periods)
+    name: 3,
+    createdBy: 4,
+    createdAt: 5
   },
 
   SYSTEM_CONFIG: {

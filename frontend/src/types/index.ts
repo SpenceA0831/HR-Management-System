@@ -88,23 +88,26 @@ export interface PtoRequest {
 export interface PtoBalance {
   userId: string;
   year: number;
-  availableHours: number;
+  totalHours: number; // Total yearly allocation
+  availableHours: number; // Calculated: totalHours - usedHours - pendingHours (deprecated, use totalHours)
   usedHours: number;
   pendingHours: number;
 }
 
 export interface Holiday {
   id: string;
-  date: string; // yyyy-MM-dd
+  date: string; // yyyy-MM-dd (start date)
+  endDate?: string; // yyyy-MM-dd (optional end date for multi-day holidays)
   name: string;
 }
 
 export interface BlackoutDate {
   id: string;
-  date: string; // yyyy-MM-dd
+  date: string; // yyyy-MM-dd (start date)
+  endDate?: string; // yyyy-MM-dd (optional end date for multi-day blackout periods)
   name: string;
-  createdBy: string;
-  createdAt: string; // ISO 8601
+  createdBy?: string;
+  createdAt?: string; // ISO 8601
 }
 
 export interface SystemConfig {

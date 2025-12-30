@@ -1,65 +1,39 @@
-import { useState } from 'react';
-import { Box, Button, Typography, Paper, Container, Alert, Menu, MenuItem } from '@mui/material';
+import { useState, useEffect } from 'react';
+import { Box, Button, Typography, Paper, Container, Alert, Menu, MenuItem, CircularProgress } from '@mui/material';
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
 import { useStore } from '../store/useStore';
+import { getDemoUsers } from '../services/api/usersApi';
 import type { User } from '../types';
-
-const DEMO_USERS: User[] = [
-  {
-    id: 'demo-user-1',
-    name: 'Demo User',
-    email: 'demo@example.com',
-    userRole: 'STAFF',
-    teamId: 'team_eng_001',
-    employmentType: 'Full Time',
-    hireDate: '2024-01-01',
-    roleType: 'ORGANIZER',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'usr_aaron_001',
-    name: 'Aaron Spence',
-    email: 'aaronhspence@gmail.com',
-    userRole: 'MANAGER',
-    teamId: 'team_eng_001',
-    employmentType: 'Full Time',
-    hireDate: '2024-01-01',
-    roleType: 'ORGANIZER',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'usr_test_001',
-    name: 'Test Employee',
-    email: 'test@example.com',
-    userRole: 'STAFF',
-    teamId: 'team_eng_001',
-    employmentType: 'Full Time',
-    hireDate: '2024-01-15',
-    roleType: 'ORGANIZER',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'usr_ceo_001',
-    name: 'Jane CEO',
-    email: 'ceo@example.com',
-    userRole: 'ADMIN',
-    teamId: 'team_exec_001',
-    employmentType: 'Full Time',
-    hireDate: '2024-01-01',
-    roleType: 'ORGANIZER',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
 
 export default function SignIn() {
   const { setCurrentUser, setIsAuthenticated } = useStore();
   const [error, setError] = useState<string | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(true);
   const open = Boolean(anchorEl);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        setLoadingUsers(true);
+        const response = await getDemoUsers();
+        if (response.success && response.data) {
+          setUsers(response.data);
+        } else {
+          console.error('Failed to fetch demo users:', response.error);
+          setError('Failed to load users. Please refresh the page.');
+        }
+      } catch (err) {
+        console.error('Error fetching demo users:', err);
+        setError('Failed to load users. Please refresh the page.');
+      } finally {
+        setLoadingUsers(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   const handleGoogleSuccess = async (_credentialResponse: CredentialResponse) => {
     try {
@@ -181,9 +155,17 @@ export default function SignIn() {
               size="large"
               fullWidth
               onClick={handleOpenMenu}
+              disabled={loadingUsers}
               sx={{ py: 1.5 }}
             >
-              Sign In (Demo Mode)
+              {loadingUsers ? (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <CircularProgress size={20} />
+                  <span>Loading users...</span>
+                </Box>
+              ) : (
+                'Sign In (Demo Mode)'
+              )}
             </Button>
             <Menu
               anchorEl={anchorEl}
@@ -201,20 +183,28 @@ export default function SignIn() {
                 sx: { minWidth: anchorEl?.offsetWidth || 200 }
               }}
             >
-              {DEMO_USERS.map((user) => (
-                <MenuItem
-                  key={user.id}
-                  onClick={() => handleDemoLogin(user)}
-                  sx={{ flexDirection: 'column', alignItems: 'flex-start', py: 1.5 }}
-                >
-                  <Typography variant="body1" fontWeight={600}>
-                    {user.name}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {user.userRole} • {user.email}
+              {users.length === 0 ? (
+                <MenuItem disabled>
+                  <Typography variant="body2" color="text.secondary">
+                    No users available
                   </Typography>
                 </MenuItem>
-              ))}
+              ) : (
+                users.map((user) => (
+                  <MenuItem
+                    key={user.id}
+                    onClick={() => handleDemoLogin(user)}
+                    sx={{ flexDirection: 'column', alignItems: 'flex-start', py: 1.5 }}
+                  >
+                    <Typography variant="body1" fontWeight={600}>
+                      {user.name}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {user.userRole} • {user.email}
+                    </Typography>
+                  </MenuItem>
+                ))
+              )}
             </Menu>
           </Box>
 

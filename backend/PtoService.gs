@@ -79,7 +79,7 @@ function handleGetPtoRequest(currentUser, payload) {
  * @returns {Object} Success or error response
  */
 function handleCreatePtoRequest(currentUser, payload) {
-  const { type, startDate, endDate, isHalfDayStart, isHalfDayEnd, reason, attachment } = payload;
+  const { type, startDate, endDate, isHalfDayStart, isHalfDayEnd, reason, attachment, status } = payload;
 
   if (!type || !startDate || !endDate) {
     return errorResponse('Missing required fields: type, startDate, endDate', 'MISSING_PARAMETERS');
@@ -119,13 +119,17 @@ function handleCreatePtoRequest(currentUser, payload) {
     // Create request
     const id = generateId('pto');
     const now = getCurrentTimestamp();
+
+    // Use the provided status or default to DRAFT
+    const requestStatus = status || PTO_STATUSES.DRAFT;
+
     const history = [
       {
         timestamp: now.toISOString(),
         actorId: currentUser.id,
         actorName: currentUser.name,
-        action: 'Created',
-        note: 'Request created'
+        action: requestStatus === PTO_STATUSES.SUBMITTED ? 'Submitted' : 'Created',
+        note: requestStatus === PTO_STATUSES.SUBMITTED ? 'Request submitted for approval' : 'Request created as draft'
       }
     ];
 
@@ -143,7 +147,7 @@ function handleCreatePtoRequest(currentUser, payload) {
     rowData[colMap.totalHours] = totalHours;
     rowData[colMap.reason] = reason || '';
     rowData[colMap.attachment] = attachment || '';
-    rowData[colMap.status] = PTO_STATUSES.DRAFT;
+    rowData[colMap.status] = requestStatus;
     rowData[colMap.managerComment] = '';
     rowData[colMap.employeeComment] = '';
     rowData[colMap.approverId] = approver.id;

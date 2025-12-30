@@ -1,14 +1,36 @@
 # Next Steps & Project Status
 
-Last Updated: 2025-12-28
+Last Updated: 2025-12-30
 
 ## Current Session Status
 
-**Status**: All tasks completed and committed
+**Status**: SignIn page dynamic user loading implemented - ready for backend deployment
 **Branch**: main
-**Last Action**: Completed PTO workflow enhancements
+**Last Action**: Implemented dynamic user loading on SignIn page from Google Sheets
 
 ## Recently Completed (Latest Session)
+
+### Dynamic SignIn User Loading (⏳ Pending Deployment - Session 2025-12-30)
+- [x] Created `usersApi.ts` with `getDemoUsers()`, `getUsers()`, and `getCurrentUser()` functions
+- [x] Added `handleGetDemoUsers()` backend function in `UserService.gs` (public endpoint)
+- [x] Added `getDemoUsers` route in `Code.gs` (no auth required, for login page)
+- [x] Updated `SignIn.tsx` to dynamically fetch users on mount
+- [x] Removed hardcoded `DEMO_USERS` array from SignIn page
+- [x] Added loading state and error handling for user fetch
+- [x] Updated button to show loading spinner while fetching users
+- [x] Backend changes ready to deploy - need new Apps Script deployment
+
+**Next Steps for Deployment:**
+1. Copy updated backend files to Google Apps Script:
+   - `backend/Code.gs` (added getDemoUsers route)
+   - `backend/UserService.gs` (added handleGetDemoUsers function)
+   - `backend/Auth.gs` (updated getCurrentUserEmail for demo mode)
+2. Create new Apps Script deployment
+3. Update `.env` with new deployment URL
+4. Add users to Google Sheets Users tab (currently only has 3 users)
+5. Test login with dynamically loaded users
+
+## Previously Completed
 
 ### PTO Workflow Enhancements (✅ Complete - Commit: 3b9e20f)
 - [x] Status label mapping: "Submitted" now displays as "Awaiting Approval"

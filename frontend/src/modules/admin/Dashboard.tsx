@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Container,
@@ -6,8 +7,9 @@ import {
   Tabs,
   Tab,
   Paper,
+  Button,
 } from '@mui/material';
-import { Settings, Calendar, TrendingUp } from 'lucide-react';
+import { Settings, Calendar, TrendingUp, ArrowLeft } from 'lucide-react';
 import SystemSettings from './SystemSettings';
 import PtoSettings from './PtoSettings';
 import EvaluationsSettings from './EvaluationsSettings';
@@ -35,6 +37,7 @@ function TabPanel(props: TabPanelProps) {
 }
 
 export default function AdminDashboard() {
+  const navigate = useNavigate();
   const [currentTab, setCurrentTab] = useState(0);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
@@ -43,6 +46,14 @@ export default function AdminDashboard() {
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Button
+        startIcon={<ArrowLeft size={20} />}
+        onClick={() => navigate('/')}
+        sx={{ mb: 3 }}
+      >
+        Back to Module Selector
+      </Button>
+
       <Typography variant="h4" gutterBottom fontWeight={700}>
         Admin Console
       </Typography>

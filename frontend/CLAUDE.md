@@ -84,7 +84,12 @@ Each module lives in `src/modules/{moduleName}/`:
 All API calls are organized in `src/services/api/`:
 - `apiClient.ts`: Core HTTP client with demo mode support
 - `ptoApi.ts`: PTO-specific endpoints (getPtoRequests, createPtoRequest, etc.)
+- `usersApi.ts`: User-related endpoints (getDemoUsers, getUsers, getCurrentUser)
 - `debugApi.ts`: Debugging utilities exposed as `window.debugApi` in dev mode
+
+**Public Endpoints (No Auth Required):**
+- `health`: Backend health check
+- `getDemoUsers`: Returns all users for SignIn page demo mode
 
 ### Form Handling
 
@@ -102,13 +107,16 @@ All API calls are organized in `src/services/api/`:
 
 ### Demo Mode Users
 
-Four demo users are available in `src/pages/SignIn.tsx`:
-1. **Demo User** (`demo@example.com`) - STAFF role
-2. **Aaron Spence** (`aaronhspence@gmail.com`) - MANAGER role
-3. **Test Employee** (`test@example.com`) - STAFF role
-4. **Jane CEO** (`ceo@example.com`) - ADMIN role
+Demo users are **dynamically loaded** from the Google Sheets Users tab via the `getDemoUsers` API endpoint. The SignIn page (`src/pages/SignIn.tsx`) fetches all available users on mount and displays them in the demo login menu.
 
-User data must match the Users sheet in the Google Apps Script backend.
+**How It Works:**
+1. `SignIn.tsx` calls `getDemoUsers()` from `src/services/api/usersApi.ts` on mount
+2. Backend endpoint `getDemoUsers` in `Code.gs` is **public** (no authentication required)
+3. Returns all users from Users sheet with safe fields (id, name, email, userRole, etc.)
+4. Users are displayed in a dropdown menu for demo login selection
+5. User data is automatically synchronized with the Google Sheets Users tab
+
+**Important**: User data in Google Sheets must be properly formatted with all required fields. Any changes to the Users sheet will automatically appear in the SignIn page after a refresh.
 
 ## Key Implementation Patterns
 
@@ -143,6 +151,39 @@ const location = useLocation();
 useEffect(() => {
   fetchData();
 }, [user, location.key]); // Refetch when route changes
+```
+
+### Dynamic User Loading on SignIn
+
+The SignIn page loads users dynamically from the backend instead of hardcoding them:
+```typescript
+const [users, setUsers] = useState<User[]>([]);
+const [loadingUsers, setLoadingUsers] = useState(true);
+
+useEffect(() => {
+  const fetchUsers = async () => {
+    const response = await getDemoUsers();
+    if (response.success && response.data) {
+      setUsers(response.data);
+    }
+    setLoadingUsers(false);
+  };
+  fetchUsers();
+}, []);
+
+// Button shows loading state
+<Button disabled={loadingUsers}>
+  {loadingUsers ? <CircularProgress /> : 'Sign In (Demo Mode)'}
+</Button>
+
+// Menu displays fetched users
+<Menu>
+  {users.map(user => (
+    <MenuItem onClick={() => handleDemoLogin(user)}>
+      {user.name} • {user.userRole}
+    </MenuItem>
+  ))}
+</Menu>
 ```
 
 ### Form Submit Actions

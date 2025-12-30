@@ -10,7 +10,7 @@ import {
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
 import * as ptoApi from '../../services/api/ptoApi';
-import type { PtoRequest, PtoBalance, Holiday } from '../../types';
+import type { PtoRequest, PtoBalance, Holiday, BlackoutDate } from '../../types';
 import { StatusChip } from '../../components/StatusChip';
 import { TypeChip } from '../../components/TypeChip';
 import { formatPtoDates } from '../../utils/ptoUtils';
@@ -28,6 +28,7 @@ export default function PtoDashboard() {
     const [balance, setBalance] = useState<PtoBalance | null>(null);
     const [loading, setLoading] = useState(true);
     const [holidays, setHolidays] = useState<Holiday[]>([]);
+    const [blackoutDates, setBlackoutDates] = useState<BlackoutDate[]>([]);
     const [upcomingTeamPto, setUpcomingTeamPto] = useState<PtoRequest[]>([]);
     const [teamOutToday, setTeamOutToday] = useState<PtoRequest[]>([]);
 
@@ -38,11 +39,12 @@ export default function PtoDashboard() {
         try {
             const isManager = user.userRole === 'MANAGER' || user.userRole === 'ADMIN';
 
-            // Fetch requests, balance, and holidays
-            const [reqsResponse, balResponse, holidaysResponse] = await Promise.all([
+            // Fetch requests, balance, holidays, and blackout dates
+            const [reqsResponse, balResponse, holidaysResponse, blackoutResponse] = await Promise.all([
                 ptoApi.getPtoRequests({}), // Backend will filter by current user appropriately
                 ptoApi.getPtoBalance(), // Let backend determine current user's balance
-                ptoApi.getHolidays()
+                ptoApi.getHolidays(),
+                ptoApi.getBlackoutDates()
             ]);
 
             if (reqsResponse.success && reqsResponse.data) {
@@ -75,8 +77,17 @@ export default function PtoDashboard() {
                     const today = startOfDay(new Date());
                     const upcomingHolidays = holidaysResponse.data
                         .filter(h => isAfter(parseISO(h.date), today) || format(parseISO(h.date), 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd'))
-                        .slice(0, 3);
+                        .slice(0, 5);
                     setHolidays(upcomingHolidays);
+                }
+
+                if (blackoutResponse.success && blackoutResponse.data) {
+                    // Filter blackout dates to upcoming ones
+                    const today = startOfDay(new Date());
+                    const upcomingBlackouts = blackoutResponse.data
+                        .filter(b => isAfter(parseISO(b.date), today) || format(parseISO(b.date), 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd'))
+                        .slice(0, 5);
+                    setBlackoutDates(upcomingBlackouts);
                 }
 
                 // For managers: get team PTO data (exclude own requests)
@@ -194,7 +205,7 @@ export default function PtoDashboard() {
     // Calculate personal PTO balance (for both staff and managers)
     const used = balance?.usedHours || 0;
     const pending = balance?.pendingHours || 0;
-    const total = balance?.availableHours || 120;
+    const total = balance?.totalHours || balance?.availableHours || 120;
     const remaining = total - used - pending;
 
     const pieData = [
@@ -409,21 +420,48 @@ export default function PtoDashboard() {
                             </CardContent>
                         </Card>
 
-                        {/* Upcoming Holidays */}
+                        {/* Upcoming Key Dates */}
                         <Card sx={{ borderRadius: 4 }}>
                             <CardContent sx={{ p: 3 }}>
-                                <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>Upcoming Holidays</Typography>
-                                {holidays.length === 0 ? (
+                                <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>Upcoming Key Dates</Typography>
+
+                                {/* Legend */}
+                                <Stack direction="row" spacing={2} sx={{ mb: 2, pb: 2, borderBottom: 1, borderColor: 'divider' }}>
+                                    <Stack direction="row" spacing={0.5} alignItems="center">
+                                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'success.main' }} />
+                                        <Typography variant="caption" color="text.secondary">Holidays</Typography>
+                                    </Stack>
+                                    <Stack direction="row" spacing={0.5} alignItems="center">
+                                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'error.main' }} />
+                                        <Typography variant="caption" color="text.secondary">Blackout Dates</Typography>
+                                    </Stack>
+                                </Stack>
+
+                                {holidays.length === 0 && blackoutDates.length === 0 ? (
                                     <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
-                                        No upcoming holidays
+                                        No upcoming key dates
                                     </Typography>
                                 ) : (
                                     <Stack spacing={2}>
                                         {holidays.map((h) => (
                                             <Box key={h.id} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                <Typography variant="body2" sx={{ fontWeight: 500 }}>{h.name}</Typography>
+                                                <Stack direction="row" spacing={1} alignItems="center">
+                                                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'success.main' }} />
+                                                    <Typography variant="body2" sx={{ fontWeight: 500 }}>{h.name}</Typography>
+                                                </Stack>
                                                 <Typography variant="caption" color="text.secondary">
-                                                    {format(parseISO(h.date), 'MMM d, yyyy')}
+                                                    {h.endDate ? `${format(parseISO(h.date), 'MMM d')} - ${format(parseISO(h.endDate), 'MMM d, yyyy')}` : format(parseISO(h.date), 'MMM d, yyyy')}
+                                                </Typography>
+                                            </Box>
+                                        ))}
+                                        {blackoutDates.map((b) => (
+                                            <Box key={b.id} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <Stack direction="row" spacing={1} alignItems="center">
+                                                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'error.main' }} />
+                                                    <Typography variant="body2" sx={{ fontWeight: 500 }}>{b.name}</Typography>
+                                                </Stack>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    {b.endDate ? `${format(parseISO(b.date), 'MMM d')} - ${format(parseISO(b.endDate), 'MMM d, yyyy')}` : format(parseISO(b.date), 'MMM d, yyyy')}
                                                 </Typography>
                                             </Box>
                                         ))}

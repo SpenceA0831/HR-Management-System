@@ -141,65 +141,6 @@ export default function PtoDashboard() {
         }
     };
 
-    const handleApprove = async (requestId: string) => {
-        try {
-            console.log('Approving request:', requestId);
-            console.log('Current user:', user);
-
-            // Find the request to see its details
-            const request = teamRequests.find(r => r.id === requestId);
-            console.log('Request details:', request);
-            console.log('Request status:', request?.status);
-            console.log('Request approverId:', request?.approverId);
-            console.log('Current user id:', user?.id);
-            console.log('Do IDs match?', request?.approverId === user?.id);
-
-            const response = await ptoApi.approvePtoRequest(requestId);
-            console.log('Approve response:', response);
-
-            if (response.success) {
-                alert('Request approved successfully!');
-                // Refresh data after approval
-                if (user) {
-                    fetchData();
-                }
-            } else {
-                alert(`Failed to approve: ${response.error || 'Unknown error'}`);
-            }
-        } catch (error) {
-            console.error('Failed to approve request:', error);
-            alert('Failed to approve request. Please check console for details.');
-        }
-    };
-
-    const handleDeny = async (requestId: string) => {
-        const reason = prompt('Enter reason for denial:');
-        if (reason === null) return; // User cancelled
-        if (!reason.trim()) {
-            alert('Reason is required when denying a request');
-            return;
-        }
-
-        try {
-            console.log('Denying request:', requestId, 'with reason:', reason);
-            const response = await ptoApi.denyPtoRequest(requestId, reason);
-            console.log('Deny response:', response);
-
-            if (response.success) {
-                alert('Request denied successfully!');
-                // Refresh data after denial
-                if (user) {
-                    fetchData();
-                }
-            } else {
-                alert(`Failed to deny: ${response.error || 'Unknown error'}`);
-            }
-        } catch (error) {
-            console.error('Failed to deny request:', error);
-            alert('Failed to deny request. Please check console for details.');
-        }
-    };
-
     useEffect(() => {
         fetchData();
     }, [user, location.key]); // Refetch when navigating back to dashboard

@@ -20,10 +20,15 @@ import { DataGrid, type GridColDef, type GridRenderCellParams } from '@mui/x-dat
 import { DatePicker } from '@mui/x-date-pickers';
 
 export default function PtoDashboard() {
-    const { currentUser: user } = useStore();
+    const { currentUser: user, setActiveModule } = useStore();
     const navigate = useNavigate();
     const location = useLocation();
     const theme = useTheme();
+
+    // Ensure activeModule is set when this component loads
+    useEffect(() => {
+        setActiveModule('pto');
+    }, [setActiveModule]);
 
     const [myRequests, setMyRequests] = useState<PtoRequest[]>([]);
     const [teamRequests, setTeamRequests] = useState<PtoRequest[]>([]);

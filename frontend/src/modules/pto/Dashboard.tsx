@@ -173,6 +173,20 @@ export default function PtoDashboard() {
         { name: 'Awaiting Approval', value: pending, color: '#f59e0b' },
     ].filter(d => d.value > 0);
 
+    // Calculate used hours breakdown by type
+    const usedByType = myRequests
+        .filter(req => req.status === 'Approved')
+        .reduce((acc, req) => {
+            if (req.type === 'Vacation') {
+                acc.vacation += req.totalHours;
+            } else if (req.type === 'Sick') {
+                acc.sick += req.totalHours;
+            } else {
+                acc.other += req.totalHours;
+            }
+            return acc;
+        }, { vacation: 0, sick: 0, other: 0 });
+
     // Get unique user names for filter dropdown
     const uniqueUsers = Array.from(new Set(myRequests.map(r => r.userName))).sort();
 
@@ -433,13 +447,26 @@ export default function PtoDashboard() {
                                                 </Stack>
                                                 <Typography variant="h5" fontWeight={700}>{remaining}h</Typography>
                                             </Box>
-                                            <Box>
-                                                <Stack direction="row" spacing={0.5} alignItems="center">
-                                                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#ef4444' }} />
-                                                    <Typography variant="caption" sx={{ opacity: 0.7 }}>Used</Typography>
-                                                </Stack>
-                                                <Typography variant="h5" fontWeight={700}>{used}h</Typography>
-                                            </Box>
+                                            <MuiTooltip
+                                                title={
+                                                    <Stack spacing={0.5}>
+                                                        <Typography variant="caption" fontWeight={600}>Used Hours Breakdown:</Typography>
+                                                        <Typography variant="caption">Vacation: {usedByType.vacation}h</Typography>
+                                                        <Typography variant="caption">Sick: {usedByType.sick}h</Typography>
+                                                        {usedByType.other > 0 && <Typography variant="caption">Other: {usedByType.other}h</Typography>}
+                                                    </Stack>
+                                                }
+                                                placement="top"
+                                                arrow
+                                            >
+                                                <Box sx={{ cursor: 'pointer' }}>
+                                                    <Stack direction="row" spacing={0.5} alignItems="center">
+                                                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#ef4444' }} />
+                                                        <Typography variant="caption" sx={{ opacity: 0.7 }}>Used</Typography>
+                                                    </Stack>
+                                                    <Typography variant="h5" fontWeight={700}>{used}h</Typography>
+                                                </Box>
+                                            </MuiTooltip>
                                             <Box>
                                                 <Stack direction="row" spacing={0.5} alignItems="center">
                                                     <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#f59e0b' }} />

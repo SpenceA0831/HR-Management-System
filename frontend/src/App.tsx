@@ -12,7 +12,6 @@ import Layout from './components/Layout';
 
 // PTO Module Pages
 import PtoDashboard from './modules/pto/Dashboard';
-import PtoRequestsList from './modules/pto/RequestsList';
 import PtoNewRequest from './modules/pto/NewRequest';
 import PtoRequestDetail from './modules/pto/RequestDetail';
 
@@ -44,7 +43,6 @@ function App() {
                 {/* PTO Module Routes */}
                 <Route path="pto">
                   <Route index element={<PtoDashboard />} />
-                  <Route path="requests" element={<PtoRequestsList />} />
                   <Route path="requests/new" element={<PtoNewRequest />} />
                   <Route path="requests/:id" element={<PtoRequestDetail />} />
                 </Route>

@@ -112,7 +112,7 @@ export default function NewRequest() {
       console.log('Creating PTO request with data:', requestData);
       await ptoApi.createPtoRequest(requestData);
 
-      navigate('/pto/requests');
+      navigate('/pto');
     } catch (err) {
       console.error('Failed to create PTO request:', err);
       setError('Failed to create request. Please try again.');
@@ -126,10 +126,10 @@ export default function NewRequest() {
     <Box sx={{ maxWidth: 800, mx: 'auto' }}>
       <Button
         startIcon={<ArrowLeft size={20} />}
-        onClick={() => navigate('/pto/requests')}
+        onClick={() => navigate('/pto')}
         sx={{ mb: 3 }}
       >
-        Back to Requests
+        Back to Dashboard
       </Button>
 
       <Typography variant="h4" fontWeight={700} gutterBottom sx={{ mb: 3 }}>
@@ -303,7 +303,7 @@ export default function NewRequest() {
             <Stack direction="row" spacing={2} justifyContent="flex-end">
               <Button
                 variant="outlined"
-                onClick={() => navigate('/pto/requests')}
+                onClick={() => navigate('/pto')}
                 disabled={submitting}
               >
                 Cancel

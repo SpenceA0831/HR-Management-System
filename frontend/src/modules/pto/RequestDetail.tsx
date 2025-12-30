@@ -184,7 +184,7 @@ export default function RequestDetail() {
     try {
       setSubmitting(true);
       await ptoApi.cancelPtoRequest(id);
-      navigate('/pto/requests');
+      navigate('/pto');
     } catch (err) {
       console.error('Failed to cancel request:', err);
       setError('Failed to cancel request.');
@@ -245,10 +245,10 @@ export default function RequestDetail() {
     <Box sx={{ maxWidth: 800, mx: 'auto' }}>
       <Button
         startIcon={<ArrowLeft size={20} />}
-        onClick={() => navigate('/pto/requests')}
+        onClick={() => navigate('/pto')}
         sx={{ mb: 3 }}
       >
-        Back to Requests
+        Back to Dashboard
       </Button>
 
       <Stack direction="row" justifyContent="space-between" alignItems="flex-start" mb={4}>

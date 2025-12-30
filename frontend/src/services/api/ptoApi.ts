@@ -149,6 +149,12 @@ export async function getPtoBalance(
     });
   }
 
+  // Default to 2026 for testing with current data
+  // TODO: Revert to dynamic year detection after testing
+  if (!year) {
+    year = 2026;
+  }
+
   const params = new URLSearchParams();
   if (userId) params.set('userId', userId);
   if (year) params.set('year', year.toString());

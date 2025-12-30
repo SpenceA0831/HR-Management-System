@@ -70,6 +70,11 @@ export default function NewRequest() {
     ? calculatePtoHours(startDate, endDate, isHalfDayStart, isHalfDayEnd)
     : 0;
 
+  // Calculate actual available hours
+  const actualAvailable = balance
+    ? (balance.totalHours || balance.availableHours) - (balance.usedHours || 0) - (balance.pendingHours || 0)
+    : 0;
+
   const showShortNoticeWarning = startDate ? isShortNotice(startDate) : false;
 
   useEffect(() => {
@@ -149,7 +154,7 @@ export default function NewRequest() {
                 Available PTO
               </Typography>
               <Typography variant="h6" fontWeight={600}>
-                {balance.availableHours}h
+                {actualAvailable}h
               </Typography>
             </Box>
             <Box>
@@ -167,13 +172,13 @@ export default function NewRequest() {
               <Typography
                 variant="h6"
                 fontWeight={600}
-                color={balance.availableHours - totalHours < 0 ? 'error.main' : 'success.main'}
+                color={actualAvailable - totalHours < 0 ? 'error.main' : 'success.main'}
               >
-                {balance.availableHours - totalHours}h
+                {actualAvailable - totalHours}h
               </Typography>
             </Box>
           </Stack>
-          {balance.availableHours - totalHours < 0 && (
+          {actualAvailable - totalHours < 0 && (
             <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
               ⚠️ This request exceeds your available PTO balance
             </Typography>

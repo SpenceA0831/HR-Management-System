@@ -11,7 +11,9 @@
  */
 function handleGetPtoBalance(currentUser, payload) {
   const userId = payload.userId || currentUser.id;
-  const year = payload.year || new Date().getFullYear();
+  // Default to 2026 for testing with current data
+  // TODO: Revert to new Date().getFullYear() after testing
+  const year = parseInt(payload.year) || 2026;
 
   // Authorization: Can view own balance, managers can view direct reports, admins can view all
   const canView = currentUser.id === userId ||
@@ -122,8 +124,7 @@ function syncBalanceToSheet(userId, year) {
   const rowData = new Array(Object.keys(colMap).length);
   rowData[colMap.userId] = balance.userId;
   rowData[colMap.year] = balance.year;
-  rowData[colMap.totalHours] = balance.totalHours;
-  rowData[colMap.availableHours] = balance.availableHours;  // Deprecated but keeping for compatibility
+  rowData[colMap.availableHours] = balance.totalHours;  // Write totalHours to availableHours column
   rowData[colMap.usedHours] = balance.usedHours;
   rowData[colMap.pendingHours] = balance.pendingHours;
 

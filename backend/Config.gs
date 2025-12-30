@@ -44,15 +44,14 @@ const COLUMN_MAPS = {
     name: 1,
     email: 2,
     userRole: 3,          // STAFF | MANAGER | ADMIN
-    department: 4,
-    teamId: 5,
-    managerId: 6,
-    employmentType: 7,    // Full Time | Part Time
-    hireDate: 8,          // yyyy-MM-dd
-    roleType: 9,          // For evaluations
-    avatar: 10,
-    createdAt: 11,
-    updatedAt: 12
+    teamId: 4,
+    managerId: 5,
+    employmentType: 6,    // Full Time | Part Time
+    hireDate: 7,          // yyyy-MM-dd
+    roleType: 8,          // For evaluations
+    avatar: 9,
+    createdAt: 10,
+    updatedAt: 11
   },
 
   PTO_REQUESTS: {
@@ -80,10 +79,9 @@ const COLUMN_MAPS = {
   PTO_BALANCES: {
     userId: 0,
     year: 1,
-    totalHours: 2,
-    availableHours: 3,  // Deprecated, keeping for backwards compatibility
-    usedHours: 4,
-    pendingHours: 5
+    availableHours: 2,  // Stores totalHours (for backwards compatibility)
+    usedHours: 3,
+    pendingHours: 4
   },
 
   HOLIDAYS: {

@@ -41,6 +41,7 @@ export default function Layout() {
     if (!activeModule) return 'HR Management System';
     if (activeModule === 'pto') return 'PTO Tracker';
     if (activeModule === 'evaluations') return 'Staff Evaluations';
+    if (activeModule === 'admin') return 'Admin Console';
     return 'HR Management System';
   };
 

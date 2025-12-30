@@ -232,6 +232,6 @@ export interface ApiResponse<T = unknown> {
 // APP STATE TYPES
 // ============================================================================
 
-export type AppModule = 'pto' | 'evaluations';
+export type AppModule = 'pto' | 'evaluations' | 'admin';
 
 export type ThemeMode = 'light' | 'dark';

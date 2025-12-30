@@ -73,20 +73,30 @@ export default function PtoDashboard() {
                 }
 
                 if (holidaysResponse.success && holidaysResponse.data) {
-                    // Filter holidays to upcoming ones
+                    // Filter holidays to next 3 months
                     const today = startOfDay(new Date());
+                    const threeMonthsFromNow = addDays(today, 90);
                     const upcomingHolidays = holidaysResponse.data
-                        .filter(h => isAfter(parseISO(h.date), today) || format(parseISO(h.date), 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd'))
-                        .slice(0, 5);
+                        .filter(h => {
+                            const holidayDate = parseISO(h.date);
+                            return (isAfter(holidayDate, today) || format(holidayDate, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd'))
+                                && isBefore(holidayDate, threeMonthsFromNow);
+                        })
+                        .slice(0, 10);
                     setHolidays(upcomingHolidays);
                 }
 
                 if (blackoutResponse.success && blackoutResponse.data) {
-                    // Filter blackout dates to upcoming ones
+                    // Filter blackout dates to next 3 months
                     const today = startOfDay(new Date());
+                    const threeMonthsFromNow = addDays(today, 90);
                     const upcomingBlackouts = blackoutResponse.data
-                        .filter(b => isAfter(parseISO(b.date), today) || format(parseISO(b.date), 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd'))
-                        .slice(0, 5);
+                        .filter(b => {
+                            const blackoutDate = parseISO(b.date);
+                            return (isAfter(blackoutDate, today) || format(blackoutDate, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd'))
+                                && isBefore(blackoutDate, threeMonthsFromNow);
+                        })
+                        .slice(0, 10);
                     setBlackoutDates(upcomingBlackouts);
                 }
 

@@ -61,6 +61,14 @@ function handleRequest(e, method) {
       return output.setContent(JSON.stringify(handleGetDemoUsers()));
     }
 
+    // Public endpoints - no auth required
+    if (action === 'getHolidays') {
+      return output.setContent(JSON.stringify(handleGetHolidaysPublic()));
+    }
+    if (action === 'getBlackoutDates') {
+      return output.setContent(JSON.stringify(handleGetBlackoutDatesPublic()));
+    }
+
     // Get authenticated user (pass event object for demo mode support)
     const userEmail = getCurrentUserEmail(e);
     if (!userEmail) {

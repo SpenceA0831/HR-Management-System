@@ -4,18 +4,26 @@
  */
 
 /**
- * Get all holidays
- * @param {Object} currentUser - The authenticated user
+ * Get all holidays (public endpoint - no auth required)
  * @returns {Object} Success or error response
  */
-function handleGetHolidays(currentUser) {
+function handleGetHolidaysPublic() {
   try {
     const holidays = getSheetData(SHEET_NAMES.HOLIDAYS, COLUMN_MAPS.HOLIDAYS, rowToHoliday);
     return successResponse(holidays);
   } catch (error) {
-    Logger.log('Error in handleGetHolidays: ' + error.message);
+    Logger.log('Error in handleGetHolidaysPublic: ' + error.message);
     return errorResponse('Failed to retrieve holidays', 'GET_HOLIDAYS_ERROR');
   }
+}
+
+/**
+ * Get all holidays (authenticated endpoint - kept for backward compatibility)
+ * @param {Object} currentUser - The authenticated user
+ * @returns {Object} Success or error response
+ */
+function handleGetHolidays(currentUser) {
+  return handleGetHolidaysPublic();
 }
 
 /**
@@ -90,18 +98,26 @@ function handleDeleteHoliday(currentUser, payload) {
 }
 
 /**
- * Get all blackout dates
- * @param {Object} currentUser - The authenticated user
+ * Get all blackout dates (public endpoint - no auth required)
  * @returns {Object} Success or error response
  */
-function handleGetBlackoutDates(currentUser) {
+function handleGetBlackoutDatesPublic() {
   try {
     const blackoutDates = getSheetData(SHEET_NAMES.BLACKOUT_DATES, COLUMN_MAPS.BLACKOUT_DATES, rowToBlackoutDate);
     return successResponse(blackoutDates);
   } catch (error) {
-    Logger.log('Error in handleGetBlackoutDates: ' + error.message);
+    Logger.log('Error in handleGetBlackoutDatesPublic: ' + error.message);
     return errorResponse('Failed to retrieve blackout dates', 'GET_BLACKOUT_ERROR');
   }
+}
+
+/**
+ * Get all blackout dates (authenticated endpoint - kept for backward compatibility)
+ * @param {Object} currentUser - The authenticated user
+ * @returns {Object} Success or error response
+ */
+function handleGetBlackoutDates(currentUser) {
+  return handleGetBlackoutDatesPublic();
 }
 
 /**

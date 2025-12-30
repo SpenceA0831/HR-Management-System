@@ -18,6 +18,7 @@ import {
   Divider,
   Collapse,
   IconButton,
+  Grid,
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
 import { ArrowLeft, Save, Send, X, Check, XCircle, ChevronDown, ChevronUp } from 'lucide-react';
@@ -321,52 +322,56 @@ export default function RequestDetail() {
       <Paper sx={{ p: 3 }}>
         {!isEditing ? (
           <Stack spacing={3}>
-            <Box>
-              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                Dates
-              </Typography>
-              <Typography variant="body1">
-                {formatPtoDates(request.startDate, request.endDate)}
-                {request.isHalfDayStart && ' (Half Day Start)'}
-                {request.isHalfDayEnd && ' (Half Day End)'}
-              </Typography>
-            </Box>
+            {/* 2-column grid for key details */}
+            <Grid container spacing={3}>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                  Dates
+                </Typography>
+                <Typography variant="body1">
+                  {formatPtoDates(request.startDate, request.endDate)}
+                  {request.isHalfDayStart && ' (Half Day Start)'}
+                  {request.isHalfDayEnd && ' (Half Day End)'}
+                </Typography>
+              </Grid>
 
-            <Box>
-              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                Total Hours
-              </Typography>
-              <Typography variant="body1">
-                {request.totalHours} hours ({request.totalHours / 8} day{request.totalHours !== 8 ? 's' : ''})
-              </Typography>
-            </Box>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                  Total Hours
+                </Typography>
+                <Typography variant="body1">
+                  {request.totalHours} hours ({request.totalHours / 8} day{request.totalHours !== 8 ? 's' : ''})
+                </Typography>
+              </Grid>
 
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                  Created
+                </Typography>
+                <Typography variant="body1">
+                  {new Date(request.createdAt).toLocaleString()}
+                </Typography>
+              </Grid>
+
+              {request.approverName && (
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                    Assigned Approver
+                  </Typography>
+                  <Typography variant="body1" sx={{ color: 'primary.main', fontWeight: 500 }}>
+                    {request.approverName}
+                  </Typography>
+                </Grid>
+              )}
+            </Grid>
+
+            {/* Reason - full width */}
             <Box>
               <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                 Reason
               </Typography>
               <Typography variant="body1">{request.reason}</Typography>
             </Box>
-
-            <Box>
-              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                Created
-              </Typography>
-              <Typography variant="body1">
-                {new Date(request.createdAt).toLocaleString()}
-              </Typography>
-            </Box>
-
-            {request.approverName && (
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                  Assigned Approver
-                </Typography>
-                <Typography variant="body1" sx={{ color: 'primary.main', fontWeight: 500 }}>
-                  {request.approverName}
-                </Typography>
-              </Box>
-            )}
 
             {request.history && request.history.length > 0 && (
               <Box>

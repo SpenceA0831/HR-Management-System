@@ -265,57 +265,53 @@ export default function PtoDashboard() {
                                 <Card sx={{
                                     bgcolor: theme.palette.mode === 'light' ? 'primary.main' : 'primary.dark',
                                     color: 'white',
-                                    borderRadius: 4,
+                                    borderRadius: 3,
                                     position: 'relative',
                                     overflow: 'hidden'
                                 }}>
-                                    <CardContent sx={{ p: 4 }}>
-                                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3} alignItems="center">
+                                    <CardContent sx={{ p: 2.5 }}>
+                                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
                                             {/* Left side - Stats */}
                                             <Box sx={{ flex: 1 }}>
-                                                <Typography variant="h6" sx={{ opacity: 0.8, mb: 1, fontWeight: 500 }}>Available PTO</Typography>
-                                                <Typography variant="h2" sx={{ fontWeight: 800, mb: 2 }}>
-                                                    {remaining} <Typography component="span" variant="h5">hours</Typography>
-                                                </Typography>
-                                                <Divider sx={{ bgcolor: 'rgba(255,255,255,0.1)', mb: 2 }} />
-                                                <Stack direction="row" spacing={3} flexWrap="wrap">
+                                                <Typography variant="h6" sx={{ opacity: 0.9, mb: 1.5, fontWeight: 600 }}>PTO Balance</Typography>
+                                                <Stack direction="row" spacing={2.5} flexWrap="wrap">
                                                     <Box>
                                                         <Stack direction="row" spacing={0.5} alignItems="center">
                                                             <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#22c55e' }} />
-                                                            <Typography variant="caption" sx={{ opacity: 0.7 }}>Remaining</Typography>
+                                                            <Typography variant="caption" sx={{ opacity: 0.7 }}>Available</Typography>
                                                         </Stack>
-                                                        <Typography variant="h6">{remaining}h</Typography>
+                                                        <Typography variant="h5" fontWeight={700}>{remaining}h</Typography>
                                                     </Box>
                                                     <Box>
                                                         <Stack direction="row" spacing={0.5} alignItems="center">
                                                             <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#ef4444' }} />
                                                             <Typography variant="caption" sx={{ opacity: 0.7 }}>Used</Typography>
                                                         </Stack>
-                                                        <Typography variant="h6">{used}h</Typography>
+                                                        <Typography variant="h5" fontWeight={700}>{used}h</Typography>
                                                     </Box>
                                                     <Box>
                                                         <Stack direction="row" spacing={0.5} alignItems="center">
                                                             <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#f59e0b' }} />
-                                                            <Typography variant="caption" sx={{ opacity: 0.7 }}>Awaiting Approval</Typography>
+                                                            <Typography variant="caption" sx={{ opacity: 0.7 }}>Pending</Typography>
                                                         </Stack>
-                                                        <Typography variant="h6">{pending}h</Typography>
+                                                        <Typography variant="h5" fontWeight={700}>{pending}h</Typography>
                                                     </Box>
                                                     <Box>
-                                                        <Typography variant="caption" sx={{ opacity: 0.7, display: 'block' }}>Yearly Total</Typography>
-                                                        <Typography variant="h6">{total}h</Typography>
+                                                        <Typography variant="caption" sx={{ opacity: 0.7, display: 'block' }}>Total</Typography>
+                                                        <Typography variant="h5" fontWeight={700}>{total}h</Typography>
                                                     </Box>
                                                 </Stack>
                                             </Box>
                                             {/* Right side - Pie Chart */}
-                                            <Box sx={{ width: 160, height: 160 }}>
+                                            <Box sx={{ width: 120, height: 120 }}>
                                                 <ResponsiveContainer width="100%" height="100%">
                                                     <PieChart>
                                                         <Pie
                                                             data={pieData}
                                                             cx="50%"
                                                             cy="50%"
-                                                            innerRadius={45}
-                                                            outerRadius={70}
+                                                            innerRadius={30}
+                                                            outerRadius={50}
                                                             paddingAngle={2}
                                                             dataKey="value"
                                                             stroke="none"

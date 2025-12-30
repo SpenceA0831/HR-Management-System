@@ -42,19 +42,6 @@ export default function ModuleSelector() {
           Select a module to get started
         </Typography>
 
-        {/* DEBUG INFO - REMOVE AFTER TESTING */}
-        <Box sx={{ mb: 4, p: 2, bgcolor: 'warning.light', borderRadius: 2 }}>
-          <Typography variant="body2">
-            DEBUG: User Role = {currentUser?.userRole || 'undefined'}
-          </Typography>
-          <Typography variant="body2">
-            DEBUG: isAdmin = {String(isAdmin)}
-          </Typography>
-          <Typography variant="body2">
-            DEBUG: User Name = {currentUser?.name || 'undefined'}
-          </Typography>
-        </Box>
-
         <Box
           sx={{
             display: 'grid',

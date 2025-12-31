@@ -28,6 +28,10 @@ const SHEET_NAMES = {
   BLACKOUT_DATES: 'BlackoutDates',
   SYSTEM_CONFIG: 'SystemConfig',
 
+  // Payroll Module
+  PAYROLL_HISTORY: 'Payroll_History',
+  REIMBURSEMENTS: 'Reimbursements',
+
   // Evaluation Module
   EVALUATIONS: 'Evaluations',
   EVALUATION_CYCLES: 'EvaluationCycles',
@@ -106,6 +110,43 @@ const COLUMN_MAPS = {
     prorateByHireDate: 2,
     fullTeamCalendarVisible: 3,
     shortNoticeThresholdDays: 4
+  },
+
+  PAYROLL_HISTORY: {
+    id: 0,
+    runDate: 1,
+    checkDate: 2,
+    payPeriodStart: 3,
+    payPeriodEnd: 4,
+    totalGross: 5,
+    totalNet: 6,
+    totalTaxes: 7,
+    totalDeductions: 8,
+    status: 9,
+    processedBy: 10,
+    notes: 11,
+    source: 12,              // PDF_Import | Manual
+    createdAt: 13,
+    updatedAt: 14
+  },
+
+  REIMBURSEMENTS: {
+    id: 0,
+    staffName: 1,
+    staffEmail: 2,
+    expenseDate: 3,
+    description: 4,
+    amount: 5,
+    reimbursementType: 6,
+    methodOfReimbursement: 7,
+    status: 8,
+    submittedAt: 9,
+    dateReimbursed: 10,
+    reviewerId: 11,
+    reviewerName: 12,
+    notes: 13,
+    createdAt: 14,
+    updatedAt: 15
   },
 
   EVALUATIONS: {
@@ -217,6 +258,37 @@ const PTO_STATUSES = {
   CANCELLED: 'Cancelled'
 };
 
+// Payroll Module
+const PAYROLL_STATUSES = {
+  DRAFT: 'Draft',
+  APPROVED: 'Approved',
+  PROCESSED: 'Processed'
+};
+
+const PAYROLL_SOURCE = {
+  PDF_IMPORT: 'PDF_Import',
+  MANUAL: 'Manual'
+};
+
+const REIMBURSEMENT_STATUSES = {
+  PENDING: 'Pending',
+  APPROVED: 'Approved',
+  REIMBURSED: 'Reimbursed',
+  DENIED: 'Denied'
+};
+
+const REIMBURSEMENT_TYPES = {
+  SECTION_129: 'Section 129 Plan - Dependent Care',
+  SECTION_127: 'Section 127 Plan - Educational Assistance',
+  EXPENSE: 'Expense Reimbursement'
+};
+
+const REIMBURSEMENT_METHODS = {
+  PAYROLL: 'Payroll Expense Reimbursement',
+  CHECK: 'Check',
+  DIRECT_DEPOSIT: 'Direct Deposit'
+};
+
 // Evaluation Module
 const EVALUATION_TYPES = {
   QUARTERLY_SELF: 'QUARTERLY_SELF',
@@ -277,6 +349,11 @@ if (typeof module !== 'undefined') {
     EMPLOYMENT_TYPES,
     PTO_TYPES,
     PTO_STATUSES,
+    PAYROLL_STATUSES,
+    PAYROLL_SOURCE,
+    REIMBURSEMENT_STATUSES,
+    REIMBURSEMENT_TYPES,
+    REIMBURSEMENT_METHODS,
     EVALUATION_TYPES,
     EVALUATION_STATUSES,
     RATING_TYPES,

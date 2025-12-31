@@ -63,6 +63,18 @@ function setupDatabase() {
       'fullTeamCalendarVisible', 'shortNoticeThresholdDays'
     ],
 
+    'Payroll_History': [
+      'id', 'runDate', 'checkDate', 'payPeriodStart', 'payPeriodEnd',
+      'totalGross', 'totalNet', 'totalTaxes', 'totalDeductions',
+      'status', 'processedBy', 'notes', 'source', 'createdAt', 'updatedAt'
+    ],
+
+    'Reimbursements': [
+      'id', 'staffName', 'staffEmail', 'expenseDate', 'description', 'amount',
+      'reimbursementType', 'methodOfReimbursement', 'status', 'submittedAt',
+      'dateReimbursed', 'reviewerId', 'reviewerName', 'notes', 'createdAt', 'updatedAt'
+    ],
+
     'Evaluations': [
       'id', 'employeeId', 'cycleId', 'type', 'status',
       'overallSummary', 'createdAt', 'updatedAt'
@@ -150,8 +162,8 @@ function setupDatabase() {
   // Reorder sheets to match documentation order
   const sheetOrder = [
     'Users', 'PtoRequests', 'PtoBalances', 'Holidays', 'BlackoutDates',
-    'SystemConfig', 'Evaluations', 'EvaluationCycles', 'Ratings',
-    'Goals', 'PeerReviewRequests', 'Competencies'
+    'SystemConfig', 'Payroll_History', 'Reimbursements', 'Evaluations',
+    'EvaluationCycles', 'Ratings', 'Goals', 'PeerReviewRequests', 'Competencies'
   ];
 
   sheetOrder.forEach(function(name, index) {
@@ -169,7 +181,7 @@ function setupDatabase() {
   }
 
   Logger.log('✅ Database setup complete!');
-  Logger.log('All 12 sheets created with headers and formatting.');
+  Logger.log('All 14 sheets created with headers and formatting.');
   Logger.log('');
   Logger.log('NEXT STEPS:');
   Logger.log('1. Copy the Sheet ID from the URL');
@@ -180,7 +192,7 @@ function setupDatabase() {
   SpreadsheetApp.getUi().alert(
     'Setup Complete!',
     'Your HR Management System database has been set up successfully.\n\n' +
-    '✓ 12 sheets created\n' +
+    '✓ 14 sheets created\n' +
     '✓ Column headers added\n' +
     '✓ Headers formatted and frozen\n' +
     '✓ Default system config added\n\n' +

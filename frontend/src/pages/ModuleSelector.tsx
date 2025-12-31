@@ -53,190 +53,246 @@ export default function ModuleSelector() {
             gap: 4,
           }}
         >
-          <Box>
-            <Card
-              elevation={3}
-              sx={{
-                height: '100%',
-                borderRadius: 4,
-                transition: 'transform 0.2s',
-                '&:hover': {
-                  transform: 'scale(1.02)',
-                },
-              }}
+          <Card
+            elevation={3}
+            sx={{
+              borderRadius: 4,
+              transition: 'transform 0.2s',
+              '&:hover': {
+                transform: 'scale(1.02)',
+              },
+            }}
+          >
+            <CardActionArea
+              onClick={() => handleModuleSelect('pto')}
+              sx={{ height: '100%' }}
             >
-              <CardActionArea
-                onClick={() => handleModuleSelect('pto')}
-                sx={{ height: '100%', p: 4 }}
-              >
-                <CardContent sx={{ textAlign: 'center' }}>
-                  <Box
-                    sx={{
-                      width: 80,
-                      height: 80,
-                      borderRadius: 2,
-                      bgcolor: 'primary.main',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'white',
-                      mx: 'auto',
-                      mb: 3,
-                    }}
-                  >
-                    <Calendar size={40} />
-                  </Box>
-
-                  <Typography variant="h4" gutterBottom fontWeight={600}>
-                    PTO Tracker
-                  </Typography>
-
-                  <Typography variant="body1" color="text.secondary">
-                    Manage time-off requests, view balances, and track team calendars
-                  </Typography>
-                </CardContent>
-              </CardActionArea>
-            </Card>
-          </Box>
-
-          <Box>
-            <Card
-              elevation={3}
-              sx={{
-                height: '100%',
-                borderRadius: 4,
-                transition: 'transform 0.2s',
-                '&:hover': {
-                  transform: 'scale(1.02)',
-                },
-              }}
-            >
-              <CardActionArea
-                onClick={() => handleModuleSelect('evaluations')}
-                sx={{ height: '100%', p: 4 }}
-              >
-                <CardContent sx={{ textAlign: 'center' }}>
-                  <Box
-                    sx={{
-                      width: 80,
-                      height: 80,
-                      borderRadius: 2,
-                      bgcolor: 'secondary.main',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'white',
-                      mx: 'auto',
-                      mb: 3,
-                    }}
-                  >
-                    <TrendingUp size={40} />
-                  </Box>
-
-                  <Typography variant="h4" gutterBottom fontWeight={600}>
-                    Staff Evaluations
-                  </Typography>
-
-                  <Typography variant="body1" color="text.secondary">
-                    360-degree reviews, performance tracking, and competency management
-                  </Typography>
-                </CardContent>
-              </CardActionArea>
-            </Card>
-          </Box>
-
-          <Box>
-            <Card
-              elevation={3}
-              sx={{
-                height: '100%',
-                borderRadius: 4,
-                transition: 'transform 0.2s',
-                '&:hover': {
-                  transform: 'scale(1.02)',
-                },
-              }}
-            >
-              <CardActionArea
-                onClick={() => handleModuleSelect('payroll')}
-                sx={{ height: '100%', p: 4 }}
-              >
-                <CardContent sx={{ textAlign: 'center' }}>
-                  <Box
-                    sx={{
-                      width: 80,
-                      height: 80,
-                      borderRadius: 2,
-                      bgcolor: 'success.main',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'white',
-                      mx: 'auto',
-                      mb: 3,
-                    }}
-                  >
-                    <DollarSign size={40} />
-                  </Box>
-
-                  <Typography variant="h4" gutterBottom fontWeight={600}>
-                    Payroll & Reimbursements
-                  </Typography>
-
-                  <Typography variant="body1" color="text.secondary">
-                    Submit expense reimbursements and manage payroll runs
-                  </Typography>
-                </CardContent>
-              </CardActionArea>
-            </Card>
-          </Box>
-
-          {isAdmin && (
-            <Box>
-              <Card
-                elevation={3}
+              <CardContent
                 sx={{
-                  height: '100%',
-                  borderRadius: 4,
-                  transition: 'transform 0.2s',
-                  '&:hover': {
-                    transform: 'scale(1.02)',
-                  },
+                  textAlign: 'center',
+                  p: 4,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  minHeight: 320,
                 }}
               >
-                <CardActionArea
-                  onClick={() => handleModuleSelect('admin')}
-                  sx={{ height: '100%', p: 4 }}
+                <Box
+                  sx={{
+                    width: 80,
+                    height: 80,
+                    borderRadius: 2,
+                    bgcolor: 'primary.main',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white',
+                    mx: 'auto',
+                    mb: 3,
+                  }}
                 >
-                  <CardContent sx={{ textAlign: 'center' }}>
-                    <Box
-                      sx={{
-                        width: 80,
-                        height: 80,
-                        borderRadius: 2,
-                        bgcolor: 'error.main',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: 'white',
-                        mx: 'auto',
-                        mb: 3,
-                      }}
-                    >
-                      <Shield size={40} />
-                    </Box>
+                  <Calendar size={40} />
+                </Box>
 
-                    <Typography variant="h4" gutterBottom fontWeight={600}>
-                      Admin Console
-                    </Typography>
+                <Typography variant="h4" sx={{ mb: 2, fontWeight: 600 }}>
+                  PTO Tracker
+                </Typography>
 
-                    <Typography variant="body1" color="text.secondary">
-                      Manage system settings, PTO policies, and evaluation configurations
-                    </Typography>
-                  </CardContent>
-                </CardActionArea>
-              </Card>
-            </Box>
+                <Typography
+                  variant="body1"
+                  color="text.secondary"
+                  sx={{
+                    display: '-webkit-box',
+                    WebkitLineClamp: 3,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                  }}
+                >
+                  Manage time-off requests, view balances, and track team calendars
+                </Typography>
+              </CardContent>
+            </CardActionArea>
+          </Card>
+
+          <Card
+            elevation={3}
+            sx={{
+              borderRadius: 4,
+              transition: 'transform 0.2s',
+              '&:hover': {
+                transform: 'scale(1.02)',
+              },
+            }}
+          >
+            <CardActionArea
+              onClick={() => handleModuleSelect('evaluations')}
+              sx={{ height: '100%' }}
+            >
+              <CardContent
+                sx={{
+                  textAlign: 'center',
+                  p: 4,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  minHeight: 320,
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 80,
+                    height: 80,
+                    borderRadius: 2,
+                    bgcolor: 'secondary.main',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white',
+                    mx: 'auto',
+                    mb: 3,
+                  }}
+                >
+                  <TrendingUp size={40} />
+                </Box>
+
+                <Typography variant="h4" sx={{ mb: 2, fontWeight: 600 }}>
+                  Staff Evaluations
+                </Typography>
+
+                <Typography
+                  variant="body1"
+                  color="text.secondary"
+                  sx={{
+                    display: '-webkit-box',
+                    WebkitLineClamp: 3,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                  }}
+                >
+                  360-degree reviews, performance tracking, and competency management
+                </Typography>
+              </CardContent>
+            </CardActionArea>
+          </Card>
+
+          <Card
+            elevation={3}
+            sx={{
+              borderRadius: 4,
+              transition: 'transform 0.2s',
+              '&:hover': {
+                transform: 'scale(1.02)',
+              },
+            }}
+          >
+            <CardActionArea
+              onClick={() => handleModuleSelect('payroll')}
+              sx={{ height: '100%' }}
+            >
+              <CardContent
+                sx={{
+                  textAlign: 'center',
+                  p: 4,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  minHeight: 320,
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 80,
+                    height: 80,
+                    borderRadius: 2,
+                    bgcolor: 'success.main',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white',
+                    mx: 'auto',
+                    mb: 3,
+                  }}
+                >
+                  <DollarSign size={40} />
+                </Box>
+
+                <Typography variant="h4" sx={{ mb: 2, fontWeight: 600 }}>
+                  Payroll & Reimbursements
+                </Typography>
+
+                <Typography
+                  variant="body1"
+                  color="text.secondary"
+                  sx={{
+                    display: '-webkit-box',
+                    WebkitLineClamp: 3,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                  }}
+                >
+                  Submit expense reimbursements and manage payroll runs
+                </Typography>
+              </CardContent>
+            </CardActionArea>
+          </Card>
+
+          {isAdmin && (
+            <Card
+              elevation={3}
+              sx={{
+                borderRadius: 4,
+                transition: 'transform 0.2s',
+                '&:hover': {
+                  transform: 'scale(1.02)',
+                },
+              }}
+            >
+              <CardActionArea
+                onClick={() => handleModuleSelect('admin')}
+                sx={{ height: '100%' }}
+              >
+                <CardContent
+                  sx={{
+                    textAlign: 'center',
+                    p: 4,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    minHeight: 320,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: 80,
+                      height: 80,
+                      borderRadius: 2,
+                      bgcolor: 'error.main',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'white',
+                      mx: 'auto',
+                      mb: 3,
+                    }}
+                  >
+                    <Shield size={40} />
+                  </Box>
+
+                  <Typography variant="h4" sx={{ mb: 2, fontWeight: 600 }}>
+                    Admin Console
+                  </Typography>
+
+                  <Typography
+                    variant="body1"
+                    color="text.secondary"
+                    sx={{
+                      display: '-webkit-box',
+                      WebkitLineClamp: 3,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    Manage system settings, PTO policies, and evaluation configurations
+                  </Typography>
+                </CardContent>
+              </CardActionArea>
+            </Card>
           )}
         </Box>
       </Box>

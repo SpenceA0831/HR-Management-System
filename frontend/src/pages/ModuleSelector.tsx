@@ -7,7 +7,7 @@ import {
   Container,
   Typography,
 } from '@mui/material';
-import { Calendar, TrendingUp, Shield } from 'lucide-react';
+import { Calendar, TrendingUp, DollarSign, Shield } from 'lucide-react';
 import { useStore } from '../store/useStore';
 
 export default function ModuleSelector() {
@@ -16,7 +16,7 @@ export default function ModuleSelector() {
 
   const isAdmin = currentUser?.userRole === 'ADMIN';
 
-  const handleModuleSelect = (module: 'pto' | 'evaluations' | 'admin') => {
+  const handleModuleSelect = (module: 'pto' | 'evaluations' | 'payroll' | 'admin') => {
     setActiveModule(module);
     navigate(`/${module}`);
   };
@@ -47,7 +47,8 @@ export default function ModuleSelector() {
             display: 'grid',
             gridTemplateColumns: {
               xs: '1fr',
-              md: isAdmin ? '1fr 1fr 1fr' : '1fr 1fr'
+              sm: '1fr 1fr',
+              md: isAdmin ? '1fr 1fr 1fr 1fr' : '1fr 1fr 1fr'
             },
             gap: 4,
           }}
@@ -138,6 +139,52 @@ export default function ModuleSelector() {
 
                   <Typography variant="body1" color="text.secondary">
                     360-degree reviews, performance tracking, and competency management
+                  </Typography>
+                </CardContent>
+              </CardActionArea>
+            </Card>
+          </Box>
+
+          <Box>
+            <Card
+              elevation={3}
+              sx={{
+                height: '100%',
+                borderRadius: 4,
+                transition: 'transform 0.2s',
+                '&:hover': {
+                  transform: 'scale(1.02)',
+                },
+              }}
+            >
+              <CardActionArea
+                onClick={() => handleModuleSelect('payroll')}
+                sx={{ height: '100%', p: 4 }}
+              >
+                <CardContent sx={{ textAlign: 'center' }}>
+                  <Box
+                    sx={{
+                      width: 80,
+                      height: 80,
+                      borderRadius: 2,
+                      bgcolor: 'success.main',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'white',
+                      mx: 'auto',
+                      mb: 3,
+                    }}
+                  >
+                    <DollarSign size={40} />
+                  </Box>
+
+                  <Typography variant="h4" gutterBottom fontWeight={600}>
+                    Payroll & Reimbursements
+                  </Typography>
+
+                  <Typography variant="body1" color="text.secondary">
+                    Submit expense reimbursements and manage payroll runs
                   </Typography>
                 </CardContent>
               </CardActionArea>

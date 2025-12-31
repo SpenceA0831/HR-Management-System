@@ -15,6 +15,15 @@ import PtoDashboard from './modules/pto/Dashboard';
 import PtoNewRequest from './modules/pto/NewRequest';
 import PtoRequestDetail from './modules/pto/RequestDetail';
 
+// Payroll Module Pages
+import PayrollDashboard from './modules/payroll/Dashboard';
+import PayrollApproval from './modules/payroll/PayrollApproval';
+import PayrollHistory from './modules/payroll/PayrollHistory';
+import PayrollUpload from './modules/payroll/PayrollUpload';
+import ReimbursementsList from './modules/payroll/ReimbursementsList';
+import NewReimbursement from './modules/payroll/NewReimbursement';
+import ReimbursementDetail from './modules/payroll/ReimbursementDetail';
+
 // Evaluation Module Pages (placeholders - to be created)
 import EvaluationDashboard from './modules/evaluations/Dashboard';
 
@@ -45,6 +54,17 @@ function App() {
                   <Route index element={<PtoDashboard />} />
                   <Route path="requests/new" element={<PtoNewRequest />} />
                   <Route path="requests/:id" element={<PtoRequestDetail />} />
+                </Route>
+
+                {/* Payroll Module Routes */}
+                <Route path="payroll">
+                  <Route index element={<PayrollDashboard />} />
+                  <Route path="approval" element={<PayrollApproval />} />
+                  <Route path="history" element={<PayrollHistory />} />
+                  <Route path="upload" element={<PayrollUpload />} />
+                  <Route path="reimbursements" element={<ReimbursementsList />} />
+                  <Route path="reimbursements/new" element={<NewReimbursement />} />
+                  <Route path="reimbursements/:id" element={<ReimbursementDetail />} />
                 </Route>
 
                 {/* Evaluation Module Routes */}

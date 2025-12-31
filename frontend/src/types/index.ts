@@ -119,6 +119,63 @@ export interface SystemConfig {
 }
 
 // ============================================================================
+// PAYROLL MODULE TYPES
+// ============================================================================
+
+export type PayrollStatus = 'Draft' | 'Approved' | 'Processed';
+
+export type PayrollSource = 'PDF_Import' | 'Manual';
+
+export interface PayrollRun {
+  id: string;
+  runDate: string; // yyyy-MM-dd
+  checkDate: string; // yyyy-MM-dd
+  payPeriodStart: string; // yyyy-MM-dd
+  payPeriodEnd: string; // yyyy-MM-dd
+  totalGross: number;
+  totalNet: number;
+  totalTaxes: number;
+  totalDeductions: number;
+  status: PayrollStatus;
+  processedBy: string; // email
+  notes?: string;
+  source: PayrollSource;
+  createdAt: string; // ISO 8601
+  updatedAt: string; // ISO 8601
+}
+
+export type ReimbursementStatus = 'Pending' | 'Approved' | 'Reimbursed' | 'Denied';
+
+export type ReimbursementType =
+  | 'Section 129 Plan - Dependent Care'
+  | 'Section 127 Plan - Educational Assistance'
+  | 'Expense Reimbursement';
+
+export type ReimbursementMethod =
+  | 'Payroll Expense Reimbursement'
+  | 'Check'
+  | 'Direct Deposit';
+
+export interface Reimbursement {
+  id: string;
+  staffName: string;
+  staffEmail: string;
+  expenseDate: string; // yyyy-MM-dd - When expense was incurred
+  description: string;
+  amount: number;
+  reimbursementType: ReimbursementType;
+  methodOfReimbursement: ReimbursementMethod;
+  status: ReimbursementStatus;
+  submittedAt: string; // ISO 8601
+  dateReimbursed?: string; // yyyy-MM-dd - When actually reimbursed via payroll
+  reviewerId?: string;
+  reviewerName?: string;
+  notes?: string; // Includes attachment references
+  createdAt: string; // ISO 8601
+  updatedAt: string; // ISO 8601
+}
+
+// ============================================================================
 // EVALUATION MODULE TYPES
 // ============================================================================
 
@@ -235,6 +292,6 @@ export interface ApiResponse<T = unknown> {
 // APP STATE TYPES
 // ============================================================================
 
-export type AppModule = 'pto' | 'evaluations' | 'admin';
+export type AppModule = 'pto' | 'evaluations' | 'payroll' | 'admin';
 
 export type ThemeMode = 'light' | 'dark';

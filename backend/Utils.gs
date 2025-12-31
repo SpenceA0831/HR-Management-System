@@ -345,6 +345,59 @@ function rowToCompetency(colMap, row) {
   };
 }
 
+/**
+ * Convert a row array to PayrollHistory object
+ * @param {Object} colMap - Column mapping
+ * @param {Array} row - Row data
+ * @returns {Object} PayrollHistory object
+ */
+function rowToPayrollHistory(colMap, row) {
+  return {
+    id: row[colMap.id] || '',
+    runDate: row[colMap.runDate] || null,
+    checkDate: row[colMap.checkDate] || null,
+    payPeriodStart: row[colMap.payPeriodStart] || null,
+    payPeriodEnd: row[colMap.payPeriodEnd] || null,
+    totalGross: parseFloat(row[colMap.totalGross]) || 0,
+    totalNet: parseFloat(row[colMap.totalNet]) || 0,
+    totalTaxes: parseFloat(row[colMap.totalTaxes]) || 0,
+    totalDeductions: parseFloat(row[colMap.totalDeductions]) || 0,
+    status: row[colMap.status] || '',
+    processedBy: row[colMap.processedBy] || '',
+    notes: row[colMap.notes] || '',
+    source: row[colMap.source] || '',
+    createdAt: row[colMap.createdAt] || null,
+    updatedAt: row[colMap.updatedAt] || null
+  };
+}
+
+/**
+ * Convert a row array to Reimbursement object
+ * @param {Object} colMap - Column mapping
+ * @param {Array} row - Row data
+ * @returns {Object} Reimbursement object
+ */
+function rowToReimbursement(colMap, row) {
+  return {
+    id: row[colMap.id] || '',
+    staffName: row[colMap.staffName] || '',
+    staffEmail: row[colMap.staffEmail] || '',
+    expenseDate: row[colMap.expenseDate] || null,
+    description: row[colMap.description] || '',
+    amount: parseFloat(row[colMap.amount]) || 0,
+    reimbursementType: row[colMap.reimbursementType] || '',
+    methodOfReimbursement: row[colMap.methodOfReimbursement] || '',
+    status: row[colMap.status] || '',
+    submittedAt: row[colMap.submittedAt] || null,
+    dateReimbursed: row[colMap.dateReimbursed] || null,
+    reviewerId: row[colMap.reviewerId] || null,
+    reviewerName: row[colMap.reviewerName] || null,
+    notes: row[colMap.notes] || '',
+    createdAt: row[colMap.createdAt] || null,
+    updatedAt: row[colMap.updatedAt] || null
+  };
+}
+
 // ============================================================================
 // DATE UTILITIES FOR PTO CALCULATIONS
 // ============================================================================

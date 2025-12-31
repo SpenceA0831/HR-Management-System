@@ -215,6 +215,44 @@ function handleRequest(e, method) {
         result = handleDeleteCustomCompetency(currentUser, payload);
         break;
 
+      // ========================================================================
+      // PAYROLL MODULE ENDPOINTS (ADMIN ONLY)
+      // ========================================================================
+      case 'getPayrollHistory':
+        result = handleGetPayrollHistory(currentUser, payload);
+        break;
+      case 'getPayrollRun':
+        result = handleGetPayrollRun(currentUser, payload);
+        break;
+      case 'logPayroll':
+        result = handleLogPayroll(currentUser, payload);
+        break;
+      case 'updatePayrollStatus':
+        result = handleUpdatePayrollStatus(currentUser, payload);
+        break;
+      case 'processReimbursements':
+        result = handleProcessReimbursements(currentUser, payload);
+        break;
+
+      // ========================================================================
+      // REIMBURSEMENT MODULE ENDPOINTS
+      // ========================================================================
+      case 'getReimbursements':
+        result = handleGetReimbursements(currentUser, payload);
+        break;
+      case 'getReimbursement':
+        result = handleGetReimbursement(currentUser, payload);
+        break;
+      case 'createReimbursement':
+        result = handleCreateReimbursement(currentUser, payload);
+        break;
+      case 'approveReimbursement':
+        result = handleApproveReimbursement(currentUser, payload);
+        break;
+      case 'denyReimbursement':
+        result = handleDenyReimbursement(currentUser, payload);
+        break;
+
       default:
         result = errorResponse('Unknown action: ' + action, 'UNKNOWN_ACTION');
     }

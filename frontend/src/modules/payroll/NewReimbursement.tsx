@@ -7,7 +7,6 @@ import { Send, DollarSign } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
 import * as payrollApi from '../../services/api/payrollApi';
-import type { ReimbursementType, ReimbursementMethod } from '../../types';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -15,28 +14,26 @@ import { DatePicker } from '@mui/x-date-pickers';
 
 // Form validation schema
 const reimbursementSchema = z.object({
-  expenseDate: z.date({ required_error: 'Expense date is required' }),
+  expenseDate: z.date(),
   description: z.string().min(3, 'Description must be at least 3 characters'),
   amount: z.number().min(0.01, 'Amount must be greater than zero'),
   reimbursementType: z.enum([
     'Section 129 Plan - Dependent Care',
     'Section 127 Plan - Educational Assistance',
     'Expense Reimbursement',
-  ] as const, {
-    required_error: 'Reimbursement type is required',
-  }),
+  ]),
   methodOfReimbursement: z.enum([
     'Payroll Expense Reimbursement',
     'Check',
     'Direct Deposit',
-  ] as const).optional(),
+  ]).optional(),
   notes: z.string().optional(),
 });
 
 type ReimbursementFormData = z.infer<typeof reimbursementSchema>;
 
 export default function NewReimbursement() {
-  const { currentUser: user, setActiveModule } = useStore();
+  const { setActiveModule } = useStore();
   const navigate = useNavigate();
 
   useEffect(() => {

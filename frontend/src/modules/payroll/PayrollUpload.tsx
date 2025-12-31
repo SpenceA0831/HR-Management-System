@@ -3,7 +3,7 @@ import {
   Box, Typography, Button, Card, CardContent, Paper, TextField,
   Stack, Alert, CircularProgress, Tab, Tabs, Divider, InputAdornment
 } from '@mui/material';
-import { FileUp, FileText, DollarSign, Save, Send } from 'lucide-react';
+import { FileUp, FileText, Send } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
 import * as payrollApi from '../../services/api/payrollApi';
@@ -16,14 +16,14 @@ import { DatePicker } from '@mui/x-date-pickers';
 
 // Form validation schema
 const payrollSchema = z.object({
-  runDate: z.date({ required_error: 'Run date is required' }),
-  checkDate: z.date({ required_error: 'Check date is required' }),
-  payPeriodStart: z.date({ required_error: 'Pay period start is required' }),
-  payPeriodEnd: z.date({ required_error: 'Pay period end is required' }),
+  runDate: z.date(),
+  checkDate: z.date(),
+  payPeriodStart: z.date(),
+  payPeriodEnd: z.date(),
   totalGross: z.number().min(0, 'Must be a positive number'),
   totalNet: z.number().min(0, 'Must be a positive number'),
-  totalTaxes: z.number().min(0, 'Must be a positive number').optional().default(0),
-  totalDeductions: z.number().min(0, 'Must be a positive number').optional().default(0),
+  totalTaxes: z.number().min(0, 'Must be a positive number'),
+  totalDeductions: z.number().min(0, 'Must be a positive number'),
   notes: z.string().optional(),
 });
 
@@ -66,7 +66,6 @@ export default function PayrollUpload() {
     formState: { errors: formErrors },
     setValue,
     watch,
-    reset,
   } = useForm<PayrollFormData>({
     resolver: zodResolver(payrollSchema),
     defaultValues: {

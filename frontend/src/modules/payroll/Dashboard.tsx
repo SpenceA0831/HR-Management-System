@@ -40,7 +40,6 @@ export default function PayrollDashboard() {
     setLoading(true);
     try {
       const isAdmin = user.userRole === 'ADMIN';
-      const isManager = user.userRole === 'MANAGER' || user.userRole === 'ADMIN';
 
       if (isAdmin) {
         // Admin: Fetch payroll history and all reimbursements
@@ -102,7 +101,6 @@ export default function PayrollDashboard() {
   }
 
   const isAdmin = user?.userRole === 'ADMIN';
-  const isManager = user?.userRole === 'MANAGER' || user?.userRole === 'ADMIN';
 
   // Calculate reimbursement stats for non-admin users
   const totalRequested = myReimbursements.reduce((sum, r) => sum + r.amount, 0);

@@ -32,7 +32,6 @@ export default function ReimbursementsList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const isAdmin = user?.userRole === 'ADMIN';
   const isManager = user?.userRole === 'MANAGER' || user?.userRole === 'ADMIN';
 
   const fetchData = async () => {

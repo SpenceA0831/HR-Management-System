@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   Box, Typography, Button, Card, CardContent, Paper,
-  Stack, Checkbox, Alert, CircularProgress, Chip, Divider
+  Stack, Checkbox, Alert, CircularProgress, Chip
 } from '@mui/material';
 import { CheckCircle2, DollarSign, Calendar, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -12,8 +12,7 @@ import { DataGrid, type GridColDef, type GridRenderCellParams } from '@mui/x-dat
 import {
   formatCurrency,
   formatDisplayDate,
-  getNextPayPeriod,
-  getReimbursementStatusColor
+  getNextPayPeriod
 } from '../../utils/payrollUtils';
 import { DatePicker } from '@mui/x-date-pickers';
 
@@ -139,7 +138,6 @@ export default function PayrollApproval() {
     .reduce((sum, r) => sum + r.amount, 0);
 
   // Calculate next bi-weekly pay period
-  const today = new Date();
   const lastPayPeriodEnd = '2026-01-04'; // From user: latest run 12/29/25, period end 1/4/26
   const nextPeriod = getNextPayPeriod(lastPayPeriodEnd);
 

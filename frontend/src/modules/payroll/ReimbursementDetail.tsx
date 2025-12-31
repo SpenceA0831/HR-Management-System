@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import {
-  Box, Typography, Button, Card, CardContent, Paper, TextField,
+  Box, Typography, Button, Card, CardContent, TextField,
   Stack, Alert, CircularProgress, Chip, Divider, Dialog, DialogTitle,
   DialogContent, DialogActions
 } from '@mui/material';
-import { ArrowLeft, CheckCircle2, XCircle, DollarSign } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, XCircle } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
 import * as payrollApi from '../../services/api/payrollApi';

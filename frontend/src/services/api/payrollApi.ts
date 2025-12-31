@@ -81,6 +81,47 @@ export async function processReimbursements(
   return apiClient.post('processReimbursements', { reimbursementIds, dateReimbursed });
 }
 
+/**
+ * Generate all 26 bi-weekly payroll runs for a year (ADMIN only)
+ * Creates pre-populated runs with dates but $0 placeholders
+ * @param year - Year to generate runs for (e.g., 2025)
+ * @param firstRunDate - First payroll run date in yyyy-MM-dd format (e.g., "2025-01-03")
+ */
+export async function generateAnnualRuns(
+  year: number,
+  firstRunDate: string
+): Promise<ApiResponse<{ message: string; count: number }>> {
+  return apiClient.post('generateAnnualRuns', { year, firstRunDate });
+}
+
+/**
+ * Get all pending payroll runs (ADMIN only)
+ * Returns runs with status "Pending" that haven't been filled yet
+ */
+export async function getPendingRuns(): Promise<ApiResponse<PayrollRun[]>> {
+  return apiClient.get<PayrollRun[]>('getPendingRuns');
+}
+
+/**
+ * Update a pending payroll run with actual data (ADMIN only)
+ * Fills in financial data and changes status from Pending to Draft
+ * @param runId - ID of the pending run to update
+ * @param data - Payroll financial data
+ */
+export async function updatePendingRun(
+  runId: string,
+  data: {
+    totalGross: number;
+    totalNet: number;
+    totalTaxes: number;
+    totalDeductions: number;
+    source?: 'PDF_Import' | 'Manual';
+    notes?: string;
+  }
+): Promise<ApiResponse<PayrollRun>> {
+  return apiClient.post<PayrollRun>('updatePendingRun', { runId, ...data });
+}
+
 // ============================================================================
 // REIMBURSEMENTS
 // ============================================================================

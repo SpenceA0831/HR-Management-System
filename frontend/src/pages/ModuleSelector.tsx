@@ -93,14 +93,22 @@ export default function ModuleSelector() {
                   <Calendar size={40} />
                 </Box>
 
-                <Typography variant="h4" sx={{ mb: 2, fontWeight: 600 }}>
+                <Typography
+                  variant="h5"
+                  sx={{
+                    mb: 2,
+                    fontWeight: 700,
+                    lineHeight: 1.3,
+                  }}
+                >
                   PTO Tracker
                 </Typography>
 
                 <Typography
-                  variant="body1"
+                  variant="body2"
                   color="text.secondary"
                   sx={{
+                    lineHeight: 1.6,
                     display: '-webkit-box',
                     WebkitLineClamp: 3,
                     WebkitBoxOrient: 'vertical',
@@ -153,14 +161,22 @@ export default function ModuleSelector() {
                   <TrendingUp size={40} />
                 </Box>
 
-                <Typography variant="h4" sx={{ mb: 2, fontWeight: 600 }}>
+                <Typography
+                  variant="h5"
+                  sx={{
+                    mb: 2,
+                    fontWeight: 700,
+                    lineHeight: 1.3,
+                  }}
+                >
                   Staff Evaluations
                 </Typography>
 
                 <Typography
-                  variant="body1"
+                  variant="body2"
                   color="text.secondary"
                   sx={{
+                    lineHeight: 1.6,
                     display: '-webkit-box',
                     WebkitLineClamp: 3,
                     WebkitBoxOrient: 'vertical',
@@ -213,14 +229,22 @@ export default function ModuleSelector() {
                   <DollarSign size={40} />
                 </Box>
 
-                <Typography variant="h4" sx={{ mb: 2, fontWeight: 600 }}>
-                  Payroll & Reimbursements
+                <Typography
+                  variant="h5"
+                  sx={{
+                    mb: 2,
+                    fontWeight: 700,
+                    lineHeight: 1.3,
+                  }}
+                >
+                  Payroll &<br />Reimbursements
                 </Typography>
 
                 <Typography
-                  variant="body1"
+                  variant="body2"
                   color="text.secondary"
                   sx={{
+                    lineHeight: 1.6,
                     display: '-webkit-box',
                     WebkitLineClamp: 3,
                     WebkitBoxOrient: 'vertical',
@@ -274,14 +298,22 @@ export default function ModuleSelector() {
                     <Shield size={40} />
                   </Box>
 
-                  <Typography variant="h4" sx={{ mb: 2, fontWeight: 600 }}>
+                  <Typography
+                    variant="h5"
+                    sx={{
+                      mb: 2,
+                      fontWeight: 700,
+                      lineHeight: 1.3,
+                    }}
+                  >
                     Admin Console
                   </Typography>
 
                   <Typography
-                    variant="body1"
+                    variant="body2"
                     color="text.secondary"
                     sx={{
+                      lineHeight: 1.6,
                       display: '-webkit-box',
                       WebkitLineClamp: 3,
                       WebkitBoxOrient: 'vertical',

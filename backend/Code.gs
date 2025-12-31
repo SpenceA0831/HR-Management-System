@@ -230,6 +230,15 @@ function handleRequest(e, method) {
       case 'updatePayrollStatus':
         result = handleUpdatePayrollStatus(currentUser, payload);
         break;
+      case 'generateAnnualRuns':
+        result = handleGenerateAnnualRuns(currentUser, payload);
+        break;
+      case 'getPendingRuns':
+        result = handleGetPendingRuns(currentUser, payload);
+        break;
+      case 'updatePendingRun':
+        result = handleUpdatePendingRun(currentUser, payload);
+        break;
       case 'processReimbursements':
         result = handleProcessReimbursements(currentUser, payload);
         break;

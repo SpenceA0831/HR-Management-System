@@ -260,6 +260,7 @@ const PTO_STATUSES = {
 
 // Payroll Module
 const PAYROLL_STATUSES = {
+  PENDING: 'Pending',  // Pre-populated run waiting for data
   DRAFT: 'Draft',
   APPROVED: 'Approved',
   PROCESSED: 'Processed'

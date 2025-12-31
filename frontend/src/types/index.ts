@@ -122,7 +122,7 @@ export interface SystemConfig {
 // PAYROLL MODULE TYPES
 // ============================================================================
 
-export type PayrollStatus = 'Draft' | 'Approved' | 'Processed';
+export type PayrollStatus = 'Pending' | 'Draft' | 'Approved' | 'Processed';
 
 export type PayrollSource = 'PDF_Import' | 'Manual';
 

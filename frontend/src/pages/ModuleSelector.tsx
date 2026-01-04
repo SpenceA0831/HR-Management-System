@@ -22,8 +22,8 @@ export default function ModuleSelector() {
   };
 
   return (
-    <Container maxWidth="md">
-      <Box sx={{ py: 8 }}>
+    <Container maxWidth="xl">
+      <Box sx={{ py: 6 }}>
         <Typography
           variant="h3"
           align="center"
@@ -37,7 +37,7 @@ export default function ModuleSelector() {
           variant="h6"
           align="center"
           color="text.secondary"
-          sx={{ mb: 6 }}
+          sx={{ mb: 5 }}
         >
           Select a module to get started
         </Typography>
@@ -48,18 +48,21 @@ export default function ModuleSelector() {
             gridTemplateColumns: {
               xs: '1fr',
               sm: '1fr 1fr',
-              md: isAdmin ? '1fr 1fr 1fr 1fr' : '1fr 1fr 1fr'
+              md: isAdmin ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)',
             },
-            gap: 4,
+            gap: 3,
+            maxWidth: isAdmin ? 1400 : 1100,
+            mx: 'auto',
           }}
         >
           <Card
-            elevation={3}
+            elevation={2}
             sx={{
-              borderRadius: 4,
-              transition: 'transform 0.2s',
+              borderRadius: 3,
+              transition: 'all 0.2s',
               '&:hover': {
-                transform: 'scale(1.02)',
+                transform: 'translateY(-4px)',
+                boxShadow: 6,
               },
             }}
           >
@@ -69,36 +72,34 @@ export default function ModuleSelector() {
             >
               <CardContent
                 sx={{
-                  textAlign: 'center',
-                  p: 4,
+                  p: 3,
                   display: 'flex',
                   flexDirection: 'column',
-                  minHeight: 320,
+                  alignItems: 'center',
+                  gap: 1.5,
                 }}
               >
                 <Box
                   sx={{
-                    width: 80,
-                    height: 80,
-                    borderRadius: 2,
+                    width: 100,
+                    height: 100,
+                    borderRadius: '50%',
                     bgcolor: 'primary.main',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: 'white',
-                    mx: 'auto',
-                    mb: 3,
+                    mb: 0.5,
                   }}
                 >
-                  <Calendar size={40} />
+                  <Calendar size={48} strokeWidth={1.5} />
                 </Box>
 
                 <Typography
-                  variant="h5"
+                  variant="h6"
                   sx={{
-                    mb: 2,
                     fontWeight: 700,
-                    lineHeight: 1.3,
+                    textAlign: 'center',
                   }}
                 >
                   PTO Tracker
@@ -108,11 +109,9 @@ export default function ModuleSelector() {
                   variant="body2"
                   color="text.secondary"
                   sx={{
-                    lineHeight: 1.6,
-                    display: '-webkit-box',
-                    WebkitLineClamp: 3,
-                    WebkitBoxOrient: 'vertical',
-                    overflow: 'hidden',
+                    textAlign: 'center',
+                    lineHeight: 1.5,
+                    fontSize: '0.875rem',
                   }}
                 >
                   Manage time-off requests, view balances, and track team calendars
@@ -122,51 +121,48 @@ export default function ModuleSelector() {
           </Card>
 
           <Card
-            elevation={3}
+            elevation={2}
             sx={{
-              borderRadius: 4,
-              transition: 'transform 0.2s',
-              '&:hover': {
-                transform: 'scale(1.02)',
-              },
+              borderRadius: 3,
+              opacity: 0.5,
+              pointerEvents: 'none',
+              filter: 'grayscale(0.3)',
             }}
           >
             <CardActionArea
-              onClick={() => handleModuleSelect('evaluations')}
-              sx={{ height: '100%' }}
+              disabled
+              sx={{ height: '100%', cursor: 'not-allowed' }}
             >
               <CardContent
                 sx={{
-                  textAlign: 'center',
-                  p: 4,
+                  p: 3,
                   display: 'flex',
                   flexDirection: 'column',
-                  minHeight: 320,
+                  alignItems: 'center',
+                  gap: 1.5,
                 }}
               >
                 <Box
                   sx={{
-                    width: 80,
-                    height: 80,
-                    borderRadius: 2,
+                    width: 100,
+                    height: 100,
+                    borderRadius: '50%',
                     bgcolor: 'secondary.main',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: 'white',
-                    mx: 'auto',
-                    mb: 3,
+                    mb: 0.5,
                   }}
                 >
-                  <TrendingUp size={40} />
+                  <TrendingUp size={48} strokeWidth={1.5} />
                 </Box>
 
                 <Typography
-                  variant="h5"
+                  variant="h6"
                   sx={{
-                    mb: 2,
                     fontWeight: 700,
-                    lineHeight: 1.3,
+                    textAlign: 'center',
                   }}
                 >
                   Staff Evaluations
@@ -176,11 +172,9 @@ export default function ModuleSelector() {
                   variant="body2"
                   color="text.secondary"
                   sx={{
-                    lineHeight: 1.6,
-                    display: '-webkit-box',
-                    WebkitLineClamp: 3,
-                    WebkitBoxOrient: 'vertical',
-                    overflow: 'hidden',
+                    textAlign: 'center',
+                    lineHeight: 1.5,
+                    fontSize: '0.875rem',
                   }}
                 >
                   360-degree reviews, performance tracking, and competency management
@@ -190,51 +184,48 @@ export default function ModuleSelector() {
           </Card>
 
           <Card
-            elevation={3}
+            elevation={2}
             sx={{
-              borderRadius: 4,
-              transition: 'transform 0.2s',
-              '&:hover': {
-                transform: 'scale(1.02)',
-              },
+              borderRadius: 3,
+              opacity: 0.5,
+              pointerEvents: 'none',
+              filter: 'grayscale(0.3)',
             }}
           >
             <CardActionArea
-              onClick={() => handleModuleSelect('payroll')}
-              sx={{ height: '100%' }}
+              disabled
+              sx={{ height: '100%', cursor: 'not-allowed' }}
             >
               <CardContent
                 sx={{
-                  textAlign: 'center',
-                  p: 4,
+                  p: 3,
                   display: 'flex',
                   flexDirection: 'column',
-                  minHeight: 320,
+                  alignItems: 'center',
+                  gap: 1.5,
                 }}
               >
                 <Box
                   sx={{
-                    width: 80,
-                    height: 80,
-                    borderRadius: 2,
+                    width: 100,
+                    height: 100,
+                    borderRadius: '50%',
                     bgcolor: 'success.main',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: 'white',
-                    mx: 'auto',
-                    mb: 3,
+                    mb: 0.5,
                   }}
                 >
-                  <DollarSign size={40} />
+                  <DollarSign size={48} strokeWidth={1.5} />
                 </Box>
 
                 <Typography
-                  variant="h5"
+                  variant="h6"
                   sx={{
-                    mb: 2,
                     fontWeight: 700,
-                    lineHeight: 1.3,
+                    textAlign: 'center',
                   }}
                 >
                   Payroll &<br />Reimbursements
@@ -244,11 +235,9 @@ export default function ModuleSelector() {
                   variant="body2"
                   color="text.secondary"
                   sx={{
-                    lineHeight: 1.6,
-                    display: '-webkit-box',
-                    WebkitLineClamp: 3,
-                    WebkitBoxOrient: 'vertical',
-                    overflow: 'hidden',
+                    textAlign: 'center',
+                    lineHeight: 1.5,
+                    fontSize: '0.875rem',
                   }}
                 >
                   Submit expense reimbursements and manage payroll runs
@@ -259,12 +248,13 @@ export default function ModuleSelector() {
 
           {isAdmin && (
             <Card
-              elevation={3}
+              elevation={2}
               sx={{
-                borderRadius: 4,
-                transition: 'transform 0.2s',
+                borderRadius: 3,
+                transition: 'all 0.2s',
                 '&:hover': {
-                  transform: 'scale(1.02)',
+                  transform: 'translateY(-4px)',
+                  boxShadow: 6,
                 },
               }}
             >
@@ -274,36 +264,34 @@ export default function ModuleSelector() {
               >
                 <CardContent
                   sx={{
-                    textAlign: 'center',
-                    p: 4,
+                    p: 3,
                     display: 'flex',
                     flexDirection: 'column',
-                    minHeight: 320,
+                    alignItems: 'center',
+                    gap: 1.5,
                   }}
                 >
                   <Box
                     sx={{
-                      width: 80,
-                      height: 80,
-                      borderRadius: 2,
+                      width: 100,
+                      height: 100,
+                      borderRadius: '50%',
                       bgcolor: 'error.main',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       color: 'white',
-                      mx: 'auto',
-                      mb: 3,
+                      mb: 0.5,
                     }}
                   >
-                    <Shield size={40} />
+                    <Shield size={48} strokeWidth={1.5} />
                   </Box>
 
                   <Typography
-                    variant="h5"
+                    variant="h6"
                     sx={{
-                      mb: 2,
                       fontWeight: 700,
-                      lineHeight: 1.3,
+                      textAlign: 'center',
                     }}
                   >
                     Admin Console
@@ -313,11 +301,9 @@ export default function ModuleSelector() {
                     variant="body2"
                     color="text.secondary"
                     sx={{
-                      lineHeight: 1.6,
-                      display: '-webkit-box',
-                      WebkitLineClamp: 3,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden',
+                      textAlign: 'center',
+                      lineHeight: 1.5,
+                      fontSize: '0.875rem',
                     }}
                   >
                     Manage system settings, PTO policies, and evaluation configurations

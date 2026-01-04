@@ -2,303 +2,358 @@
 
 ## Recent Updates (December 2025)
 
+### Payroll & Reimbursements Module Implementation
+
+The Payroll module has been added with comprehensive functionality for bi-weekly payroll tracking and employee reimbursement management.
+
+**✅ Completed:**
+- Backend Services:
+  - `PayrollService.gs` - Payroll run CRUD and status management
+  - `PayrollGenerator.gs` - Pre-populate 26 bi-weekly runs for the year
+  - `ReimbursementService.gs` - Reimbursement request workflow with manager approval
+  - Added 3 new routes: `generateAnnualRuns`, `getPendingRuns`, `updatePendingRun`
+  - Added `Pending` status to payroll workflow (Pending → Draft → Approved → Processed)
+
+- Frontend Components:
+  - `Dashboard.tsx` - Role-based dashboard (ADMIN: payroll runs + reimbursements; STAFF: my reimbursements)
+  - `PayrollApproval.tsx` - Batch process approved reimbursements (ADMIN only)
+  - `PayrollHistory.tsx` - All payroll runs with DataGrid filtering (ADMIN only)
+  - `PayrollUpload.tsx` - Dual-mode: Paychex PDF upload OR manual entry (ADMIN only)
+  - `ReimbursementsList.tsx` - View/manage reimbursements with filters
+  - `NewReimbursement.tsx` - Submit reimbursement request form
+  - `ReimbursementDetail.tsx` - View and approve/deny reimbursements
+
+- Utilities:
+  - `payrollUtils.ts` - Currency formatting, date calculations, status helpers
+  - `paychexParser.ts` - PDF parsing for Paychex payroll journals
+  - Added types: `PayrollRun`, `Reimbursement`, with full status enums
+  - Created `payrollApi.ts` with all endpoints
+
+- Features:
+  - Pre-populated payroll runs (26 bi-weekly runs created annually)
+  - Paychex PDF parsing with validation
+  - IRS tax-advantaged plans support (Section 127, Section 129)
+  - Reimbursement → Payroll integration workflow
+  - Role-based access control (STAFF can submit, MANAGER/ADMIN can approve)
+
+**🟡 Remaining (10% of Payroll Module):**
+- [ ] Update PayrollUpload to display pending runs list and allow selecting/filling them
+- [ ] Create admin UI for generating annual runs (simple form: year + first run date)
+- [ ] Add status color indicators for pending runs in PayrollHistory
+- [ ] Create comprehensive test plan document
+
+**Test Plan Available:** See `docs/PAYROLL_TEST_PLAN.md` for detailed testing procedures
+
+---
+
+### Staff Evaluations Components Created
+
+Evaluation form components have been converted to Material-UI v7:
+
+**✅ Completed:**
+- Created evaluation constants file (`constants/evaluations.ts`)
+- Converted components to MUI:
+  - `RadarChart.tsx` - 360° competency visualization with ToggleButtonGroup
+  - `Timeline.tsx` - MUI Stepper for workflow progress
+  - `GrowthReport.tsx` - Perception gap analysis with Table and radar chart
+  - `EvaluationForm.tsx` - Competency rating form with collapsible sections
+
+**🟡 Remaining:**
+- [ ] Create Evaluations Dashboard component
+- [ ] Add evaluation routes to App.tsx
+- [ ] Create navigation components
+- [ ] Test evaluation workflow end-to-end
+
+---
+
 ### PTO Dashboard Consolidation
-The PTO module has been streamlined with the following improvements:
 
 **Completed:**
-- ✅ Consolidated `/pto/requests` list into main dashboard - all request viewing now happens on the dashboard with DataGrid filtering
-- ✅ Implemented 2-column grid layout for request details page - more efficient use of screen space
-- ✅ Added tooltip on "Used Hours" showing breakdown by type (Vacation, Sick, Other)
-- ✅ Fixed home button visibility - each module dashboard automatically sets `activeModule` on mount
-- ✅ Updated navigation patterns - all routes now point to `/pto` instead of `/pto/requests`
+- ✅ Consolidated `/pto/requests` list into main dashboard
+- ✅ Implemented 2-column grid layout for request details page
+- ✅ Added tooltip on "Used Hours" showing breakdown by type
+- ✅ Fixed home button visibility
+- ✅ Updated navigation patterns
 
 **Current Status:**
-- PTO module is fully functional with request lifecycle (create, submit, approve/deny, cancel)
+- PTO module is fully functional with complete request lifecycle
 - Dashboard provides unified view with filtering, sorting, and inline actions
-- Balance tracking with real-time calculations working correctly
-- Approval workflows implemented for managers and admins
+- Balance tracking with real-time calculations
+- Approval workflows fully implemented
 
 ---
 
-## Immediate Next Steps (This Week)
+## Immediate Next Steps
 
-### 1. Create Google Sheets Database (1-2 hours) - ✅ COMPLETE
+### 1. Complete Payroll Module UI (2-3 hours)
 
 **Action Items:**
-- [x] Create new Google Sheet: "HR Management System Database"
-- [x] Create 12 sheets (tabs) as specified in setup guide
-- [x] Add column headers for each sheet
-- [x] Populate with initial test data (copy from existing projects)
-- [x] Share sheet with appropriate users
-- [x] Note the Sheet ID
+- [ ] Update PayrollUpload component:
+  - Display list of pending runs at top
+  - Allow selecting a pending run to fill
+  - Pre-populate form with run's dates
+  - Call `updatePendingRun()` instead of `logPayroll()` when filling pending run
 
-**Status:** Google Sheets database is fully set up and operational with all required sheets and test data.
+- [ ] Create admin page for generating annual runs:
+  - Simple form with year input and first run date picker
+  - Button to call `generateAnnualRuns()`
+  - Success/error feedback
 
-**Reference:** See `/docs/GOOGLE_SHEETS_STRUCTURE.md` for column definitions
+- [ ] Add visual indicators:
+  - Color-code pending runs in PayrollHistory (gray/pending color)
+  - Highlight next upcoming run to be filled
+  - Show count of pending vs completed runs
 
----
-
-### 2. Build Google Apps Script Backend (1-2 days) - ✅ COMPLETE
-
-**Files Created:**
-
-#### Core Files
-- [x] `Code.gs` - Main router (GET/POST handler)
-- [x] `Config.gs` - Sheet names, column mappings, enums
-- [x] `Auth.gs` - Authentication and authorization functions
-- [x] `Utils.gs` - Helper functions (ID generation, row conversion)
-
-#### Service Files
-- [x] `UserService.gs` - User management
-- [x] `PtoRequestService.gs` - PTO request CRUD
-- [x] `BalanceService.gs` - PTO balance calculations
-- [x] `HolidayService.gs` - Holiday management
-- [x] `EvaluationService.gs` - Evaluation CRUD (foundation)
-- [x] `RatingService.gs` - Rating operations (foundation)
-- [x] `GoalService.gs` - Goal management (foundation)
-- [x] `PeerReviewService.gs` - Peer review workflow (foundation)
-- [x] `CompetencyService.gs` - Competency management (foundation)
-- [x] `CycleService.gs` - Evaluation cycle management (foundation)
-
-**Status:** Backend is fully deployed and operational. PTO services are complete, evaluation services have foundation in place.
-
-**Deployment:**
-- [x] Deploy as Web App
-- [x] Test with curl/Postman
-- [x] Verify authorization rules
+**File Locations:**
+- Update: `frontend/src/modules/payroll/PayrollUpload.tsx`
+- Create: `frontend/src/modules/payroll/GenerateAnnualRuns.tsx` (or add to admin section)
+- Update: `frontend/src/modules/payroll/PayrollHistory.tsx` (status chip colors)
 
 ---
 
-### 3. Implement Google OAuth (2-3 hours) - ✅ COMPLETE
+### 2. Complete Staff Evaluations Module (1-2 days)
 
-**Action Items:**
-- [x] Create Google Cloud Project
-- [x] Enable Google Sign-In API
-- [x] Create OAuth 2.0 Client ID
-- [x] Add authorized JavaScript origins
-- [x] Update `VITE_GOOGLE_CLIENT_ID` in .env
-- [x] Implement demo mode for local development
-- [x] Test sign-in flow (both OAuth and demo mode)
-- [x] Connect to backend `getCurrentUser` endpoint
+**Components to Create:**
+- [ ] `Dashboard.tsx` - Main evaluations landing page
+  - My current evaluations (self-assessment status)
+  - Pending peer reviews I need to complete
+  - Evaluations I'm managing (if manager)
+  - Quick stats (completion rate, upcoming deadlines)
 
-**Status:** Authentication is fully functional with two modes:
-- **Demo Mode:** Used for local development - dynamically loads users from Google Sheets via `getDemoUsers` endpoint
-- **Google OAuth:** Available for production deployment with proper OAuth credentials
-
----
-
-### 4. Migrate PTO Module (2-3 days) - ✅ COMPLETE
-
-**Components Implemented:**
-- [x] Dashboard (balance chart with tooltip breakdown, consolidated request list with DataGrid, filtering)
-- [x] NewRequest (PTO request form with validation, real-time balance calculation, short notice warnings)
-- [x] RequestDetail (2-column grid layout, request details + approval workflow for managers/admins)
-- [x] ~~RequestsList~~ (consolidated into Dashboard with DataGrid - removed as separate page)
-- [x] StatusChip and TypeChip components for color-coded badges
-
-**Supporting Files:**
-- [x] PTO utils (calculatePtoHours, formatPtoDates, isShortNotice)
-- [x] Type colors and styling
-- [x] Status/Type chip components with user-friendly labels
-
-**API Integration:**
-- [x] Created `src/services/api/ptoApi.ts` with all endpoints
-- [x] Implemented all PTO API calls (requests, balance, approvals, cancellations)
-- [x] Components integrated with API and state management
+- [ ] Page components:
+  - `MyEvaluation.tsx` - Self-assessment entry
+  - `PeerReviews.tsx` - List of peer reviews to complete
+  - `PeerReviewForm.tsx` - Submit peer review
+  - `EvaluationDetail.tsx` - View complete evaluation with all ratings
 
 **Routing:**
-- [x] Added PTO routes to App.tsx
-- [x] `/pto` - Main dashboard (consolidated view)
-- [x] `/pto/requests/new` - New request form
-- [x] `/pto/requests/:id` - Request detail/edit
-- [x] Navigation tested and working
+- [ ] Add routes to `App.tsx`:
+  ```typescript
+  <Route path="evaluations">
+    <Route index element={<EvaluationsDashboard />} />
+    <Route path="my-evaluation" element={<MyEvaluation />} />
+    <Route path="peer-reviews" element={<PeerReviews />} />
+    <Route path="peer-review/:id" element={<PeerReviewForm />} />
+    <Route path=":id" element={<EvaluationDetail />} />
+    <Route path="growth-report" element={<GrowthReport />} />
+  </Route>
+  ```
 
-**Recent Enhancements:**
-- [x] Consolidated `/pto/requests` into main dashboard for better UX
-- [x] 2-column grid layout on request details for better space utilization
-- [x] Tooltip on "Used Hours" showing breakdown by type (Vacation, Sick, Other)
-- [x] Fixed home button visibility by auto-setting activeModule
-
-**Status:** PTO module is production-ready with full request lifecycle management, approval workflows, and balance tracking.
+**API Integration:**
+- [ ] Verify `evaluationsApi.ts` has all needed endpoints
+- [ ] Add any missing API functions (evaluation CRUD, submit/approve)
+- [ ] Connect components to API
 
 ---
 
-### 5. Migrate Staff Evaluations Module (2-3 days)
+### 3. Backend Deployment & Sample Data (3-4 hours)
 
-**Components to Migrate:**
-- [ ] EvaluationForm (competency ratings form)
-- [ ] GrowthReport (360-degree analysis with radar chart)
-- [ ] PeerReviewList (peer review requests)
-- [ ] Timeline (evaluation workflow visualization)
-- [ ] CompetencyManager (admin competency CRUD)
+**Google Sheets Setup:**
+- [ ] Update `scripts/SetupGoogleSheets.gs` with new sheets:
+  - Payroll_History
+  - Reimbursements
 
-**Rebuild with MUI:**
-- [ ] Replace custom components with MUI equivalents
-- [ ] Match PTO Tracker theme/style
-- [ ] Ensure mobile responsiveness
+- [ ] Add sample data for testing:
+  - 3-4 sample payroll runs (some pending, some completed)
+  - 10-12 sample reimbursements (various statuses and types)
+  - 5-6 sample evaluation cycles
+  - Sample competencies, ratings, goals
 
-**API Integration:**
-- [ ] Create `src/services/api/evaluationApi.ts`
-- [ ] Implement all Evaluation API calls
-- [ ] Update components to use new API
+**Backend Files to Deploy:**
 
-**Routing:**
-- [ ] Add all Evaluation routes to App.tsx
-- [ ] Test navigation between pages
+All files in `/backend` directory:
+```
+Code.gs (main router)
+Config.gs (updated with payroll enums)
+Auth.gs
+Utils.gs (with payroll row converters)
+
+# PTO Module
+UserService.gs
+PtoService.gs
+PtoBalanceService.gs
+HolidayService.gs
+ConfigService.gs
+
+# Payroll Module (NEW)
+PayrollService.gs
+PayrollGenerator.gs
+ReimbursementService.gs
+
+# Evaluations Module
+EvaluationService.gs
+RatingService.gs
+GoalService.gs
+PeerReviewService.gs
+CompetencyService.gs
+CycleService.gs
+```
+
+**Deployment Steps:**
+1. [ ] Create/open Google Sheet for database
+2. [ ] Extensions → Apps Script
+3. [ ] Copy all `.gs` files from `/backend` directory
+4. [ ] Run `setupDatabase()` from SetupGoogleSheets.gs
+5. [ ] Run `addSampleData()` for test data
+6. [ ] Deploy → New deployment → Web app
+7. [ ] Copy deployment URL to `frontend/.env` as `VITE_APPS_SCRIPT_URL`
+8. [ ] Test endpoints with Postman or curl
+9. [ ] Verify all modules work with real backend
+
+---
+
+### 4. Testing & QA (2-3 days)
+
+**Payroll Module Testing:**
+- [ ] Test pre-populated runs workflow:
+  - Generate annual runs for 2025
+  - Upload Paychex PDF for next pending run
+  - Verify dates pre-filled correctly
+  - Verify financial data fills correctly
+  - Approve and process run
+
+- [ ] Test reimbursement workflow:
+  - Submit as STAFF user
+  - Approve as MANAGER user
+  - Process in PayrollApproval as ADMIN
+  - Verify status changes correctly
+
+- [ ] Test permissions:
+  - STAFF can only see own reimbursements
+  - MANAGER can see all, approve reimbursements
+  - ADMIN has full access to payroll functions
+
+**Evaluations Module Testing:**
+- [ ] Test evaluation lifecycle:
+  - Self-assessment (STAFF)
+  - Peer review (STAFF reviewing colleague)
+  - Manager review (MANAGER)
+  - Complete workflow and view growth report
+
+- [ ] Test radar chart visualization
+- [ ] Test perception gap analysis
+- [ ] Test competency management (ADMIN)
+
+**Cross-Module Testing:**
+- [ ] Navigation between all modules
+- [ ] Theme switching (light/dark mode)
+- [ ] Responsive layout on mobile
+- [ ] Browser compatibility (Chrome, Safari, Firefox)
+
+**Performance Testing:**
+- [ ] Load time with realistic data (100+ PTO requests, 50+ reimbursements)
+- [ ] Multiple concurrent users
+- [ ] PDF parsing performance
+
+---
+
+### 5. Documentation Updates (1-2 hours)
+
+**Files to Update:**
+- [x] `CLAUDE.md` - Updated with Payroll module info, workflows, backend services
+- [ ] `docs/GOOGLE_SHEETS_STRUCTURE.md` - Add Payroll_History and Reimbursements sheets
+- [ ] `docs/SETUP.md` - Add Payroll module setup steps
+- [ ] `docs/CONFIGURATION.md` - Add payroll configuration options
+- [ ] `README.md` - Update with current module status
+- [ ] `frontend/CLAUDE.md` - Add Payroll component patterns
+
+**New Documentation to Create:**
+- [ ] `docs/PAYROLL_WORKFLOW.md` - Detailed payroll process documentation
+- [ ] `docs/REIMBURSEMENT_GUIDE.md` - User guide for submitting reimbursements
+- [ ] `docs/EVALUATION_GUIDE.md` - User guide for evaluation process
 
 ---
 
 ## Near Term (Next 2 Weeks)
 
-### 6. Testing & QA (2-3 days)
-
-**Functional Testing:**
-- [ ] Test authentication flow (sign in, sign out)
-- [ ] Test PTO request lifecycle (create, submit, approve, deny, cancel)
-- [ ] Test PTO balance calculations
-- [ ] Test evaluation lifecycle (self → peer → manager → complete)
-- [ ] Test 360-degree feedback analysis
-- [ ] Test permissions (staff vs manager vs admin)
-- [ ] Test cross-module navigation
-
-**Edge Cases:**
-- [ ] Concurrent edits (use LockService)
-- [ ] Invalid data handling
-- [ ] Network errors
-- [ ] Session expiration
-
-**Performance Testing:**
-- [ ] Load time with realistic data volumes
-- [ ] Multiple concurrent users (5-10)
-- [ ] Large dataset queries
-
-**Browser Testing:**
-- [ ] Chrome
-- [ ] Safari
-- [ ] Firefox
-- [ ] Mobile browsers (iOS Safari, Chrome Android)
-
----
-
-### 7. Polish & UX Improvements (1-2 days)
+### 6. Polish & UX Improvements (1-2 days)
 
 **UI Enhancements:**
-- [ ] Loading states for all async operations
-- [ ] Error messages and toast notifications
-- [ ] Empty states (no requests, no evaluations)
+- [ ] Add loading skeletons for all data tables
+- [ ] Implement toast notifications (success/error messages)
+- [ ] Add empty states with helpful guidance
 - [ ] Confirmation dialogs for destructive actions
-- [ ] Optimistic UI updates
+- [ ] Optimistic UI updates for better perceived performance
 
 **Accessibility:**
-- [ ] Keyboard navigation
-- [ ] Screen reader support
-- [ ] Color contrast ratios
-- [ ] Focus indicators
+- [ ] Keyboard navigation for all forms
+- [ ] ARIA labels for screen readers
+- [ ] Color contrast validation
+- [ ] Focus indicators on all interactive elements
 
 **Mobile Optimization:**
-- [ ] Test on actual devices
-- [ ] Optimize touch targets
-- [ ] Responsive tables/grids
-- [ ] Mobile-friendly forms
+- [ ] Test on iOS/Android devices
+- [ ] Optimize DataGrid for mobile (responsive columns)
+- [ ] Touch-friendly form inputs
+- [ ] Mobile-specific navigation patterns
 
 ---
 
-### 8. Deployment (1 day)
+### 7. Deployment (1 day)
 
-**Frontend Deployment (Netlify recommended):**
-1. [ ] Create Netlify account
-2. [ ] Connect GitHub repo (optional)
+**Frontend Deployment (Netlify/Vercel):**
+1. [ ] Create account on hosting platform
+2. [ ] Connect GitHub repository
 3. [ ] Configure build settings:
-   - Build command: `npm run build`
-   - Publish directory: `dist`
-4. [ ] Add environment variables in Netlify dashboard
+   - Build command: `cd frontend && npm run build`
+   - Publish directory: `frontend/dist`
+4. [ ] Add environment variables:
+   - `VITE_APPS_SCRIPT_URL`
+   - `VITE_GOOGLE_CLIENT_ID` (optional for OAuth)
 5. [ ] Deploy and test
 6. [ ] Set up custom domain (optional)
 
-**Backend:**
-- [ ] Already deployed via Apps Script
-- [ ] Update CORS settings if needed
-- [ ] Monitor quota usage
-
 **Post-Deployment:**
-- [ ] Test production URLs
-- [ ] Verify Google OAuth works in production
-- [ ] Check analytics/monitoring
+- [ ] Test all modules in production
+- [ ] Verify Google OAuth works
+- [ ] Monitor for errors
+- [ ] Set up analytics (optional: Google Analytics, Plausible)
 - [ ] Set up error tracking (optional: Sentry)
 
 ---
 
-## Future Enhancements (Optional)
+## Current Implementation Status
 
-### Short Term
-- [ ] Email notifications (PTO approvals, evaluation deadlines)
-- [ ] Export data to PDF/CSV
-- [ ] Batch operations (approve multiple requests)
-- [ ] Advanced filtering and search
-- [ ] Auto-save drafts
-- [ ] Keyboard shortcuts
+### ✅ Completed Modules
 
-### Medium Term
-- [ ] Real-time updates (polling or WebSockets)
-- [ ] Mobile app (React Native)
-- [ ] Offline support with sync
-- [ ] Advanced analytics dashboard
-- [ ] Integration with Slack/Teams
-- [ ] Automated reminders
+**PTO Tracker (100%)**
+- Request management (create, submit, approve, deny, cancel)
+- Balance tracking with real-time calculations
+- Holiday and blackout date management
+- Approval workflows for managers/admins
+- Dashboard with consolidated view
 
-### Long Term (If Scaling)
-- [ ] Migrate to Node.js + PostgreSQL backend
-- [ ] Implement Redis caching
-- [ ] Add full-text search (Elasticsearch)
-- [ ] Multi-tenant support
-- [ ] Role-based access control (RBAC) with granular permissions
-- [ ] Audit logging
-- [ ] API rate limiting
+**Payroll & Reimbursements (90%)**
+- Backend: Complete (100%)
+  - Pre-populated payroll runs
+  - Paychex PDF parsing
+  - Reimbursement workflow
+  - All API endpoints
 
----
+- Frontend: Mostly Complete (90%)
+  - ✅ Dashboard, History, Approval components
+  - ✅ Reimbursement list, form, detail
+  - ✅ PayrollUpload with PDF parsing
+  - 🟡 Pending: UI for filling pre-populated runs
+  - 🟡 Pending: Admin UI to generate annual runs
 
-## Risk Mitigation
+### 🟡 In Progress
 
-### Potential Issues & Solutions
+**Staff Evaluations (40%)**
+- ✅ Backend services foundation (100%)
+- ✅ Component library created (70%)
+  - RadarChart, Timeline, GrowthReport, EvaluationForm
+- 🟡 Routes and Dashboard (0%)
+- 🟡 Full workflow integration (0%)
 
-**Issue**: Apps Script 6-minute timeout
-**Mitigation**:
-- Optimize queries
-- Implement pagination
-- Use batch operations
-- Monitor execution times
+### 🔴 Not Started
 
-**Issue**: Sheet row limits
-**Mitigation**:
-- Archive old data annually
-- Implement data retention policy
-- Monitor row counts
-
-**Issue**: Concurrent edit conflicts
-**Mitigation**:
-- Use LockService for critical sections
-- Implement optimistic locking
-- Display conflict warnings
-
-**Issue**: User adoption
-**Mitigation**:
-- User training sessions
-- Documentation and help text
-- Gradual rollout
-- Gather feedback
-
----
-
-## Success Metrics
-
-**Track these to measure success:**
-- [ ] User sign-ups and active users
-- [ ] PTO requests submitted per week
-- [ ] Evaluation completion rate
-- [ ] Average approval time for requests
-- [ ] System uptime and error rates
-- [ ] User satisfaction (survey)
-- [ ] Time saved vs. previous process
+**Advanced Features**
+- Email notifications
+- Export to PDF/CSV
+- Batch operations
+- Real-time updates
+- Mobile app
 
 ---
 
@@ -307,26 +362,76 @@ The PTO module has been streamlined with the following improvements:
 | Phase | Duration | Status |
 |-------|----------|--------|
 | 1. Google Sheets Setup | 1-2 hours | ✅ Complete |
-| 2. Apps Script Backend | 1-2 days | ✅ Complete |
-| 3. Google OAuth | 2-3 hours | ✅ Complete (Demo mode implemented) |
-| 4. PTO Migration | 2-3 days | ✅ Complete (Recently enhanced) |
-| 5. Evaluation Migration | 2-3 days | 🟡 Foundation in place, not fully implemented |
-| 6. Testing & QA | 2-3 days | 🟡 Ongoing (manual testing) |
-| 7. Polish & UX | 1-2 days | 🟡 Partially complete |
-| 8. Deployment | 1 day | 🔴 Not started |
-| **TOTAL** | **8-15 days** | **🟢 Core PTO functionality complete** |
+| 2. Apps Script Backend - PTO | 1-2 days | ✅ Complete |
+| 3. Apps Script Backend - Payroll | 1 day | ✅ Complete |
+| 4. Google OAuth | 2-3 hours | ✅ Complete |
+| 5. PTO Migration | 2-3 days | ✅ Complete |
+| 6. Payroll Frontend | 2 days | 🟡 90% Complete |
+| 7. Evaluations Components | 1 day | 🟡 40% Complete |
+| 8. Evaluations Integration | 1-2 days | 🔴 Not Started |
+| 9. Testing & QA | 2-3 days | 🟡 Ongoing |
+| 10. Documentation | 1-2 hours | 🟡 In Progress |
+| 11. Deployment | 1 day | 🔴 Not Started |
+| **TOTAL** | **12-20 days** | **🟢 70% Complete** |
+
+---
+
+## Success Metrics
+
+**Track these to measure success:**
+- [ ] User adoption rate
+- [ ] PTO requests submitted per week
+- [ ] Reimbursement processing time
+- [ ] Evaluation completion rate
+- [ ] Average approval time
+- [ ] System uptime (>99%)
+- [ ] User satisfaction score
+- [ ] Time saved vs. manual process
 
 ---
 
 ## Getting Help
 
 If you get stuck:
-1. Check the SETUP.md documentation
-2. Review original project code (PTO-Tracker-main, Staff-Evaluation-System)
+1. Check `CLAUDE.md` for architecture patterns
+2. Review `docs/PAYROLL_TEST_PLAN.md` for testing guidance
 3. Check Google Apps Script documentation
-4. Test in isolation (create minimal reproduction)
-5. Use browser dev tools for debugging
+4. Test API endpoints with Postman/curl
+5. Use browser DevTools for frontend debugging
+6. Check `window.debugApi` in dev mode
+
+---
+
+## Key Files Reference
+
+**Documentation:**
+- `CLAUDE.md` - Main project documentation
+- `docs/NEXT_STEPS.md` - This file
+- `docs/GOOGLE_SHEETS_STRUCTURE.md` - Database schema
+- `docs/PAYROLL_TEST_PLAN.md` - Payroll testing guide
+
+**Backend:**
+- `backend/Code.gs` - Main router
+- `backend/Config.gs` - Configuration
+- `backend/PayrollGenerator.gs` - Annual run generation
+- `scripts/SetupGoogleSheets.gs` - Database setup script
+
+**Frontend:**
+- `frontend/src/types/index.ts` - All TypeScript types
+- `frontend/src/services/api/payrollApi.ts` - Payroll API functions
+- `frontend/src/modules/payroll/` - Payroll components
+- `frontend/src/constants/evaluations.ts` - Evaluation constants
+
+---
 
 ## Ready to Continue?
 
-The foundation is in place! Start with Phase 1 (Google Sheets setup) and work through each phase systematically. The modular structure makes it easy to build incrementally.
+**Next immediate tasks (in order):**
+1. Complete PayrollUpload pending runs UI (2-3 hours)
+2. Create admin UI for generating annual runs (1 hour)
+3. Complete Evaluations Dashboard (3-4 hours)
+4. Deploy backend to Google Apps Script (1-2 hours)
+5. End-to-end testing of all modules (1 day)
+6. Deploy frontend to production (2-3 hours)
+
+The foundation is solid and most features are implemented. Focus on completing the remaining UI components and deploying to production!

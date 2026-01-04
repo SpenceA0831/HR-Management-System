@@ -13,59 +13,55 @@ export default function SignIn() {
   const [loadingUsers, setLoadingUsers] = useState(true);
   const open = Boolean(anchorEl);
 
+  // Demo mode disabled for production
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        setLoadingUsers(true);
-        const response = await getDemoUsers();
-        if (response.success && response.data) {
-          setUsers(response.data);
-        } else {
-          console.error('Failed to fetch demo users:', response.error);
-          setError('Failed to load users. Please refresh the page.');
-        }
-      } catch (err) {
-        console.error('Error fetching demo users:', err);
-        setError('Failed to load users. Please refresh the page.');
-      } finally {
-        setLoadingUsers(false);
-      }
-    };
-
-    fetchUsers();
+    setLoadingUsers(false);
+    // Demo users no longer loaded - using real OAuth only
   }, []);
 
-  const handleGoogleSuccess = async (_credentialResponse: CredentialResponse) => {
+  const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
     try {
       setError(null);
 
-      // TODO: Call backend to validate token and get user
-      // const response = await fetch(`${import.meta.env.VITE_APPS_SCRIPT_URL}?action=validateToken`, {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ token: credentialResponse.credential }),
-      // });
-      // const userData = await response.json();
+      // Decode JWT to get email
+      if (!credentialResponse.credential) {
+        throw new Error('No credential received');
+      }
 
-      // For now, create a mock user (remove this when backend is ready)
-      const mockUser: User = {
-        id: 'demo-user-1',
-        name: 'Demo User',
-        email: 'demo@example.com',
-        userRole: 'STAFF',
-        teamId: 'team_eng_001',
-        employmentType: 'Full Time',
-        hireDate: '2024-01-01',
-        roleType: 'ORGANIZER',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
+      // Decode the JWT token to get user email
+      const base64Url = credentialResponse.credential.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split('')
+          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join('')
+      );
+      const payload = JSON.parse(jsonPayload);
+      const userEmail = payload.email;
 
-      setCurrentUser(mockUser);
+      // Call backend to get user by email (using POST to avoid CORS)
+      const response = await fetch(
+        `${import.meta.env.VITE_APPS_SCRIPT_URL}?action=getUserByEmail`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/plain;charset=utf-8', // Use text/plain to avoid CORS preflight
+          },
+          body: JSON.stringify({ email: userEmail }),
+        }
+      );
+      const userData = await response.json();
+
+      if (!userData.success) {
+        throw new Error(userData.error || 'User not found in system. Please contact your administrator.');
+      }
+
+      setCurrentUser(userData.data);
       setIsAuthenticated(true);
     } catch (err) {
       console.error('Authentication error:', err);
-      setError('Failed to sign in. Please try again.');
+      setError(err instanceof Error ? err.message : 'Failed to sign in. Please try again.');
     }
   };
 

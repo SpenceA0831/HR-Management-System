@@ -103,7 +103,7 @@ export const ORG_WIDE_COMPETENCIES: Omit<Competency, 'id' | 'isCustom' | 'create
  * These are specialized skills required for specific positions
  */
 export const ROLE_SPECIFIC_COMPETENCIES: Record<
-  RoleType,
+  string,
   Omit<Competency, 'id' | 'isCustom' | 'createdAt'>[]
 > = {
   STAFF: [
@@ -111,19 +111,19 @@ export const ROLE_SPECIFIC_COMPETENCIES: Record<
       name: 'Task Execution',
       description: 'Completes assigned tasks accurately and on time.',
       category: 'Role-Specific',
-      roleType: 'STAFF',
+      roleType: undefined,
     },
     {
       name: 'Initiative',
       description: 'Proactively identifies and addresses needs within scope of role.',
       category: 'Role-Specific',
-      roleType: 'STAFF',
+      roleType: undefined,
     },
     {
       name: 'Professional Development',
       description: 'Actively seeks learning opportunities and applies new skills.',
       category: 'Role-Specific',
-      roleType: 'STAFF',
+      roleType: undefined,
     },
   ],
   MANAGER: [
@@ -131,19 +131,19 @@ export const ROLE_SPECIFIC_COMPETENCIES: Record<
       name: 'Team Leadership',
       description: 'Provides clear direction and support to direct reports.',
       category: 'Role-Specific',
-      roleType: 'MANAGER',
+      roleType: undefined,
     },
     {
       name: 'Performance Management',
       description: 'Conducts regular reviews and provides actionable feedback.',
       category: 'Role-Specific',
-      roleType: 'MANAGER',
+      roleType: undefined,
     },
     {
       name: 'Resource Allocation',
       description: 'Effectively manages team workload and project priorities.',
       category: 'Role-Specific',
-      roleType: 'MANAGER',
+      roleType: undefined,
     },
   ],
   ADMIN: [
@@ -151,19 +151,19 @@ export const ROLE_SPECIFIC_COMPETENCIES: Record<
       name: 'Strategic Oversight',
       description: 'Ensures organizational systems support long-term goals.',
       category: 'Role-Specific',
-      roleType: 'ADMIN',
+      roleType: undefined,
     },
     {
       name: 'Policy Development',
       description: 'Creates and maintains effective organizational policies.',
       category: 'Role-Specific',
-      roleType: 'ADMIN',
+      roleType: undefined,
     },
     {
       name: 'Cross-Functional Coordination',
       description: 'Facilitates collaboration across departments and initiatives.',
       category: 'Role-Specific',
-      roleType: 'ADMIN',
+      roleType: undefined,
     },
   ],
 };

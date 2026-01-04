@@ -39,7 +39,7 @@ type FormData = z.infer<typeof ptoRequestSchema>;
 export default function NewRequest() {
   const navigate = useNavigate();
   const { currentUser } = useStore();
-  const [balance, setBalance] = useState<{ availableHours: number; usedHours: number; pendingHours: number } | null>(null);
+  const [balance, setBalance] = useState<{ totalHours?: number; availableHours: number; usedHours: number; pendingHours: number } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitAction, setSubmitAction] = useState<'draft' | 'submit' | null>(null);
   const [error, setError] = useState<string | null>(null);

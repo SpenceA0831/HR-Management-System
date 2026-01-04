@@ -1,0 +1,4695 @@
+================================================================================
+HR MANAGEMENT SYSTEM - BACKEND CODE FOR GOOGLE APPS SCRIPT
+================================================================================
+
+Instructions:
+1. Open your work Google Sheet
+2. Go to Extensions → Apps Script
+3. For each file below:
+   - Click the + next to "Files" → "Script"
+   - Name it exactly as shown (e.g., "Config")
+   - Copy the code from this document
+   - Paste it into the Apps Script editor
+   - Click Save (Ctrl+S / Cmd+S)
+
+================================================================================
+
+
+================================================================================
+FILE: Code.gs
+================================================================================
+
+/**
+ * Main entry point for HR Management System (Google Apps Script Web App)
+ * Handles routing for both PTO and Evaluations modules
+ */
+
+/**
+ * Handle HTTP GET requests
+ * @param {Object} e - Event object containing request parameters
+ * @returns {GoogleAppsScript.Content.TextOutput} JSON response
+ */
+function doGet(e) {
+  return handleRequest(e, 'GET');
+}
+
+/**
+ * Handle HTTP POST requests
+ * @param {Object} e - Event object containing request parameters and post data
+ * @returns {GoogleAppsScript.Content.TextOutput} JSON response
+ */
+function doPost(e) {
+  return handleRequest(e, 'POST');
+}
+
+/**
+ * Handle OPTIONS requests (CORS preflight)
+ */
+function doOptions(e) {
+  const output = ContentService.createTextOutput('');
+  output.setMimeType(ContentService.MimeType.TEXT);
+  return output;
+}
+
+/**
+ * Main request handler
+ * @param {Object} e - Event object
+ * @param {string} method - HTTP method (GET or POST)
+ * @returns {GoogleAppsScript.Content.TextOutput} JSON response
+ */
+function handleRequest(e, method) {
+  const output = ContentService.createTextOutput();
+  output.setMimeType(ContentService.MimeType.JSON);
+
+  try {
+    // Get action parameter
+    const action = e.parameter.action;
+    if (!action) {
+      return output.setContent(JSON.stringify(
+        errorResponse('Missing action parameter', 'MISSING_ACTION')
+      ));
+    }
+
+    // Health check doesn't require authentication
+    if (action === 'health') {
+      return output.setContent(JSON.stringify(
+        successResponse({ status: 'ok', timestamp: new Date().toISOString() })
+      ));
+    }
+
+    // Demo users endpoint for login page (no auth required)
+    if (action === 'getDemoUsers') {
+      return output.setContent(JSON.stringify(handleGetDemoUsers()));
+    }
+
+    // Public endpoints - no auth required
+    if (action === 'getHolidays') {
+      return output.setContent(JSON.stringify(handleGetHolidaysPublic()));
+    }
+    if (action === 'getBlackoutDates') {
+      return output.setContent(JSON.stringify(handleGetBlackoutDatesPublic()));
+    }
+
+    // Get authenticated user (pass event object for demo mode support)
+    const userEmail = getCurrentUserEmail(e);
+    if (!userEmail) {
+      return output.setContent(JSON.stringify(
+        errorResponse('Authentication required', 'UNAUTHORIZED')
+      ));
+    }
+
+    const currentUser = getUserByEmail(userEmail);
+    if (!currentUser) {
+      return output.setContent(JSON.stringify(
+        errorResponse('User not found in system. Please contact your administrator.', 'USER_NOT_FOUND')
+      ));
+    }
+
+    // Parse payload for POST requests
+    let payload = {};
+    if (method === 'POST' && e.postData && e.postData.contents) {
+      try {
+        payload = JSON.parse(e.postData.contents);
+      } catch (parseError) {
+        return output.setContent(JSON.stringify(
+          errorResponse('Invalid JSON in request body', 'INVALID_JSON')
+        ));
+      }
+    } else if (method === 'GET') {
+      payload = e.parameter;
+    }
+
+    // Route to appropriate handler
+    let result;
+    switch(action) {
+      // ========================================================================
+      // USER ENDPOINTS
+      // ========================================================================
+      case 'getCurrentUser':
+        result = handleGetCurrentUser(currentUser);
+        break;
+      case 'getUsers':
+        result = handleGetUsers(currentUser);
+        break;
+      case 'getDirectReports':
+        result = handleGetDirectReports(currentUser);
+        break;
+
+      // ========================================================================
+      // PTO MODULE ENDPOINTS
+      // ========================================================================
+      case 'getPtoRequests':
+        result = handleGetPtoRequests(currentUser, payload);
+        break;
+      case 'getPtoRequest':
+        result = handleGetPtoRequest(currentUser, payload);
+        break;
+      case 'createPtoRequest':
+        result = handleCreatePtoRequest(currentUser, payload);
+        break;
+      case 'updatePtoRequest':
+        result = handleUpdatePtoRequest(currentUser, payload);
+        break;
+      case 'approvePtoRequest':
+        result = handleApprovePtoRequest(currentUser, payload);
+        break;
+      case 'denyPtoRequest':
+        result = handleDenyPtoRequest(currentUser, payload);
+        break;
+      case 'cancelPtoRequest':
+        result = handleCancelPtoRequest(currentUser, payload);
+        break;
+      case 'getPtoBalance':
+        result = handleGetPtoBalance(currentUser, payload);
+        break;
+      case 'getHolidays':
+        result = handleGetHolidays(currentUser);
+        break;
+      case 'createHoliday':
+        result = handleCreateHoliday(currentUser, payload);
+        break;
+      case 'deleteHoliday':
+        result = handleDeleteHoliday(currentUser, payload);
+        break;
+      case 'getBlackoutDates':
+        result = handleGetBlackoutDates(currentUser);
+        break;
+      case 'createBlackoutDate':
+        result = handleCreateBlackoutDate(currentUser, payload);
+        break;
+      case 'deleteBlackoutDate':
+        result = handleDeleteBlackoutDate(currentUser, payload);
+        break;
+      case 'getSystemConfig':
+        result = handleGetSystemConfig(currentUser);
+        break;
+      case 'updateSystemConfig':
+        result = handleUpdateSystemConfig(currentUser, payload);
+        break;
+
+      // ========================================================================
+      // EVALUATION MODULE ENDPOINTS
+      // ========================================================================
+      case 'getEvaluationCycles':
+        result = handleGetCycles(currentUser);
+        break;
+      case 'getActiveCycle':
+        result = handleGetActiveCycle(currentUser);
+        break;
+      case 'getEvaluations':
+        result = handleGetEvaluations(currentUser, payload);
+        break;
+      case 'getEvaluation':
+        result = handleGetEvaluation(currentUser, payload);
+        break;
+      case 'createEvaluation':
+        result = handleCreateEvaluation(currentUser, payload);
+        break;
+      case 'updateEvaluationStatus':
+        result = handleUpdateEvaluationStatus(currentUser, payload);
+        break;
+      case 'pullBackEvaluation':
+        result = handlePullBackEvaluation(currentUser, payload);
+        break;
+      case 'saveRatings':
+        result = handleSaveRatings(currentUser, payload);
+        break;
+      case 'saveGoals':
+        result = handleSaveGoals(currentUser, payload);
+        break;
+      case 'getPeerReviewRequests':
+        result = handleGetPeerReviewRequests(currentUser);
+        break;
+      case 'submitPeerReview':
+        result = handleSubmitPeerReview(currentUser, payload);
+        break;
+      case 'createPeerReviewRequest':
+        result = handleCreatePeerReviewRequest(currentUser, payload);
+        break;
+      case 'getCompetencies':
+        result = handleGetCompetencies(currentUser);
+        break;
+      case 'saveCompetency':
+        result = handleSaveCustomCompetency(currentUser, payload);
+        break;
+      case 'deleteCompetency':
+        result = handleDeleteCustomCompetency(currentUser, payload);
+        break;
+
+      // ========================================================================
+      // PAYROLL MODULE ENDPOINTS (ADMIN ONLY)
+      // ========================================================================
+      case 'getPayrollHistory':
+        result = handleGetPayrollHistory(currentUser, payload);
+        break;
+      case 'getPayrollRun':
+        result = handleGetPayrollRun(currentUser, payload);
+        break;
+      case 'logPayroll':
+        result = handleLogPayroll(currentUser, payload);
+        break;
+      case 'updatePayrollStatus':
+        result = handleUpdatePayrollStatus(currentUser, payload);
+        break;
+      case 'generateAnnualRuns':
+        result = handleGenerateAnnualRuns(currentUser, payload);
+        break;
+      case 'getPendingRuns':
+        result = handleGetPendingRuns(currentUser, payload);
+        break;
+      case 'updatePendingRun':
+        result = handleUpdatePendingRun(currentUser, payload);
+        break;
+      case 'processReimbursements':
+        result = handleProcessReimbursements(currentUser, payload);
+        break;
+
+      // ========================================================================
+      // REIMBURSEMENT MODULE ENDPOINTS
+      // ========================================================================
+      case 'getReimbursements':
+        result = handleGetReimbursements(currentUser, payload);
+        break;
+      case 'getReimbursement':
+        result = handleGetReimbursement(currentUser, payload);
+        break;
+      case 'createReimbursement':
+        result = handleCreateReimbursement(currentUser, payload);
+        break;
+      case 'approveReimbursement':
+        result = handleApproveReimbursement(currentUser, payload);
+        break;
+      case 'denyReimbursement':
+        result = handleDenyReimbursement(currentUser, payload);
+        break;
+
+      default:
+        result = errorResponse('Unknown action: ' + action, 'UNKNOWN_ACTION');
+    }
+
+    return output.setContent(JSON.stringify(result));
+
+  } catch (error) {
+    Logger.log('Error in handleRequest: ' + error.message);
+    Logger.log('Stack trace: ' + error.stack);
+
+    return output.setContent(JSON.stringify(
+      errorResponse('Internal server error: ' + error.message, 'INTERNAL_ERROR')
+    ));
+  }
+}
+
+
+================================================================================
+FILE: Config.gs
+================================================================================
+
+/**
+ * Configuration file for HR Management System (Google Apps Script backend)
+ * Contains sheet names, column mappings, and constants for both PTO and Evaluations modules
+ */
+
+// Get Spreadsheet ID from Script Properties
+// Set via: File > Project settings > Script properties > Add property: SPREADSHEET_ID
+function getSpreadsheetId() {
+  const scriptProperties = PropertiesService.getScriptProperties();
+  const spreadsheetId = scriptProperties.getProperty('SPREADSHEET_ID');
+
+  if (!spreadsheetId) {
+    throw new Error('SPREADSHEET_ID not configured in Script Properties');
+  }
+
+  return spreadsheetId;
+}
+
+// Sheet names
+const SHEET_NAMES = {
+  // Shared
+  USERS: 'Users',
+
+  // PTO Module
+  PTO_REQUESTS: 'PtoRequests',
+  PTO_BALANCES: 'PtoBalances',
+  HOLIDAYS: 'Holidays',
+  BLACKOUT_DATES: 'BlackoutDates',
+  SYSTEM_CONFIG: 'SystemConfig',
+
+  // Payroll Module
+  PAYROLL_HISTORY: 'Payroll_History',
+  REIMBURSEMENTS: 'Reimbursements',
+
+  // Evaluation Module
+  EVALUATIONS: 'Evaluations',
+  EVALUATION_CYCLES: 'EvaluationCycles',
+  RATINGS: 'Ratings',
+  GOALS: 'Goals',
+  PEER_REVIEW_REQUESTS: 'PeerReviewRequests',
+  COMPETENCIES: 'Competencies'
+};
+
+// Column mappings for each sheet (0-indexed)
+const COLUMN_MAPS = {
+  USERS: {
+    id: 0,
+    name: 1,
+    email: 2,
+    userRole: 3,          // STAFF | MANAGER | ADMIN
+    teamId: 4,
+    managerId: 5,
+    employmentType: 6,    // Full Time | Part Time
+    hireDate: 7,          // yyyy-MM-dd
+    roleType: 8,          // For evaluations
+    avatar: 9,
+    createdAt: 10,
+    updatedAt: 11
+  },
+
+  PTO_REQUESTS: {
+    id: 0,
+    userId: 1,
+    userName: 2,
+    type: 3,              // Vacation | Sick | Other
+    startDate: 4,
+    endDate: 5,
+    isHalfDayStart: 6,
+    isHalfDayEnd: 7,
+    totalHours: 8,
+    reason: 9,
+    attachment: 10,
+    status: 11,
+    managerComment: 12,
+    employeeComment: 13,
+    approverId: 14,
+    approverName: 15,
+    createdAt: 16,
+    updatedAt: 17,
+    history: 18           // JSON string of AuditTrail[]
+  },
+
+  PTO_BALANCES: {
+    userId: 0,
+    year: 1,
+    availableHours: 2,  // Stores totalHours (for backwards compatibility)
+    usedHours: 3,
+    pendingHours: 4
+  },
+
+  HOLIDAYS: {
+    id: 0,
+    date: 1,              // yyyy-MM-dd (start date)
+    endDate: 2,           // yyyy-MM-dd (optional end date for multi-day holidays)
+    name: 3
+  },
+
+  BLACKOUT_DATES: {
+    id: 0,
+    date: 1,              // yyyy-MM-dd (start date)
+    endDate: 2,           // yyyy-MM-dd (optional end date for multi-day blackout periods)
+    name: 3,
+    createdBy: 4,
+    createdAt: 5
+  },
+
+  SYSTEM_CONFIG: {
+    defaultFullTimeHours: 0,
+    defaultPartTimeHours: 1,
+    prorateByHireDate: 2,
+    fullTeamCalendarVisible: 3,
+    shortNoticeThresholdDays: 4
+  },
+
+  PAYROLL_HISTORY: {
+    id: 0,
+    runDate: 1,
+    checkDate: 2,
+    payPeriodStart: 3,
+    payPeriodEnd: 4,
+    totalGross: 5,
+    totalNet: 6,
+    totalTaxes: 7,
+    totalDeductions: 8,
+    status: 9,
+    processedBy: 10,
+    notes: 11,
+    source: 12,              // PDF_Import | Manual
+    createdAt: 13,
+    updatedAt: 14
+  },
+
+  REIMBURSEMENTS: {
+    id: 0,
+    staffName: 1,
+    staffEmail: 2,
+    expenseDate: 3,
+    description: 4,
+    amount: 5,
+    reimbursementType: 6,
+    methodOfReimbursement: 7,
+    status: 8,
+    submittedAt: 9,
+    dateReimbursed: 10,
+    reviewerId: 11,
+    reviewerName: 12,
+    notes: 13,
+    createdAt: 14,
+    updatedAt: 15
+  },
+
+  EVALUATIONS: {
+    id: 0,
+    employeeId: 1,
+    cycleId: 2,
+    type: 3,
+    status: 4,
+    overallSummary: 5,
+    createdAt: 6,
+    updatedAt: 7
+  },
+
+  EVALUATION_CYCLES: {
+    id: 0,
+    name: 1,
+    year: 2,
+    type: 3,
+    deadline: 4,
+    selfDeadline: 5,
+    peerDeadline: 6,
+    managerDeadline: 7,
+    status: 8
+  },
+
+  RATINGS: {
+    id: 0,
+    evaluationId: 1,
+    ratingType: 2,
+    competencyId: 3,
+    score: 4,
+    comments: 5,
+    reviewerId: 6,
+    createdAt: 7,
+    updatedAt: 8
+  },
+
+  GOALS: {
+    id: 0,
+    evaluationId: 1,
+    description: 2,
+    status: 3,
+    achievements: 4,
+    challenges: 5,
+    createdAt: 6,
+    updatedAt: 7
+  },
+
+  PEER_REVIEW_REQUESTS: {
+    id: 0,
+    evaluationId: 1,
+    reviewerId: 2,
+    targetUserId: 3,
+    targetUserName: 4,
+    status: 5,
+    createdAt: 6,
+    updatedAt: 7
+  },
+
+  COMPETENCIES: {
+    id: 0,
+    name: 1,
+    description: 2,
+    category: 3,
+    roleType: 4,
+    isCustom: 5,
+    createdAt: 6
+  }
+};
+
+// ============================================================================
+// ENUMS matching frontend TypeScript types
+// ============================================================================
+
+// Shared
+const USER_ROLES = {
+  STAFF: 'STAFF',
+  MANAGER: 'MANAGER',
+  ADMIN: 'ADMIN'
+};
+
+const ROLE_TYPES = {
+  ORGANIZER: 'ORGANIZER',
+  OPS_MANAGER: 'OPS_MANAGER',
+  COMMS_MANAGER: 'COMMS_MANAGER',
+  DEVELOPMENT: 'DEVELOPMENT',
+  DEPUTY_DIRECTOR: 'DEPUTY_DIRECTOR',
+  EXECUTIVE_DIRECTOR: 'EXECUTIVE_DIRECTOR'
+};
+
+const EMPLOYMENT_TYPES = {
+  FULL_TIME: 'Full Time',
+  PART_TIME: 'Part Time'
+};
+
+// PTO Module
+const PTO_TYPES = {
+  VACATION: 'Vacation',
+  SICK: 'Sick',
+  OTHER: 'Other'
+};
+
+const PTO_STATUSES = {
+  DRAFT: 'Draft',
+  SUBMITTED: 'Submitted',
+  APPROVED: 'Approved',
+  DENIED: 'Denied',
+  CHANGES_REQUESTED: 'ChangesRequested',
+  CANCELLED: 'Cancelled'
+};
+
+// Payroll Module
+const PAYROLL_STATUSES = {
+  PENDING: 'Pending',  // Pre-populated run waiting for data
+  DRAFT: 'Draft',
+  APPROVED: 'Approved',
+  PROCESSED: 'Processed'
+};
+
+const PAYROLL_SOURCE = {
+  PDF_IMPORT: 'PDF_Import',
+  MANUAL: 'Manual'
+};
+
+const REIMBURSEMENT_STATUSES = {
+  PENDING: 'Pending',
+  APPROVED: 'Approved',
+  REIMBURSED: 'Reimbursed',
+  DENIED: 'Denied'
+};
+
+const REIMBURSEMENT_TYPES = {
+  SECTION_129: 'Section 129 Plan - Dependent Care',
+  SECTION_127: 'Section 127 Plan - Educational Assistance',
+  EXPENSE: 'Expense Reimbursement'
+};
+
+const REIMBURSEMENT_METHODS = {
+  PAYROLL: 'Payroll Expense Reimbursement',
+  CHECK: 'Check',
+  DIRECT_DEPOSIT: 'Direct Deposit'
+};
+
+// Evaluation Module
+const EVALUATION_TYPES = {
+  QUARTERLY_SELF: 'QUARTERLY_SELF',
+  MID_YEAR_REVIEW: 'MID_YEAR_REVIEW',
+  PEER_REVIEW: 'PEER_REVIEW',
+  ANNUAL_REVIEW: 'ANNUAL_REVIEW'
+};
+
+const EVALUATION_STATUSES = {
+  DRAFT: 'Draft',
+  SUBMITTED: 'Submitted',
+  PEER_REVIEW: 'Peer-Review',
+  MANAGER_REVIEW: 'Manager-Review',
+  APPROVED: 'Approved',
+  COMPLETE: 'Complete'
+};
+
+const RATING_TYPES = {
+  SELF: 'SELF',
+  PEER: 'PEER',
+  MANAGER: 'MANAGER'
+};
+
+const GOAL_STATUSES = {
+  NOT_STARTED: 'Not Started',
+  IN_PROGRESS: 'In Progress',
+  COMPLETED: 'Completed',
+  DEFERRED: 'Deferred'
+};
+
+const PEER_REQUEST_STATUSES = {
+  PENDING: 'Pending',
+  IN_PROGRESS: 'In Progress',
+  COMPLETE: 'Complete'
+};
+
+const CYCLE_STATUSES = {
+  UPCOMING: 'Upcoming',
+  ACTIVE: 'Active',
+  COMPLETE: 'Complete'
+};
+
+// Workflow status sequences for evaluations
+const WORKFLOW_STATUS_SEQUENCES = {
+  'QUARTERLY_SELF': ['Draft', 'Submitted', 'Complete'],
+  'MID_YEAR_REVIEW': ['Draft', 'Submitted', 'Manager-Review', 'Approved', 'Complete'],
+  'PEER_REVIEW': ['Draft', 'Complete'],
+  'ANNUAL_REVIEW': ['Draft', 'Submitted', 'Peer-Review', 'Manager-Review', 'Complete']
+};
+
+// Export for other scripts (Apps Script doesn't use module.exports, but keeping for reference)
+if (typeof module !== 'undefined') {
+  module.exports = {
+    SHEET_NAMES,
+    COLUMN_MAPS,
+    USER_ROLES,
+    ROLE_TYPES,
+    EMPLOYMENT_TYPES,
+    PTO_TYPES,
+    PTO_STATUSES,
+    PAYROLL_STATUSES,
+    PAYROLL_SOURCE,
+    REIMBURSEMENT_STATUSES,
+    REIMBURSEMENT_TYPES,
+    REIMBURSEMENT_METHODS,
+    EVALUATION_TYPES,
+    EVALUATION_STATUSES,
+    RATING_TYPES,
+    GOAL_STATUSES,
+    PEER_REQUEST_STATUSES,
+    CYCLE_STATUSES,
+    WORKFLOW_STATUS_SEQUENCES,
+    getSpreadsheetId
+  };
+}
+
+
+================================================================================
+FILE: Auth.gs
+================================================================================
+
+/**
+ * Authentication and Authorization functions
+ * Handles Google Workspace authentication and row-level security for both PTO and Evaluations
+ */
+
+/**
+ * Get the currently authenticated user's email
+ * Supports demo mode via demoEmail parameter
+ * @param {Object} e - Event object with parameters (optional)
+ * @returns {string} User email or null
+ */
+function getCurrentUserEmail(e) {
+  // Demo mode: Check for demoEmail parameter first
+  if (e && e.parameter && e.parameter.demoEmail) {
+    return e.parameter.demoEmail;
+  }
+
+  // POST request: Check postData for demoEmail
+  if (e && e.postData && e.postData.contents) {
+    try {
+      const payload = JSON.parse(e.postData.contents);
+      if (payload.demoEmail) {
+        return payload.demoEmail;
+      }
+    } catch (parseError) {
+      // Continue to Google session if parsing fails
+    }
+  }
+
+  // Production mode: Use Google session
+  try {
+    const userEmail = Session.getActiveUser().getEmail();
+    return userEmail || null;
+  } catch (error) {
+    Logger.log('Error getting active user: ' + error.message);
+    return null;
+  }
+}
+
+/**
+ * Get user by their Google account email
+ * @param {string} email - User's email address
+ * @returns {Object|null} User object or null if not found
+ */
+function getUserByEmail(email) {
+  if (!email) {
+    return null;
+  }
+
+  const sheet = getSheet(SHEET_NAMES.USERS);
+  const data = sheet.getDataRange().getValues();
+
+  if (data.length <= 1) {
+    return null; // No users
+  }
+
+  const colMap = COLUMN_MAPS.USERS;
+
+  for (let i = 1; i < data.length; i++) {
+    const rowEmail = data[i][colMap.email];
+    if (rowEmail && rowEmail.toLowerCase() === email.toLowerCase()) {
+      return rowToUser(colMap, data[i]);
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Get user by ID
+ * @param {string} userId - User ID
+ * @returns {Object|null} User object or null if not found
+ */
+function getUserById(userId) {
+  if (!userId) {
+    return null;
+  }
+
+  const sheet = getSheet(SHEET_NAMES.USERS);
+  const data = sheet.getDataRange().getValues();
+
+  if (data.length <= 1) {
+    return null;
+  }
+
+  const colMap = COLUMN_MAPS.USERS;
+
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][colMap.id] === userId) {
+      return rowToUser(colMap, data[i]);
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Get all user IDs who are direct reports of a manager
+ * @param {string} managerId - Manager's user ID
+ * @returns {Array<string>} Array of user IDs
+ */
+function getDirectReportIds(managerId) {
+  const sheet = getSheet(SHEET_NAMES.USERS);
+  const data = sheet.getDataRange().getValues();
+
+  if (data.length <= 1) {
+    return [];
+  }
+
+  const colMap = COLUMN_MAPS.USERS;
+  const reportIds = [];
+
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][colMap.managerId] === managerId) {
+      reportIds.push(data[i][colMap.id]);
+    }
+  }
+
+  return reportIds;
+}
+
+/**
+ * Check if a user is an admin
+ * @param {Object} user - User object
+ * @returns {boolean} True if user is admin
+ */
+function isAdmin(user) {
+  return user && user.userRole === USER_ROLES.ADMIN;
+}
+
+/**
+ * Check if a user is a manager
+ * @param {Object} user - User object
+ * @returns {boolean} True if user is manager or admin
+ */
+function isManager(user) {
+  return user && (user.userRole === USER_ROLES.MANAGER || user.userRole === USER_ROLES.ADMIN);
+}
+
+// ============================================================================
+// PTO REQUEST AUTHORIZATION
+// ============================================================================
+
+/**
+ * Check if user can access a specific PTO request
+ * - Users can access their own requests
+ * - Managers can access their direct reports' requests
+ * - Approvers can access requests they're assigned to
+ * - Admins can access all requests
+ *
+ * @param {Object} currentUser - The authenticated user
+ * @param {Object} ptoRequest - The PTO request object
+ * @returns {boolean} True if user has access
+ */
+function canAccessPtoRequest(currentUser, ptoRequest) {
+  if (!currentUser || !ptoRequest) {
+    return false;
+  }
+
+  // Users can access their own
+  if (ptoRequest.userId === currentUser.id) {
+    return true;
+  }
+
+  // Admins can access all
+  if (isAdmin(currentUser)) {
+    return true;
+  }
+
+  // Approvers can access assigned requests
+  if (ptoRequest.approverId === currentUser.id) {
+    return true;
+  }
+
+  // Managers can access direct reports' requests
+  if (isManager(currentUser)) {
+    const directReportIds = getDirectReportIds(currentUser.id);
+    if (directReportIds.includes(ptoRequest.userId)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Check if user can modify a PTO request
+ * @param {Object} currentUser - The authenticated user
+ * @param {Object} ptoRequest - The PTO request object
+ * @param {string} action - Action type: 'EDIT', 'CANCEL', 'APPROVE', 'DENY'
+ * @returns {boolean} True if user can modify
+ */
+function canModifyPtoRequest(currentUser, ptoRequest, action) {
+  if (!currentUser || !ptoRequest) {
+    return false;
+  }
+
+  switch (action) {
+    case 'EDIT':
+      // Only owner can edit, and only in Draft or ChangesRequested status
+      return ptoRequest.userId === currentUser.id &&
+             (ptoRequest.status === PTO_STATUSES.DRAFT ||
+              ptoRequest.status === PTO_STATUSES.CHANGES_REQUESTED);
+
+    case 'CANCEL':
+      // Owner can cancel from Draft or Submitted status
+      return ptoRequest.userId === currentUser.id &&
+             (ptoRequest.status === PTO_STATUSES.DRAFT ||
+              ptoRequest.status === PTO_STATUSES.SUBMITTED);
+
+    case 'APPROVE':
+    case 'DENY':
+      // Must be in Submitted status
+      if (ptoRequest.status !== PTO_STATUSES.SUBMITTED) {
+        return false;
+      }
+
+      // Approver or admin can approve/deny
+      return ptoRequest.approverId === currentUser.id || isAdmin(currentUser);
+
+    default:
+      return false;
+  }
+}
+
+/**
+ * Check if user can manage system configuration
+ * @param {Object} currentUser - The authenticated user
+ * @returns {boolean} True if user can manage config
+ */
+function canManageSystemConfig(currentUser) {
+  return isAdmin(currentUser);
+}
+
+/**
+ * Check if user can manage holidays and blackout dates
+ * @param {Object} currentUser - The authenticated user
+ * @returns {boolean} True if user can manage
+ */
+function canManageHolidaysAndBlackouts(currentUser) {
+  return isAdmin(currentUser);
+}
+
+// ============================================================================
+// EVALUATION AUTHORIZATION (from Staff-Evaluation-System)
+// ============================================================================
+
+/**
+ * Check if user can access a specific evaluation
+ * - Users can always access their own evaluations
+ * - Managers can access their direct reports' evaluations
+ * - Admins can access all evaluations
+ *
+ * @param {Object} currentUser - The authenticated user
+ * @param {Object} evaluation - The evaluation object
+ * @returns {boolean} True if user has access
+ */
+function canAccessEvaluation(currentUser, evaluation) {
+  if (!currentUser || !evaluation) {
+    return false;
+  }
+
+  // Users can access their own
+  if (evaluation.employeeId === currentUser.id) {
+    return true;
+  }
+
+  // Admins can access all
+  if (isAdmin(currentUser)) {
+    return true;
+  }
+
+  // Managers can access direct reports
+  if (isManager(currentUser)) {
+    const directReportIds = getDirectReportIds(currentUser.id);
+    if (directReportIds.includes(evaluation.employeeId)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Check if user can modify an evaluation
+ * Different rules apply based on what type of modification
+ *
+ * @param {Object} currentUser - The authenticated user
+ * @param {Object} evaluation - The evaluation object
+ * @param {string} modificationType - Type of modification: 'SELF_RATING', 'MANAGER_RATING', 'PEER_RATING', 'STATUS', 'GOALS'
+ * @returns {boolean} True if user can modify
+ */
+function canModifyEvaluation(currentUser, evaluation, modificationType) {
+  if (!currentUser || !evaluation) {
+    return false;
+  }
+
+  switch (modificationType) {
+    case 'SELF_RATING':
+      // Only the employee can modify self ratings, and only in Draft status
+      return evaluation.employeeId === currentUser.id &&
+             evaluation.status === EVALUATION_STATUSES.DRAFT;
+
+    case 'MANAGER_RATING':
+      // Only the manager can modify manager ratings, in Manager-Review status
+      const targetUser = getUserById(evaluation.employeeId);
+      return targetUser &&
+             targetUser.managerId === currentUser.id &&
+             evaluation.status === EVALUATION_STATUSES.MANAGER_REVIEW;
+
+    case 'PEER_RATING':
+      // Handled separately in peer review requests
+      return true;
+
+    case 'GOALS':
+      // Employee can modify goals during Draft and Submitted status
+      return evaluation.employeeId === currentUser.id &&
+             (evaluation.status === EVALUATION_STATUSES.DRAFT ||
+              evaluation.status === EVALUATION_STATUSES.SUBMITTED);
+
+    case 'STATUS':
+      // Different rules for status transitions
+      return canTransitionStatus(currentUser, evaluation);
+
+    default:
+      return false;
+  }
+}
+
+/**
+ * Check if user can transition evaluation status
+ * @param {Object} currentUser - The authenticated user
+ * @param {Object} evaluation - The evaluation object
+ * @returns {boolean} True if user can transition
+ */
+function canTransitionStatus(currentUser, evaluation) {
+  if (!currentUser || !evaluation) {
+    return false;
+  }
+
+  const currentStatus = evaluation.status;
+  const evaluationType = evaluation.type;
+
+  // Get valid status sequence for this evaluation type
+  const statusSequence = WORKFLOW_STATUS_SEQUENCES[evaluationType];
+  if (!statusSequence) {
+    return false;
+  }
+
+  const currentIndex = statusSequence.indexOf(currentStatus);
+  if (currentIndex === -1) {
+    return false; // Invalid current status
+  }
+
+  // Can't transition from final status
+  if (currentIndex === statusSequence.length - 1) {
+    return false;
+  }
+
+  const nextStatus = statusSequence[currentIndex + 1];
+
+  // Employee can submit from Draft to Submitted
+  if (currentStatus === EVALUATION_STATUSES.DRAFT &&
+      nextStatus === EVALUATION_STATUSES.SUBMITTED &&
+      evaluation.employeeId === currentUser.id) {
+    return true;
+  }
+
+  // Manager can approve self-assessment
+  if (currentStatus === EVALUATION_STATUSES.SUBMITTED &&
+      nextStatus === EVALUATION_STATUSES.APPROVED &&
+      isManager(currentUser)) {
+    const targetUser = getUserById(evaluation.employeeId);
+    return targetUser && targetUser.managerId === currentUser.id;
+  }
+
+  // Manager can complete manager review
+  if (currentStatus === EVALUATION_STATUSES.MANAGER_REVIEW &&
+      isManager(currentUser)) {
+    const targetUser = getUserById(evaluation.employeeId);
+    return targetUser && targetUser.managerId === currentUser.id;
+  }
+
+  // Admin can do anything
+  if (isAdmin(currentUser)) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Check if user can pull back (revert status) an evaluation
+ * @param {Object} currentUser - The authenticated user
+ * @param {Object} evaluation - The evaluation object
+ * @returns {boolean} True if user can pull back
+ */
+function canPullBackEvaluation(currentUser, evaluation) {
+  if (!currentUser || !evaluation) {
+    return false;
+  }
+
+  // Only managers can pull back
+  if (!isManager(currentUser)) {
+    return false;
+  }
+
+  const targetUser = getUserById(evaluation.employeeId);
+  if (!targetUser || targetUser.managerId !== currentUser.id) {
+    return false;
+  }
+
+  // Can pull back from Submitted or Approved status back to Draft
+  return evaluation.status === EVALUATION_STATUSES.SUBMITTED ||
+         evaluation.status === EVALUATION_STATUSES.APPROVED;
+}
+
+/**
+ * Check if user can create a new evaluation
+ * @param {Object} currentUser - The authenticated user
+ * @param {string} forUserId - User ID the evaluation is for
+ * @returns {boolean} True if user can create
+ */
+function canCreateEvaluation(currentUser, forUserId) {
+  if (!currentUser || !forUserId) {
+    return false;
+  }
+
+  // Users can create evaluations for themselves
+  if (currentUser.id === forUserId) {
+    return true;
+  }
+
+  // Managers can create for direct reports
+  if (isManager(currentUser)) {
+    const directReportIds = getDirectReportIds(currentUser.id);
+    if (directReportIds.includes(forUserId)) {
+      return true;
+    }
+  }
+
+  // Admins can create for anyone
+  if (isAdmin(currentUser)) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Check if user can manage custom competencies
+ * @param {Object} currentUser - The authenticated user
+ * @returns {boolean} True if user can manage competencies
+ */
+function canManageCompetencies(currentUser) {
+  return isAdmin(currentUser);
+}
+
+/**
+ * Get the next status in the workflow
+ * @param {string} currentStatus - Current evaluation status
+ * @param {string} evaluationType - Evaluation type
+ * @returns {string|null} Next status or null if at end
+ */
+function getNextStatus(currentStatus, evaluationType) {
+  const sequence = WORKFLOW_STATUS_SEQUENCES[evaluationType];
+  if (!sequence) {
+    return null;
+  }
+
+  const currentIndex = sequence.indexOf(currentStatus);
+  if (currentIndex === -1 || currentIndex === sequence.length - 1) {
+    return null;
+  }
+
+  return sequence[currentIndex + 1];
+}
+
+/**
+ * Get the previous status in the workflow (for pull back)
+ * @param {string} currentStatus - Current evaluation status
+ * @param {string} evaluationType - Evaluation type
+ * @returns {string|null} Previous status or null if at beginning
+ */
+function getPreviousStatus(currentStatus, evaluationType) {
+  const sequence = WORKFLOW_STATUS_SEQUENCES[evaluationType];
+  if (!sequence) {
+    return null;
+  }
+
+  const currentIndex = sequence.indexOf(currentStatus);
+  if (currentIndex <= 0) {
+    return null;
+  }
+
+  return sequence[currentIndex - 1];
+}
+
+
+================================================================================
+FILE: Utils.gs
+================================================================================
+
+/**
+ * Utility functions for HR Management System (Google Apps Script backend)
+ * Includes ID generation, sheet access, row converters, and date utilities
+ */
+
+/**
+ * Generate a unique ID
+ * @param {string} prefix - Optional prefix (e.g., 'user', 'pto', 'eval')
+ * @returns {string} Generated ID
+ */
+function generateId(prefix = '') {
+  const timestamp = new Date().getTime();
+  const random = Math.random().toString(36).substring(2, 9);
+  return prefix ? `${prefix}_${timestamp}_${random}` : `${timestamp}_${random}`;
+}
+
+/**
+ * Get a sheet by name
+ * @param {string} sheetName - Name of the sheet
+ * @returns {GoogleAppsScript.Spreadsheet.Sheet} The sheet object
+ */
+function getSheet(sheetName) {
+  const spreadsheet = SpreadsheetApp.openById(getSpreadsheetId());
+  const sheet = spreadsheet.getSheetByName(sheetName);
+
+  if (!sheet) {
+    throw new Error(`Sheet not found: ${sheetName}`);
+  }
+
+  return sheet;
+}
+
+/**
+ * Get all data from a sheet as objects
+ * @param {string} sheetName - Name of the sheet
+ * @param {Object} columnMap - Column mapping object
+ * @param {Function} converter - Row to object converter function
+ * @returns {Array} Array of objects
+ */
+function getSheetData(sheetName, columnMap, converter) {
+  const sheet = getSheet(sheetName);
+  const data = sheet.getDataRange().getValues();
+
+  if (data.length <= 1) {
+    return []; // Only headers or empty
+  }
+
+  const results = [];
+  for (let i = 1; i < data.length; i++) {
+    results.push(converter(columnMap, data[i]));
+  }
+
+  return results;
+}
+
+/**
+ * Find a row index by ID
+ * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet - The sheet
+ * @param {number} idColumn - Column index for ID (usually 0)
+ * @param {string} id - ID to search for
+ * @returns {number} Row index (1-based) or -1 if not found
+ */
+function findRowById(sheet, idColumn, id) {
+  const data = sheet.getDataRange().getValues();
+
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][idColumn] === id) {
+      return i + 1; // Convert to 1-based index
+    }
+  }
+
+  return -1;
+}
+
+/**
+ * Append a new row to a sheet
+ * @param {string} sheetName - Name of the sheet
+ * @param {Array} rowData - Array of values to append
+ */
+function appendRow(sheetName, rowData) {
+  const sheet = getSheet(sheetName);
+  sheet.appendRow(rowData);
+}
+
+/**
+ * Update a row in a sheet
+ * @param {string} sheetName - Name of the sheet
+ * @param {number} rowIndex - Row index (1-based)
+ * @param {Array} rowData - Array of values to update
+ */
+function updateRow(sheetName, rowIndex, rowData) {
+  const sheet = getSheet(sheetName);
+  const range = sheet.getRange(rowIndex, 1, 1, rowData.length);
+  range.setValues([rowData]);
+}
+
+/**
+ * Delete a row from a sheet
+ * @param {string} sheetName - Name of the sheet
+ * @param {number} rowIndex - Row index (1-based)
+ */
+function deleteRow(sheetName, rowIndex) {
+  const sheet = getSheet(sheetName);
+  sheet.deleteRow(rowIndex);
+}
+
+// ============================================================================
+// ROW CONVERTERS - Convert sheet rows to objects
+// ============================================================================
+
+/**
+ * Convert a row array to User object
+ * @param {Object} colMap - Column mapping
+ * @param {Array} row - Row data
+ * @returns {Object} User object
+ */
+function rowToUser(colMap, row) {
+  return {
+    id: row[colMap.id] || '',
+    name: row[colMap.name] || '',
+    email: row[colMap.email] || '',
+    userRole: row[colMap.userRole] || '',
+    teamId: row[colMap.teamId] || '',
+    managerId: row[colMap.managerId] || null,
+    employmentType: row[colMap.employmentType] || '',
+    hireDate: row[colMap.hireDate] || null,
+    roleType: row[colMap.roleType] || '',
+    avatar: row[colMap.avatar] || null,
+    createdAt: row[colMap.createdAt] || null,
+    updatedAt: row[colMap.updatedAt] || null
+  };
+}
+
+/**
+ * Convert a row array to PtoRequest object
+ * @param {Object} colMap - Column mapping
+ * @param {Array} row - Row data
+ * @returns {Object} PtoRequest object
+ */
+function rowToPtoRequest(colMap, row) {
+  let history = [];
+  try {
+    if (row[colMap.history]) {
+      history = JSON.parse(row[colMap.history]);
+    }
+  } catch (e) {
+    Logger.log('Error parsing history JSON: ' + e.message);
+  }
+
+  return {
+    id: row[colMap.id] || '',
+    userId: row[colMap.userId] || '',
+    userName: row[colMap.userName] || '',
+    type: row[colMap.type] || '',
+    startDate: row[colMap.startDate] || null,
+    endDate: row[colMap.endDate] || null,
+    isHalfDayStart: row[colMap.isHalfDayStart] === true || row[colMap.isHalfDayStart] === 'TRUE',
+    isHalfDayEnd: row[colMap.isHalfDayEnd] === true || row[colMap.isHalfDayEnd] === 'TRUE',
+    totalHours: row[colMap.totalHours] || 0,
+    reason: row[colMap.reason] || '',
+    attachment: row[colMap.attachment] || null,
+    status: row[colMap.status] || '',
+    managerComment: row[colMap.managerComment] || '',
+    employeeComment: row[colMap.employeeComment] || '',
+    approverId: row[colMap.approverId] || '',
+    approverName: row[colMap.approverName] || '',
+    createdAt: row[colMap.createdAt] || null,
+    updatedAt: row[colMap.updatedAt] || null,
+    history: history
+  };
+}
+
+/**
+ * Convert a row array to PtoBalance object
+ * @param {Object} colMap - Column mapping
+ * @param {Array} row - Row data
+ * @returns {Object} PtoBalance object
+ */
+function rowToPtoBalance(colMap, row) {
+  return {
+    userId: row[colMap.userId] || '',
+    year: row[colMap.year] || 0,
+    availableHours: row[colMap.availableHours] || 0,
+    usedHours: row[colMap.usedHours] || 0,
+    pendingHours: row[colMap.pendingHours] || 0
+  };
+}
+
+/**
+ * Convert a row array to Holiday object
+ * @param {Object} colMap - Column mapping
+ * @param {Array} row - Row data
+ * @returns {Object} Holiday object
+ */
+function rowToHoliday(colMap, row) {
+  const holiday = {
+    id: row[colMap.id] || '',
+    date: row[colMap.date] || null,
+    name: row[colMap.name] || ''
+  };
+
+  // Include endDate if present (for multi-day holidays)
+  if (row[colMap.endDate]) {
+    holiday.endDate = row[colMap.endDate];
+  }
+
+  return holiday;
+}
+
+/**
+ * Convert a row array to BlackoutDate object
+ * @param {Object} colMap - Column mapping
+ * @param {Array} row - Row data
+ * @returns {Object} BlackoutDate object
+ */
+function rowToBlackoutDate(colMap, row) {
+  const blackout = {
+    id: row[colMap.id] || '',
+    date: row[colMap.date] || null,
+    name: row[colMap.name] || '',
+    createdBy: row[colMap.createdBy] || '',
+    createdAt: row[colMap.createdAt] || null
+  };
+
+  // Include endDate if present (for multi-day blackout periods)
+  if (row[colMap.endDate]) {
+    blackout.endDate = row[colMap.endDate];
+  }
+
+  return blackout;
+}
+
+/**
+ * Convert a row array to Evaluation object
+ * @param {Object} colMap - Column mapping
+ * @param {Array} row - Row data
+ * @returns {Object} Evaluation object
+ */
+function rowToEvaluation(colMap, row) {
+  return {
+    id: row[colMap.id] || '',
+    employeeId: row[colMap.employeeId] || '',
+    cycleId: row[colMap.cycleId] || '',
+    type: row[colMap.type] || '',
+    status: row[colMap.status] || '',
+    overallSummary: row[colMap.overallSummary] || null,
+    createdAt: row[colMap.createdAt] || null,
+    updatedAt: row[colMap.updatedAt] || null
+  };
+}
+
+/**
+ * Convert a row array to Rating object
+ * @param {Object} colMap - Column mapping
+ * @param {Array} row - Row data
+ * @returns {Object} Rating object
+ */
+function rowToRating(colMap, row) {
+  return {
+    id: row[colMap.id] || '',
+    evaluationId: row[colMap.evaluationId] || '',
+    ratingType: row[colMap.ratingType] || '',
+    competencyId: row[colMap.competencyId] || '',
+    score: row[colMap.score] || 0,
+    comments: row[colMap.comments] || '',
+    reviewerId: row[colMap.reviewerId] || null,
+    createdAt: row[colMap.createdAt] || null,
+    updatedAt: row[colMap.updatedAt] || null
+  };
+}
+
+/**
+ * Convert a row array to Goal object
+ * @param {Object} colMap - Column mapping
+ * @param {Array} row - Row data
+ * @returns {Object} Goal object
+ */
+function rowToGoal(colMap, row) {
+  return {
+    id: row[colMap.id] || '',
+    evaluationId: row[colMap.evaluationId] || '',
+    description: row[colMap.description] || '',
+    status: row[colMap.status] || '',
+    achievements: row[colMap.achievements] || '',
+    challenges: row[colMap.challenges] || '',
+    createdAt: row[colMap.createdAt] || null,
+    updatedAt: row[colMap.updatedAt] || null
+  };
+}
+
+/**
+ * Convert a row array to EvaluationCycle object
+ * @param {Object} colMap - Column mapping
+ * @param {Array} row - Row data
+ * @returns {Object} EvaluationCycle object
+ */
+function rowToCycle(colMap, row) {
+  return {
+    id: row[colMap.id] || '',
+    name: row[colMap.name] || '',
+    year: row[colMap.year] || 0,
+    type: row[colMap.type] || '',
+    deadline: row[colMap.deadline] || null,
+    selfDeadline: row[colMap.selfDeadline] || null,
+    peerDeadline: row[colMap.peerDeadline] || null,
+    managerDeadline: row[colMap.managerDeadline] || null,
+    status: row[colMap.status] || ''
+  };
+}
+
+/**
+ * Convert a row array to PeerReviewRequest object
+ * @param {Object} colMap - Column mapping
+ * @param {Array} row - Row data
+ * @returns {Object} PeerReviewRequest object
+ */
+function rowToPeerRequest(colMap, row) {
+  return {
+    id: row[colMap.id] || '',
+    evaluationId: row[colMap.evaluationId] || '',
+    reviewerId: row[colMap.reviewerId] || '',
+    targetUserId: row[colMap.targetUserId] || '',
+    targetUserName: row[colMap.targetUserName] || '',
+    status: row[colMap.status] || '',
+    createdAt: row[colMap.createdAt] || null,
+    updatedAt: row[colMap.updatedAt] || null
+  };
+}
+
+/**
+ * Convert a row array to Competency object
+ * @param {Object} colMap - Column mapping
+ * @param {Array} row - Row data
+ * @returns {Object} Competency object
+ */
+function rowToCompetency(colMap, row) {
+  return {
+    id: row[colMap.id] || '',
+    name: row[colMap.name] || '',
+    description: row[colMap.description] || '',
+    category: row[colMap.category] || '',
+    roleType: row[colMap.roleType] || null,
+    isCustom: row[colMap.isCustom] === true || row[colMap.isCustom] === 'TRUE',
+    createdAt: row[colMap.createdAt] || null
+  };
+}
+
+/**
+ * Convert a row array to PayrollHistory object
+ * @param {Object} colMap - Column mapping
+ * @param {Array} row - Row data
+ * @returns {Object} PayrollHistory object
+ */
+function rowToPayrollHistory(colMap, row) {
+  return {
+    id: row[colMap.id] || '',
+    runDate: row[colMap.runDate] || null,
+    checkDate: row[colMap.checkDate] || null,
+    payPeriodStart: row[colMap.payPeriodStart] || null,
+    payPeriodEnd: row[colMap.payPeriodEnd] || null,
+    totalGross: parseFloat(row[colMap.totalGross]) || 0,
+    totalNet: parseFloat(row[colMap.totalNet]) || 0,
+    totalTaxes: parseFloat(row[colMap.totalTaxes]) || 0,
+    totalDeductions: parseFloat(row[colMap.totalDeductions]) || 0,
+    status: row[colMap.status] || '',
+    processedBy: row[colMap.processedBy] || '',
+    notes: row[colMap.notes] || '',
+    source: row[colMap.source] || '',
+    createdAt: row[colMap.createdAt] || null,
+    updatedAt: row[colMap.updatedAt] || null
+  };
+}
+
+/**
+ * Convert a row array to Reimbursement object
+ * @param {Object} colMap - Column mapping
+ * @param {Array} row - Row data
+ * @returns {Object} Reimbursement object
+ */
+function rowToReimbursement(colMap, row) {
+  return {
+    id: row[colMap.id] || '',
+    staffName: row[colMap.staffName] || '',
+    staffEmail: row[colMap.staffEmail] || '',
+    expenseDate: row[colMap.expenseDate] || null,
+    description: row[colMap.description] || '',
+    amount: parseFloat(row[colMap.amount]) || 0,
+    reimbursementType: row[colMap.reimbursementType] || '',
+    methodOfReimbursement: row[colMap.methodOfReimbursement] || '',
+    status: row[colMap.status] || '',
+    submittedAt: row[colMap.submittedAt] || null,
+    dateReimbursed: row[colMap.dateReimbursed] || null,
+    reviewerId: row[colMap.reviewerId] || null,
+    reviewerName: row[colMap.reviewerName] || null,
+    notes: row[colMap.notes] || '',
+    createdAt: row[colMap.createdAt] || null,
+    updatedAt: row[colMap.updatedAt] || null
+  };
+}
+
+// ============================================================================
+// DATE UTILITIES FOR PTO CALCULATIONS
+// ============================================================================
+
+/**
+ * Format ISO date string for Sheets
+ * @param {string} isoDate - ISO date string
+ * @returns {Date} Date object
+ */
+function parseDate(isoDate) {
+  return isoDate ? new Date(isoDate) : null;
+}
+
+/**
+ * Format date for API response
+ * @param {Date} date - Date object
+ * @returns {string} ISO date string
+ */
+function formatDate(date) {
+  return date ? date.toISOString() : null;
+}
+
+/**
+ * Get current timestamp
+ * @returns {Date} Current date
+ */
+function getCurrentTimestamp() {
+  return new Date();
+}
+
+/**
+ * Check if a date is a weekend
+ * @param {Date} date - Date to check
+ * @returns {boolean} True if weekend
+ */
+function isWeekend(date) {
+  const day = date.getDay();
+  return day === 0 || day === 6; // Sunday or Saturday
+}
+
+/**
+ * Check if a date is a holiday
+ * @param {Date} date - Date to check
+ * @param {Array} holidays - Array of holiday objects
+ * @returns {boolean} True if holiday
+ */
+function isHoliday(date, holidays) {
+  const dateStr = Utilities.formatDate(date, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+
+  for (const holiday of holidays) {
+    if (holiday.date === dateStr) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Calculate total working hours for a PTO request
+ * @param {string} startDate - Start date (yyyy-MM-dd)
+ * @param {string} endDate - End date (yyyy-MM-dd)
+ * @param {boolean} isHalfDayStart - Half day on start
+ * @param {boolean} isHalfDayEnd - Half day on end
+ * @param {Array} holidays - Array of holidays
+ * @returns {number} Total hours
+ */
+function calculateTotalHours(startDate, endDate, isHalfDayStart, isHalfDayEnd, holidays) {
+  let totalHours = 0;
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  let currentDate = new Date(start);
+
+  while (currentDate <= end) {
+    if (!isWeekend(currentDate) && !isHoliday(currentDate, holidays)) {
+      let dayHours = 8; // Standard full day
+
+      const currentDateStr = Utilities.formatDate(currentDate, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+      const startDateStr = Utilities.formatDate(start, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+      const endDateStr = Utilities.formatDate(end, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+
+      if (currentDateStr === startDateStr && isHalfDayStart) {
+        dayHours = 4;
+      } else if (currentDateStr === endDateStr && isHalfDayEnd) {
+        dayHours = 4;
+      }
+
+      totalHours += dayHours;
+    }
+
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+
+  return totalHours;
+}
+
+/**
+ * Check if PTO request conflicts with blackout dates
+ * @param {string} startDate - Start date (yyyy-MM-dd)
+ * @param {string} endDate - End date (yyyy-MM-dd)
+ * @param {Array} blackoutDates - Array of blackout date objects
+ * @returns {Object} {conflict: boolean, date: string, name: string}
+ */
+function hasBlackoutConflict(startDate, endDate, blackoutDates) {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  for (const blackout of blackoutDates) {
+    const blackoutDate = new Date(blackout.date);
+    if (blackoutDate >= start && blackoutDate <= end) {
+      return { conflict: true, date: blackout.date, name: blackout.name };
+    }
+  }
+
+  return { conflict: false };
+}
+
+/**
+ * Add entry to audit trail history
+ * @param {Array} history - Existing history array
+ * @param {string} actorId - User ID performing action
+ * @param {string} actorName - User name
+ * @param {string} action - Action description
+ * @param {string} note - Optional note
+ * @returns {string} JSON string of updated history
+ */
+function addAuditEntry(history, actorId, actorName, action, note) {
+  const entry = {
+    timestamp: new Date().toISOString(),
+    actorId: actorId,
+    actorName: actorName,
+    action: action,
+    note: note || ''
+  };
+
+  history.push(entry);
+  return JSON.stringify(history);
+}
+
+// ============================================================================
+// RESPONSE FORMATTERS
+// ============================================================================
+
+/**
+ * Create a success response
+ * @param {*} data - Response data
+ * @returns {Object} Success response
+ */
+function successResponse(data) {
+  return {
+    success: true,
+    data: data,
+    timestamp: new Date().toISOString()
+  };
+}
+
+/**
+ * Create an error response
+ * @param {string} message - Error message
+ * @param {string} code - Error code
+ * @returns {Object} Error response
+ */
+function errorResponse(message, code = 'ERROR') {
+  return {
+    success: false,
+    error: message,
+    code: code,
+    timestamp: new Date().toISOString()
+  };
+}
+
+
+================================================================================
+FILE: UserService.gs
+================================================================================
+
+/**
+ * User Service
+ * Handles user-related operations
+ */
+
+/**
+ * Get current authenticated user
+ * @param {Object} currentUser - The authenticated user
+ * @returns {Object} Success response with user data
+ */
+function handleGetCurrentUser(currentUser) {
+  return successResponse(currentUser);
+}
+
+/**
+ * Get demo users for login page (public endpoint - no auth required)
+ * Returns only safe fields needed for demo login
+ * @returns {Object} Success response with user data
+ */
+function handleGetDemoUsers() {
+  try {
+    const users = getSheetData(SHEET_NAMES.USERS, COLUMN_MAPS.USERS, rowToUser);
+
+    // Only return fields needed for demo login
+    const demoUsers = users.map(user => ({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      userRole: user.userRole,
+      teamId: user.teamId,
+      employmentType: user.employmentType,
+      hireDate: user.hireDate,
+      roleType: user.roleType,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt
+    }));
+
+    return successResponse(demoUsers);
+  } catch (error) {
+    Logger.log('Error in handleGetDemoUsers: ' + error.message);
+    return errorResponse('Failed to retrieve demo users', 'GET_DEMO_USERS_ERROR');
+  }
+}
+
+/**
+ * Get all users (Admin only)
+ * @param {Object} currentUser - The authenticated user
+ * @returns {Object} Success or error response
+ */
+function handleGetUsers(currentUser) {
+  if (!isAdmin(currentUser)) {
+    return errorResponse('Unauthorized: Admin access required', 'UNAUTHORIZED');
+  }
+
+  try {
+    const users = getSheetData(SHEET_NAMES.USERS, COLUMN_MAPS.USERS, rowToUser);
+    return successResponse(users);
+  } catch (error) {
+    Logger.log('Error in handleGetUsers: ' + error.message);
+    return errorResponse('Failed to retrieve users', 'GET_USERS_ERROR');
+  }
+}
+
+/**
+ * Get manager's direct reports
+ * @param {Object} currentUser - The authenticated user
+ * @returns {Object} Success or error response
+ */
+function handleGetDirectReports(currentUser) {
+  if (!isManager(currentUser)) {
+    return errorResponse('Unauthorized: Manager access required', 'UNAUTHORIZED');
+  }
+
+  try {
+    const directReportIds = getDirectReportIds(currentUser.id);
+    const allUsers = getSheetData(SHEET_NAMES.USERS, COLUMN_MAPS.USERS, rowToUser);
+
+    const directReports = allUsers.filter(user => directReportIds.includes(user.id));
+
+    return successResponse(directReports);
+  } catch (error) {
+    Logger.log('Error in handleGetDirectReports: ' + error.message);
+    return errorResponse('Failed to retrieve direct reports', 'GET_REPORTS_ERROR');
+  }
+}
+
+
+================================================================================
+FILE: PtoService.gs
+================================================================================
+
+/**
+ * PTO Request Service
+ * Handles PTO request CRUD operations, approvals, and cancellations
+ */
+
+/**
+ * Get PTO requests with optional filters
+ * @param {Object} currentUser - The authenticated user
+ * @param {Object} payload - {userId (optional), status (optional), startDate (optional), endDate (optional)}
+ * @returns {Object} Success or error response
+ */
+function handleGetPtoRequests(currentUser, payload) {
+  try {
+    const allRequests = getSheetData(SHEET_NAMES.PTO_REQUESTS, COLUMN_MAPS.PTO_REQUESTS, rowToPtoRequest);
+
+    // Filter by authorization
+    let filteredRequests = allRequests.filter(req => canAccessPtoRequest(currentUser, req));
+
+    // Apply optional filters
+    if (payload.userId) {
+      filteredRequests = filteredRequests.filter(req => req.userId === payload.userId);
+    }
+
+    if (payload.status) {
+      filteredRequests = filteredRequests.filter(req => req.status === payload.status);
+    }
+
+    if (payload.startDate) {
+      filteredRequests = filteredRequests.filter(req => req.startDate >= payload.startDate);
+    }
+
+    if (payload.endDate) {
+      filteredRequests = filteredRequests.filter(req => req.endDate <= payload.endDate);
+    }
+
+    return successResponse(filteredRequests);
+  } catch (error) {
+    Logger.log('Error in handleGetPtoRequests: ' + error.message);
+    return errorResponse('Failed to retrieve PTO requests', 'GET_REQUESTS_ERROR');
+  }
+}
+
+/**
+ * Get a single PTO request by ID
+ * @param {Object} currentUser - The authenticated user
+ * @param {Object} payload - {requestId}
+ * @returns {Object} Success or error response
+ */
+function handleGetPtoRequest(currentUser, payload) {
+  const { requestId } = payload;
+
+  if (!requestId) {
+    return errorResponse('Missing requestId parameter', 'MISSING_PARAMETER');
+  }
+
+  try {
+    const allRequests = getSheetData(SHEET_NAMES.PTO_REQUESTS, COLUMN_MAPS.PTO_REQUESTS, rowToPtoRequest);
+    const request = allRequests.find(req => req.id === requestId);
+
+    if (!request) {
+      return errorResponse('PTO request not found', 'NOT_FOUND');
+    }
+
+    if (!canAccessPtoRequest(currentUser, request)) {
+      return errorResponse('Unauthorized: Cannot access this request', 'UNAUTHORIZED');
+    }
+
+    return successResponse(request);
+  } catch (error) {
+    Logger.log('Error in handleGetPtoRequest: ' + error.message);
+    return errorResponse('Failed to retrieve PTO request', 'GET_REQUEST_ERROR');
+  }
+}
+
+/**
+ * Create a new PTO request
+ * @param {Object} currentUser - The authenticated user
+ * @param {Object} payload - Request data
+ * @returns {Object} Success or error response
+ */
+function handleCreatePtoRequest(currentUser, payload) {
+  const { type, startDate, endDate, isHalfDayStart, isHalfDayEnd, reason, attachment, status } = payload;
+
+  if (!type || !startDate || !endDate) {
+    return errorResponse('Missing required fields: type, startDate, endDate', 'MISSING_PARAMETERS');
+  }
+
+  try {
+    // Get holidays for calculation
+    const holidays = getSheetData(SHEET_NAMES.HOLIDAYS, COLUMN_MAPS.HOLIDAYS, rowToHoliday);
+
+    // Calculate total hours
+    const totalHours = calculateTotalHours(
+      startDate,
+      endDate,
+      isHalfDayStart || false,
+      isHalfDayEnd || false,
+      holidays
+    );
+
+    // Check for blackout date conflicts
+    const blackoutDates = getSheetData(SHEET_NAMES.BLACKOUT_DATES, COLUMN_MAPS.BLACKOUT_DATES, rowToBlackoutDate);
+    const blackoutConflict = hasBlackoutConflict(startDate, endDate, blackoutDates);
+
+    if (blackoutConflict.conflict) {
+      return errorResponse(
+        `PTO request conflicts with blackout date: ${blackoutConflict.name} on ${blackoutConflict.date}`,
+        'BLACKOUT_CONFLICT'
+      );
+    }
+
+    // Get approver (user's manager)
+    const approver = currentUser.managerId ? getUserById(currentUser.managerId) : null;
+
+    if (!approver) {
+      return errorResponse('No manager assigned. Please contact your administrator.', 'NO_APPROVER');
+    }
+
+    // Create request
+    const id = generateId('pto');
+    const now = getCurrentTimestamp();
+
+    // Use the provided status or default to DRAFT
+    const requestStatus = status || PTO_STATUSES.DRAFT;
+
+    const history = [
+      {
+        timestamp: now.toISOString(),
+        actorId: currentUser.id,
+        actorName: currentUser.name,
+        action: requestStatus === PTO_STATUSES.SUBMITTED ? 'Submitted' : 'Created',
+        note: requestStatus === PTO_STATUSES.SUBMITTED ? 'Request submitted for approval' : 'Request created as draft'
+      }
+    ];
+
+    const colMap = COLUMN_MAPS.PTO_REQUESTS;
+    const rowData = Array(Object.keys(colMap).length).fill('');
+
+    rowData[colMap.id] = id;
+    rowData[colMap.userId] = currentUser.id;
+    rowData[colMap.userName] = currentUser.name;
+    rowData[colMap.type] = type;
+    rowData[colMap.startDate] = startDate;
+    rowData[colMap.endDate] = endDate;
+    rowData[colMap.isHalfDayStart] = isHalfDayStart || false;
+    rowData[colMap.isHalfDayEnd] = isHalfDayEnd || false;
+    rowData[colMap.totalHours] = totalHours;
+    rowData[colMap.reason] = reason || '';
+    rowData[colMap.attachment] = attachment || '';
+    rowData[colMap.status] = requestStatus;
+    rowData[colMap.managerComment] = '';
+    rowData[colMap.employeeComment] = '';
+    rowData[colMap.approverId] = approver.id;
+    rowData[colMap.approverName] = approver.name;
+    rowData[colMap.createdAt] = now;
+    rowData[colMap.updatedAt] = now;
+    rowData[colMap.history] = JSON.stringify(history);
+
+    appendRow(SHEET_NAMES.PTO_REQUESTS, rowData);
+
+    const request = rowToPtoRequest(colMap, rowData);
+    return successResponse(request);
+  } catch (error) {
+    Logger.log('Error in handleCreatePtoRequest: ' + error.message);
+    return errorResponse('Failed to create PTO request: ' + error.message, 'CREATE_REQUEST_ERROR');
+  }
+}
+
+/**
+ * Update a PTO request (Draft or ChangesRequested status only)
+ * @param {Object} currentUser - The authenticated user
+ * @param {Object} payload - {requestId, updates}
+ * @returns {Object} Success or error response
+ */
+function handleUpdatePtoRequest(currentUser, payload) {
+  const { requestId, updates } = payload;
+
+  if (!requestId) {
+    return errorResponse('Missing requestId parameter', 'MISSING_PARAMETER');
+  }
+
+  try {
+    const sheet = getSheet(SHEET_NAMES.PTO_REQUESTS);
+    const colMap = COLUMN_MAPS.PTO_REQUESTS;
+    const rowIndex = findRowById(sheet, colMap.id, requestId);
+
+    if (rowIndex === -1) {
+      return errorResponse('PTO request not found', 'NOT_FOUND');
+    }
+
+    const data = sheet.getDataRange().getValues();
+    const rowData = data[rowIndex - 1];
+    const request = rowToPtoRequest(colMap, rowData);
+
+    if (!canModifyPtoRequest(currentUser, request, 'EDIT')) {
+      return errorResponse('Unauthorized: Cannot edit this request', 'UNAUTHORIZED');
+    }
+
+    // Update allowed fields
+    if (updates.type) rowData[colMap.type] = updates.type;
+    if (updates.startDate) rowData[colMap.startDate] = updates.startDate;
+    if (updates.endDate) rowData[colMap.endDate] = updates.endDate;
+    if (updates.isHalfDayStart !== undefined) rowData[colMap.isHalfDayStart] = updates.isHalfDayStart;
+    if (updates.isHalfDayEnd !== undefined) rowData[colMap.isHalfDayEnd] = updates.isHalfDayEnd;
+    if (updates.reason !== undefined) rowData[colMap.reason] = updates.reason;
+    if (updates.attachment !== undefined) rowData[colMap.attachment] = updates.attachment;
+    if (updates.employeeComment !== undefined) rowData[colMap.employeeComment] = updates.employeeComment;
+    if (updates.status) rowData[colMap.status] = updates.status;
+
+    // Recalculate total hours if dates changed
+    if (updates.startDate || updates.endDate || updates.isHalfDayStart !== undefined || updates.isHalfDayEnd !== undefined) {
+      const holidays = getSheetData(SHEET_NAMES.HOLIDAYS, COLUMN_MAPS.HOLIDAYS, rowToHoliday);
+      rowData[colMap.totalHours] = calculateTotalHours(
+        rowData[colMap.startDate],
+        rowData[colMap.endDate],
+        rowData[colMap.isHalfDayStart],
+        rowData[colMap.isHalfDayEnd],
+        holidays
+      );
+    }
+
+    // Update timestamp and history
+    rowData[colMap.updatedAt] = getCurrentTimestamp();
+    const history = JSON.parse(rowData[colMap.history] || '[]');
+    rowData[colMap.history] = addAuditEntry(history, currentUser.id, currentUser.name, 'Updated', 'Request updated');
+
+    updateRow(SHEET_NAMES.PTO_REQUESTS, rowIndex, rowData);
+
+    const updatedRequest = rowToPtoRequest(colMap, rowData);
+    return successResponse(updatedRequest);
+  } catch (error) {
+    Logger.log('Error in handleUpdatePtoRequest: ' + error.message);
+    return errorResponse('Failed to update PTO request', 'UPDATE_REQUEST_ERROR');
+  }
+}
+
+/**
+ * Approve a PTO request (Manager/Approver only)
+ * @param {Object} currentUser - The authenticated user
+ * @param {Object} payload - {requestId, comment (optional)}
+ * @returns {Object} Success or error response
+ */
+function handleApprovePtoRequest(currentUser, payload) {
+  const { requestId, comment } = payload;
+
+  if (!requestId) {
+    return errorResponse('Missing requestId parameter', 'MISSING_PARAMETER');
+  }
+
+  try {
+    const sheet = getSheet(SHEET_NAMES.PTO_REQUESTS);
+    const colMap = COLUMN_MAPS.PTO_REQUESTS;
+    const rowIndex = findRowById(sheet, colMap.id, requestId);
+
+    if (rowIndex === -1) {
+      return errorResponse('PTO request not found', 'NOT_FOUND');
+    }
+
+    const data = sheet.getDataRange().getValues();
+    const rowData = data[rowIndex - 1];
+    const request = rowToPtoRequest(colMap, rowData);
+
+    if (!canModifyPtoRequest(currentUser, request, 'APPROVE')) {
+      return errorResponse('Unauthorized: Cannot approve this request', 'UNAUTHORIZED');
+    }
+
+    // Update status to Approved
+    rowData[colMap.status] = PTO_STATUSES.APPROVED;
+    rowData[colMap.managerComment] = comment || 'Approved';
+    rowData[colMap.updatedAt] = getCurrentTimestamp();
+
+    const history = JSON.parse(rowData[colMap.history] || '[]');
+    rowData[colMap.history] = addAuditEntry(
+      history,
+      currentUser.id,
+      currentUser.name,
+      'Approved',
+      comment || 'Request approved'
+    );
+
+    updateRow(SHEET_NAMES.PTO_REQUESTS, rowIndex, rowData);
+
+    // Sync balance to sheet after approval
+    try {
+      const requestYear = new Date(request.startDate).getFullYear();
+      syncBalanceToSheet(request.userId, requestYear);
+    } catch (balanceError) {
+      Logger.log('Failed to sync balance after approval: ' + balanceError.message);
+      // Continue - don't fail the approval if balance sync fails
+    }
+
+    const updatedRequest = rowToPtoRequest(colMap, rowData);
+    return successResponse(updatedRequest);
+  } catch (error) {
+    Logger.log('Error in handleApprovePtoRequest: ' + error.message);
+    return errorResponse('Failed to approve PTO request', 'APPROVE_REQUEST_ERROR');
+  }
+}
+
+/**
+ * Deny a PTO request (Manager/Approver only)
+ * @param {Object} currentUser - The authenticated user
+ * @param {Object} payload - {requestId, comment}
+ * @returns {Object} Success or error response
+ */
+function handleDenyPtoRequest(currentUser, payload) {
+  const { requestId, comment } = payload;
+
+  if (!requestId) {
+    return errorResponse('Missing requestId parameter', 'MISSING_PARAMETER');
+  }
+
+  if (!comment) {
+    return errorResponse('Comment required when denying a request', 'MISSING_PARAMETER');
+  }
+
+  try {
+    const sheet = getSheet(SHEET_NAMES.PTO_REQUESTS);
+    const colMap = COLUMN_MAPS.PTO_REQUESTS;
+    const rowIndex = findRowById(sheet, colMap.id, requestId);
+
+    if (rowIndex === -1) {
+      return errorResponse('PTO request not found', 'NOT_FOUND');
+    }
+
+    const data = sheet.getDataRange().getValues();
+    const rowData = data[rowIndex - 1];
+    const request = rowToPtoRequest(colMap, rowData);
+
+    if (!canModifyPtoRequest(currentUser, request, 'DENY')) {
+      return errorResponse('Unauthorized: Cannot deny this request', 'UNAUTHORIZED');
+    }
+
+    // Update status to Denied
+    rowData[colMap.status] = PTO_STATUSES.DENIED;
+    rowData[colMap.managerComment] = comment;
+    rowData[colMap.updatedAt] = getCurrentTimestamp();
+
+    const history = JSON.parse(rowData[colMap.history] || '[]');
+    rowData[colMap.history] = addAuditEntry(history, currentUser.id, currentUser.name, 'Denied', comment);
+
+    updateRow(SHEET_NAMES.PTO_REQUESTS, rowIndex, rowData);
+
+    // Sync balance to sheet after denial (to update pending hours)
+    try {
+      const requestYear = new Date(request.startDate).getFullYear();
+      syncBalanceToSheet(request.userId, requestYear);
+    } catch (balanceError) {
+      Logger.log('Failed to sync balance after denial: ' + balanceError.message);
+      // Continue - don't fail the denial if balance sync fails
+    }
+
+    const updatedRequest = rowToPtoRequest(colMap, rowData);
+    return successResponse(updatedRequest);
+  } catch (error) {
+    Logger.log('Error in handleDenyPtoRequest: ' + error.message);
+    return errorResponse('Failed to deny PTO request', 'DENY_REQUEST_ERROR');
+  }
+}
+
+/**
+ * Cancel a PTO request (Employee only)
+ * @param {Object} currentUser - The authenticated user
+ * @param {Object} payload - {requestId}
+ * @returns {Object} Success or error response
+ */
+function handleCancelPtoRequest(currentUser, payload) {
+  const { requestId } = payload;
+
+  if (!requestId) {
+    return errorResponse('Missing requestId parameter', 'MISSING_PARAMETER');
+  }
+
+  try {
+    const sheet = getSheet(SHEET_NAMES.PTO_REQUESTS);
+    const colMap = COLUMN_MAPS.PTO_REQUESTS;
+    const rowIndex = findRowById(sheet, colMap.id, requestId);
+
+    if (rowIndex === -1) {
+      return errorResponse('PTO request not found', 'NOT_FOUND');
+    }
+
+    const data = sheet.getDataRange().getValues();
+    const rowData = data[rowIndex - 1];
+    const request = rowToPtoRequest(colMap, rowData);
+
+    if (!canModifyPtoRequest(currentUser, request, 'CANCEL')) {
+      return errorResponse('Unauthorized: Cannot cancel this request', 'UNAUTHORIZED');
+    }
+
+    // Update status to Cancelled
+    rowData[colMap.status] = PTO_STATUSES.CANCELLED;
+    rowData[colMap.updatedAt] = getCurrentTimestamp();
+
+    const history = JSON.parse(rowData[colMap.history] || '[]');
+    rowData[colMap.history] = addAuditEntry(
+      history,
+      currentUser.id,
+      currentUser.name,
+      'Cancelled',
+      'Request cancelled by employee'
+    );
+
+    updateRow(SHEET_NAMES.PTO_REQUESTS, rowIndex, rowData);
+
+    const updatedRequest = rowToPtoRequest(colMap, rowData);
+    return successResponse(updatedRequest);
+  } catch (error) {
+    Logger.log('Error in handleCancelPtoRequest: ' + error.message);
+    return errorResponse('Failed to cancel PTO request', 'CANCEL_REQUEST_ERROR');
+  }
+}
+
+
+================================================================================
+FILE: PtoBalanceService.gs
+================================================================================
+
+/**
+ * PTO Balance Service
+ * Calculates and manages PTO balances for users
+ */
+
+/**
+ * Get PTO balance for a user
+ * @param {Object} currentUser - The authenticated user
+ * @param {Object} payload - {userId (optional), year (optional)}
+ * @returns {Object} Success or error response
+ */
+function handleGetPtoBalance(currentUser, payload) {
+  const userId = payload.userId || currentUser.id;
+  // Default to 2026 for testing with current data
+  // TODO: Revert to new Date().getFullYear() after testing
+  const year = parseInt(payload.year) || 2026;
+
+  // Authorization: Can view own balance, managers can view direct reports, admins can view all
+  const canView = currentUser.id === userId ||
+                  isAdmin(currentUser) ||
+                  (isManager(currentUser) && getDirectReportIds(currentUser.id).includes(userId));
+
+  if (!canView) {
+    return errorResponse('Unauthorized: Cannot access this user\'s balance', 'UNAUTHORIZED');
+  }
+
+  try {
+    const balance = calculatePtoBalance(userId, year);
+    return successResponse(balance);
+  } catch (error) {
+    Logger.log('Error in handleGetPtoBalance: ' + error.message);
+    return errorResponse('Failed to retrieve PTO balance', 'GET_BALANCE_ERROR');
+  }
+}
+
+/**
+ * Calculate PTO balance for a user and year
+ * @param {string} userId - User ID
+ * @param {number} year - Year
+ * @returns {Object} Balance object {userId, year, availableHours, usedHours, pendingHours}
+ */
+function calculatePtoBalance(userId, year) {
+  // Get user
+  const user = getUserById(userId);
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  // Get system config
+  const configResponse = handleGetSystemConfig(user);
+  const config = configResponse.data;
+
+  // Determine available hours based on employment type
+  let baseHours = user.employmentType === EMPLOYMENT_TYPES.FULL_TIME
+    ? config.defaultFullTimeHours
+    : config.defaultPartTimeHours;
+
+  // Prorate for hire date if applicable
+  if (config.prorateByHireDate && user.hireDate) {
+    const hireDate = new Date(user.hireDate);
+    const hireYear = hireDate.getFullYear();
+
+    if (hireYear === year) {
+      // Prorate based on months worked in first year
+      const monthsWorked = 12 - hireDate.getMonth();
+      baseHours = Math.round((baseHours / 12) * monthsWorked);
+    }
+  }
+
+  // Get all PTO requests for this user and year
+  const allRequests = getSheetData(SHEET_NAMES.PTO_REQUESTS, COLUMN_MAPS.PTO_REQUESTS, rowToPtoRequest);
+  const userRequests = allRequests.filter(req => req.userId === userId);
+
+  let usedHours = 0;
+  let pendingHours = 0;
+
+  for (const request of userRequests) {
+    const requestYear = new Date(request.startDate).getFullYear();
+    if (requestYear === year) {
+      if (request.status === PTO_STATUSES.APPROVED) {
+        usedHours += request.totalHours;
+      } else if (request.status === PTO_STATUSES.SUBMITTED) {
+        pendingHours += request.totalHours;
+      }
+    }
+  }
+
+  return {
+    userId,
+    year,
+    totalHours: baseHours,
+    availableHours: baseHours, // Deprecated: keeping for backwards compatibility
+    usedHours,
+    pendingHours
+  };
+}
+
+/**
+ * Sync calculated balance to the PtoBalances sheet
+ * @param {string} userId - User ID
+ * @param {number} year - Year
+ * @returns {Object} The synced balance
+ */
+function syncBalanceToSheet(userId, year) {
+  const balance = calculatePtoBalance(userId, year);
+  const sheet = SpreadsheetApp.openById(getSpreadsheetId()).getSheetByName(SHEET_NAMES.PTO_BALANCES);
+
+  if (!sheet) {
+    throw new Error('PtoBalances sheet not found');
+  }
+
+  const colMap = COLUMN_MAPS.PTO_BALANCES;
+  const data = sheet.getDataRange().getValues();
+
+  // Find existing balance record
+  let rowIndex = -1;
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][colMap.userId] === userId && data[i][colMap.year] === year) {
+      rowIndex = i + 1; // 1-indexed for sheet
+      break;
+    }
+  }
+
+  const rowData = new Array(Object.keys(colMap).length);
+  rowData[colMap.userId] = balance.userId;
+  rowData[colMap.year] = balance.year;
+  rowData[colMap.availableHours] = balance.totalHours;  // Write totalHours to availableHours column
+  rowData[colMap.usedHours] = balance.usedHours;
+  rowData[colMap.pendingHours] = balance.pendingHours;
+
+  if (rowIndex > 0) {
+    // Update existing record
+    sheet.getRange(rowIndex, 1, 1, rowData.length).setValues([rowData]);
+  } else {
+    // Append new record
+    sheet.appendRow(rowData);
+  }
+
+  return balance;
+}
+
+/**
+ * Initialize balances for all users for a given year
+ * @param {number} year - Year to initialize (defaults to current year)
+ * @returns {Object} Success response with count of initialized balances
+ */
+function initializeAllBalances(year) {
+  year = year || new Date().getFullYear();
+
+  // Get all users
+  const users = getSheetData(SHEET_NAMES.USERS, COLUMN_MAPS.USERS, rowToUser);
+
+  let count = 0;
+  for (const user of users) {
+    try {
+      syncBalanceToSheet(user.id, year);
+      count++;
+    } catch (error) {
+      Logger.log('Failed to initialize balance for user ' + user.id + ': ' + error.message);
+    }
+  }
+
+  return successResponse({
+    message: 'Initialized balances for ' + count + ' users',
+    count: count,
+    year: year
+  });
+}
+
+/**
+ * Handler to manually initialize all balances (admin only)
+ * @param {Object} currentUser - The authenticated user
+ * @param {Object} payload - {year (optional)}
+ * @returns {Object} Success or error response
+ */
+function handleInitializeBalances(currentUser, payload) {
+  if (!isAdmin(currentUser)) {
+    return errorResponse('Unauthorized: Admin access required', 'UNAUTHORIZED');
+  }
+
+  try {
+    const year = payload.year || new Date().getFullYear();
+    return initializeAllBalances(year);
+  } catch (error) {
+    Logger.log('Error in handleInitializeBalances: ' + error.message);
+    return errorResponse('Failed to initialize balances', 'INIT_BALANCES_ERROR');
+  }
+}
+
+
+================================================================================
+FILE: HolidayService.gs
+================================================================================
+
+/**
+ * Holiday and Blackout Date Service
+ * Manages company holidays and blackout dates for PTO requests
+ */
+
+/**
+ * Get all holidays (public endpoint - no auth required)
+ * @returns {Object} Success or error response
+ */
+function handleGetHolidaysPublic() {
+  try {
+    const holidays = getSheetData(SHEET_NAMES.HOLIDAYS, COLUMN_MAPS.HOLIDAYS, rowToHoliday);
+    return successResponse(holidays);
+  } catch (error) {
+    Logger.log('Error in handleGetHolidaysPublic: ' + error.message);
+    return errorResponse('Failed to retrieve holidays', 'GET_HOLIDAYS_ERROR');
+  }
+}
+
+/**
+ * Get all holidays (authenticated endpoint - kept for backward compatibility)
+ * @param {Object} currentUser - The authenticated user
+ * @returns {Object} Success or error response
+ */
+function handleGetHolidays(currentUser) {
+  return handleGetHolidaysPublic();
+}
+
+/**
+ * Create a new holiday (Admin only)
+ * @param {Object} currentUser - The authenticated user
+ * @param {Object} payload - Holiday data
+ * @returns {Object} Success or error response
+ */
+function handleCreateHoliday(currentUser, payload) {
+  if (!canManageHolidaysAndBlackouts(currentUser)) {
+    return errorResponse('Unauthorized: Admin access required', 'UNAUTHORIZED');
+  }
+
+  const { date, endDate, name } = payload;
+
+  if (!date || !name) {
+    return errorResponse('Missing required fields: date, name', 'MISSING_PARAMETERS');
+  }
+
+  try {
+    const id = generateId('holiday');
+    const colMap = COLUMN_MAPS.HOLIDAYS;
+
+    const rowData = Array(Object.keys(colMap).length).fill('');
+    rowData[colMap.id] = id;
+    rowData[colMap.date] = date;
+    rowData[colMap.endDate] = endDate || '';  // Optional end date for multi-day holidays
+    rowData[colMap.name] = name;
+
+    appendRow(SHEET_NAMES.HOLIDAYS, rowData);
+
+    const holiday = { id, date, endDate: endDate || undefined, name };
+    return successResponse(holiday);
+  } catch (error) {
+    Logger.log('Error in handleCreateHoliday: ' + error.message);
+    return errorResponse('Failed to create holiday', 'CREATE_HOLIDAY_ERROR');
+  }
+}
+
+/**
+ * Delete a holiday (Admin only)
+ * @param {Object} currentUser - The authenticated user
+ * @param {Object} payload - {holidayId}
+ * @returns {Object} Success or error response
+ */
+function handleDeleteHoliday(currentUser, payload) {
+  if (!canManageHolidaysAndBlackouts(currentUser)) {
+    return errorResponse('Unauthorized: Admin access required', 'UNAUTHORIZED');
+  }
+
+  const { holidayId } = payload;
+
+  if (!holidayId) {
+    return errorResponse('Missing holidayId parameter', 'MISSING_PARAMETER');
+  }
+
+  try {
+    const sheet = getSheet(SHEET_NAMES.HOLIDAYS);
+    const rowIndex = findRowById(sheet, COLUMN_MAPS.HOLIDAYS.id, holidayId);
+
+    if (rowIndex === -1) {
+      return errorResponse('Holiday not found', 'NOT_FOUND');
+    }
+
+    deleteRow(SHEET_NAMES.HOLIDAYS, rowIndex);
+
+    return successResponse({ deleted: true, holidayId });
+  } catch (error) {
+    Logger.log('Error in handleDeleteHoliday: ' + error.message);
+    return errorResponse('Failed to delete holiday', 'DELETE_HOLIDAY_ERROR');
+  }
+}
+
+/**
+ * Get all blackout dates (public endpoint - no auth required)
+ * @returns {Object} Success or error response
+ */
+function handleGetBlackoutDatesPublic() {
+  try {
+    const blackoutDates = getSheetData(SHEET_NAMES.BLACKOUT_DATES, COLUMN_MAPS.BLACKOUT_DATES, rowToBlackoutDate);
+    return successResponse(blackoutDates);
+  } catch (error) {
+    Logger.log('Error in handleGetBlackoutDatesPublic: ' + error.message);
+    return errorResponse('Failed to retrieve blackout dates', 'GET_BLACKOUT_ERROR');
+  }
+}
+
+/**
+ * Get all blackout dates (authenticated endpoint - kept for backward compatibility)
+ * @param {Object} currentUser - The authenticated user
+ * @returns {Object} Success or error response
+ */
+function handleGetBlackoutDates(currentUser) {
+  return handleGetBlackoutDatesPublic();
+}
+
+/**
+ * Create a blackout date (Admin only)
+ * @param {Object} currentUser - The authenticated user
+ * @param {Object} payload - {date, name}
+ * @returns {Object} Success or error response
+ */
+function handleCreateBlackoutDate(currentUser, payload) {
+  if (!canManageHolidaysAndBlackouts(currentUser)) {
+    return errorResponse('Unauthorized: Admin access required', 'UNAUTHORIZED');
+  }
+
+  const { date, endDate, name } = payload;
+
+  if (!date || !name) {
+    return errorResponse('Missing required fields: date, name', 'MISSING_PARAMETERS');
+  }
+
+  try {
+    const id = generateId('blackout');
+    const colMap = COLUMN_MAPS.BLACKOUT_DATES;
+
+    const rowData = Array(Object.keys(colMap).length).fill('');
+    rowData[colMap.id] = id;
+    rowData[colMap.date] = date;
+    rowData[colMap.endDate] = endDate || '';  // Optional end date for multi-day blackout periods
+    rowData[colMap.name] = name;
+    rowData[colMap.createdBy] = currentUser.id;
+    rowData[colMap.createdAt] = getCurrentTimestamp();
+
+    appendRow(SHEET_NAMES.BLACKOUT_DATES, rowData);
+
+    const blackoutDate = {
+      id,
+      date,
+      endDate: endDate || undefined,
+      name,
+      createdBy: currentUser.id,
+      createdAt: rowData[colMap.createdAt]
+    };
+
+    return successResponse(blackoutDate);
+  } catch (error) {
+    Logger.log('Error in handleCreateBlackoutDate: ' + error.message);
+    return errorResponse('Failed to create blackout date', 'CREATE_BLACKOUT_ERROR');
+  }
+}
+
+/**
+ * Delete a blackout date (Admin only)
+ * @param {Object} currentUser - The authenticated user
+ * @param {Object} payload - {blackoutId}
+ * @returns {Object} Success or error response
+ */
+function handleDeleteBlackoutDate(currentUser, payload) {
+  if (!canManageHolidaysAndBlackouts(currentUser)) {
+    return errorResponse('Unauthorized: Admin access required', 'UNAUTHORIZED');
+  }
+
+  const { blackoutId } = payload;
+
+  if (!blackoutId) {
+    return errorResponse('Missing blackoutId parameter', 'MISSING_PARAMETER');
+  }
+
+  try {
+    const sheet = getSheet(SHEET_NAMES.BLACKOUT_DATES);
+    const rowIndex = findRowById(sheet, COLUMN_MAPS.BLACKOUT_DATES.id, blackoutId);
+
+    if (rowIndex === -1) {
+      return errorResponse('Blackout date not found', 'NOT_FOUND');
+    }
+
+    deleteRow(SHEET_NAMES.BLACKOUT_DATES, rowIndex);
+
+    return successResponse({ deleted: true, blackoutId });
+  } catch (error) {
+    Logger.log('Error in handleDeleteBlackoutDate: ' + error.message);
+    return errorResponse('Failed to delete blackout date', 'DELETE_BLACKOUT_ERROR');
+  }
+}
+
+
+================================================================================
+FILE: ConfigService.gs
+================================================================================
+
+/**
+ * System Configuration Service
+ * Manages PTO system settings
+ */
+
+/**
+ * Get system configuration
+ * @param {Object} currentUser - The authenticated user
+ * @returns {Object} Success or error response
+ */
+function handleGetSystemConfig(currentUser) {
+  try {
+    const sheet = getSheet(SHEET_NAMES.SYSTEM_CONFIG);
+    const data = sheet.getDataRange().getValues();
+
+    if (data.length < 2) {
+      // Return default config if none exists
+      return successResponse({
+        defaultFullTimeHours: 120,
+        defaultPartTimeHours: 60,
+        prorateByHireDate: true,
+        fullTeamCalendarVisible: true,
+        shortNoticeThresholdDays: 7
+      });
+    }
+
+    const colMap = COLUMN_MAPS.SYSTEM_CONFIG;
+    const row = data[1]; // Second row (first row is headers)
+
+    const config = {
+      defaultFullTimeHours: row[colMap.defaultFullTimeHours] || 120,
+      defaultPartTimeHours: row[colMap.defaultPartTimeHours] || 60,
+      prorateByHireDate: row[colMap.prorateByHireDate] === true || row[colMap.prorateByHireDate] === 'TRUE',
+      fullTeamCalendarVisible: row[colMap.fullTeamCalendarVisible] === true || row[colMap.fullTeamCalendarVisible] === 'TRUE',
+      shortNoticeThresholdDays: row[colMap.shortNoticeThresholdDays] || 7
+    };
+
+    return successResponse(config);
+  } catch (error) {
+    Logger.log('Error in handleGetSystemConfig: ' + error.message);
+    return errorResponse('Failed to retrieve system configuration', 'GET_CONFIG_ERROR');
+  }
+}
+
+/**
+ * Update system configuration (Admin only)
+ * @param {Object} currentUser - The authenticated user
+ * @param {Object} payload - Configuration updates
+ * @returns {Object} Success or error response
+ */
+function handleUpdateSystemConfig(currentUser, payload) {
+  if (!canManageSystemConfig(currentUser)) {
+    return errorResponse('Unauthorized: Admin access required', 'UNAUTHORIZED');
+  }
+
+  try {
+    const sheet = getSheet(SHEET_NAMES.SYSTEM_CONFIG);
+    const colMap = COLUMN_MAPS.SYSTEM_CONFIG;
+
+    // Get current config or create default
+    let rowData = Array(Object.keys(colMap).length).fill('');
+    const data = sheet.getDataRange().getValues();
+
+    if (data.length >= 2) {
+      rowData = data[1]; // Existing config row
+    }
+
+    // Update values from payload
+    if (payload.defaultFullTimeHours !== undefined) {
+      rowData[colMap.defaultFullTimeHours] = payload.defaultFullTimeHours;
+    }
+    if (payload.defaultPartTimeHours !== undefined) {
+      rowData[colMap.defaultPartTimeHours] = payload.defaultPartTimeHours;
+    }
+    if (payload.prorateByHireDate !== undefined) {
+      rowData[colMap.prorateByHireDate] = payload.prorateByHireDate;
+    }
+    if (payload.fullTeamCalendarVisible !== undefined) {
+      rowData[colMap.fullTeamCalendarVisible] = payload.fullTeamCalendarVisible;
+    }
+    if (payload.shortNoticeThresholdDays !== undefined) {
+      rowData[colMap.shortNoticeThresholdDays] = payload.shortNoticeThresholdDays;
+    }
+
+    // Update or create row
+    if (data.length >= 2) {
+      updateRow(SHEET_NAMES.SYSTEM_CONFIG, 2, rowData); // Row 2 (1-based)
+    } else {
+      appendRow(SHEET_NAMES.SYSTEM_CONFIG, rowData);
+    }
+
+    const config = {
+      defaultFullTimeHours: rowData[colMap.defaultFullTimeHours],
+      defaultPartTimeHours: rowData[colMap.defaultPartTimeHours],
+      prorateByHireDate: rowData[colMap.prorateByHireDate],
+      fullTeamCalendarVisible: rowData[colMap.fullTeamCalendarVisible],
+      shortNoticeThresholdDays: rowData[colMap.shortNoticeThresholdDays]
+    };
+
+    return successResponse(config);
+  } catch (error) {
+    Logger.log('Error in handleUpdateSystemConfig: ' + error.message);
+    return errorResponse('Failed to update system configuration', 'UPDATE_CONFIG_ERROR');
+  }
+}
+
+
+================================================================================
+FILE: PayrollService.gs
+================================================================================
+
+/**
+ * Payroll Service
+ * Handles payroll history operations (ADMIN only)
+ * Manages bi-weekly payroll runs and approved reimbursement processing
+ */
+
+/**
+ * Get all payroll history records
+ * @param {Object} currentUser - The authenticated user
+ * @param {Object} payload - Optional filters
+ * @returns {Object} Success or error response
+ */
+function handleGetPayrollHistory(currentUser, payload) {
+  // ADMIN only
+  if (!isAdmin(currentUser)) {
+    return errorResponse('Unauthorized: Only admins can view payroll history', 'UNAUTHORIZED');
+  }
+
+  try {
+    const allPayrollRuns = getSheetData(
+      SHEET_NAMES.PAYROLL_HISTORY,
+      COLUMN_MAPS.PAYROLL_HISTORY,
+      rowToPayrollHistory
+    );
+
+    // Optional filters
+    let filtered = allPayrollRuns;
+
+    if (payload.year) {
+      filtered = filtered.filter(run => {
+        const runYear = new Date(run.runDate).getFullYear();
+        return runYear === parseInt(payload.year);
+      });
+    }
+
+    if (payload.status) {
+      filtered = filtered.filter(run => run.status === payload.status);
+    }
+
+    // Sort by runDate descending (most recent first)
+    filtered.sort((a, b) => new Date(b.runDate) - new Date(a.runDate));
+
+    return successResponse(filtered);
+  } catch (error) {
+    Logger.log('Error in handleGetPayrollHistory: ' + error.message);
+    return errorResponse('Failed to retrieve payroll history', 'GET_PAYROLL_ERROR');
+  }
+}
+
+/**
+ * Get a single payroll run by ID
+ * @param {Object} currentUser - The authenticated user
+ * @param {Object} payload - {payrollId}
+ * @returns {Object} Success or error response
+ */
+function handleGetPayrollRun(currentUser, payload) {
+  // ADMIN only
+  if (!isAdmin(currentUser)) {
+    return errorResponse('Unauthorized: Only admins can view payroll details', 'UNAUTHORIZED');
+  }
+
+  const { payrollId } = payload;
+
+  if (!payrollId) {
+    return errorResponse('Missing payrollId parameter', 'MISSING_PARAMETER');
+  }
+
+  try {
+    const allRuns = getSheetData(
+      SHEET_NAMES.PAYROLL_HISTORY,
+      COLUMN_MAPS.PAYROLL_HISTORY,
+      rowToPayrollHistory
+    );
+
+    const payrollRun = allRuns.find(run => run.id === payrollId);
+
+    if (!payrollRun) {
+      return errorResponse('Payroll run not found', 'NOT_FOUND');
+    }
+
+    return successResponse(payrollRun);
+  } catch (error) {
+    Logger.log('Error in handleGetPayrollRun: ' + error.message);
+    return errorResponse('Failed to retrieve payroll run', 'GET_PAYROLL_RUN_ERROR');
+  }
+}
+
+/**
+ * Log a new payroll run (from PDF import or manual entry)
+ * @param {Object} currentUser - The authenticated user
+ * @param {Object} payload - Payroll run data
+ * @returns {Object} Success or error response
+ */
+function handleLogPayroll(currentUser, payload) {
+  // ADMIN only
+  if (!isAdmin(currentUser)) {
+    return errorResponse('Unauthorized: Only admins can log payroll', 'UNAUTHORIZED');
+  }
+
+  const {
+    runDate,
+    checkDate,
+    payPeriodStart,
+    payPeriodEnd,
+    totalGross,
+    totalNet,
+    totalTaxes,
+    totalDeductions,
+    notes,
+    source
+  } = payload;
+
+  // Validate required fields
+  if (!runDate || !checkDate || !payPeriodStart || !payPeriodEnd || totalGross === undefined || totalNet === undefined) {
+    return errorResponse('Missing required fields', 'MISSING_PARAMETERS');
+  }
+
+  try {
+    const ss = SpreadsheetApp.openById(getSpreadsheetId());
+    const sheet = ss.getSheetByName(SHEET_NAMES.PAYROLL_HISTORY);
+
+    const now = new Date().toISOString();
+    const payrollId = generateId('payroll');
+
+    const rowData = [
+      payrollId,
+      runDate,
+      checkDate,
+      payPeriodStart,
+      payPeriodEnd,
+      totalGross || 0,
+      totalNet || 0,
+      totalTaxes || 0,
+      totalDeductions || 0,
+      PAYROLL_STATUSES.DRAFT,        // Initial status
+      currentUser.email,               // processedBy
+      notes || '',
+      source || PAYROLL_SOURCE.MANUAL,
+      now,                             // createdAt
+      now                              // updatedAt
+    ];
+
+    sheet.appendRow(rowData);
+
+    const newPayrollRun = {
+      id: payrollId,
+      runDate: runDate,
+      checkDate: checkDate,
+      payPeriodStart: payPeriodStart,
+      payPeriodEnd: payPeriodEnd,
+      totalGross: totalGross || 0,
+      totalNet: totalNet || 0,
+      totalTaxes: totalTaxes || 0,
+      totalDeductions: totalDeductions || 0,
+      status: PAYROLL_STATUSES.DRAFT,
+      processedBy: currentUser.email,
+      notes: notes || '',
+      source: source || PAYROLL_SOURCE.MANUAL,
+      createdAt: now,
+      updatedAt: now
+    };
+
+    return successResponse(newPayrollRun);
+  } catch (error) {
+    Logger.log('Error in handleLogPayroll: ' + error.message);
+    return errorResponse('Failed to log payroll', 'LOG_PAYROLL_ERROR');
+  }
+}
+
+/**
+ * Update payroll status (Draft -> Approved -> Processed)
+ * @param {Object} currentUser - The authenticated user
+ * @param {Object} payload - {payrollId, status}
+ * @returns {Object} Success or error response
+ */
+function handleUpdatePayrollStatus(currentUser, payload) {
+  // ADMIN only
+  if (!isAdmin(currentUser)) {
+    return errorResponse('Unauthorized: Only admins can update payroll status', 'UNAUTHORIZED');
+  }
+
+  const { payrollId, status } = payload;
+
+  if (!payrollId || !status) {
+    return errorResponse('Missing required fields: payrollId, status', 'MISSING_PARAMETERS');
+  }
+
+  // Validate status
+  const validStatuses = Object.values(PAYROLL_STATUSES);
+  if (!validStatuses.includes(status)) {
+    return errorResponse('Invalid status value', 'INVALID_STATUS');
+  }
+
+  try {
+    const ss = SpreadsheetApp.openById(getSpreadsheetId());
+    const sheet = ss.getSheetByName(SHEET_NAMES.PAYROLL_HISTORY);
+    const colMap = COLUMN_MAPS.PAYROLL_HISTORY;
+
+    const rowIndex = findRowById(sheet, colMap.id, payrollId);
+
+    if (rowIndex === -1) {
+      return errorResponse('Payroll run not found', 'NOT_FOUND');
+    }
+
+    const now = new Date().toISOString();
+
+    // Update status and updatedAt
+    sheet.getRange(rowIndex, colMap.status + 1).setValue(status);
+    sheet.getRange(rowIndex, colMap.updatedAt + 1).setValue(now);
+
+    // Get updated payroll run
+    const allRuns = getSheetData(
+      SHEET_NAMES.PAYROLL_HISTORY,
+      COLUMN_MAPS.PAYROLL_HISTORY,
+      rowToPayrollHistory
+    );
+    const updatedRun = allRuns.find(run => run.id === payrollId);
+
+    return successResponse(updatedRun);
+  } catch (error) {
+    Logger.log('Error in handleUpdatePayrollStatus: ' + error.message);
+    return errorResponse('Failed to update payroll status', 'UPDATE_STATUS_ERROR');
+  }
+}
+
+/**
+ * Process reimbursements as part of payroll run
+ * Marks approved reimbursements as "Reimbursed" and sets dateReimbursed
+ * @param {Object} currentUser - The authenticated user
+ * @param {Object} payload - {reimbursementIds: string[], dateReimbursed: string}
+ * @returns {Object} Success or error response
+ */
+function handleProcessReimbursements(currentUser, payload) {
+  // ADMIN only
+  if (!isAdmin(currentUser)) {
+    return errorResponse('Unauthorized: Only admins can process reimbursements', 'UNAUTHORIZED');
+  }
+
+  const { reimbursementIds, dateReimbursed } = payload;
+
+  if (!reimbursementIds || !Array.isArray(reimbursementIds) || reimbursementIds.length === 0) {
+    return errorResponse('Missing or invalid reimbursementIds', 'MISSING_PARAMETERS');
+  }
+
+  if (!dateReimbursed) {
+    return errorResponse('Missing dateReimbursed', 'MISSING_PARAMETERS');
+  }
+
+  try {
+    const ss = SpreadsheetApp.openById(getSpreadsheetId());
+    const sheet = ss.getSheetByName(SHEET_NAMES.REIMBURSEMENTS);
+    const colMap = COLUMN_MAPS.REIMBURSEMENTS;
+    const now = new Date().toISOString();
+
+    const processedIds = [];
+    const errors = [];
+
+    reimbursementIds.forEach(reimbursementId => {
+      const rowIndex = findRowById(sheet, colMap.id, reimbursementId);
+
+      if (rowIndex === -1) {
+        errors.push(`Reimbursement ${reimbursementId} not found`);
+        return;
+      }
+
+      // Get current status
+      const currentStatus = sheet.getRange(rowIndex, colMap.status + 1).getValue();
+
+      // Only process if status is "Approved"
+      if (currentStatus !== REIMBURSEMENT_STATUSES.APPROVED) {
+        errors.push(`Reimbursement ${reimbursementId} is not in Approved status (current: ${currentStatus})`);
+        return;
+      }
+
+      // Update to Reimbursed status
+      sheet.getRange(rowIndex, colMap.status + 1).setValue(REIMBURSEMENT_STATUSES.REIMBURSED);
+      sheet.getRange(rowIndex, colMap.dateReimbursed + 1).setValue(dateReimbursed);
+      sheet.getRange(rowIndex, colMap.updatedAt + 1).setValue(now);
+
+      processedIds.push(reimbursementId);
+    });
+
+    return successResponse({
+      processedCount: processedIds.length,
+      processedIds: processedIds,
+      errors: errors.length > 0 ? errors : null
+    });
+  } catch (error) {
+    Logger.log('Error in handleProcessReimbursements: ' + error.message);
+    return errorResponse('Failed to process reimbursements', 'PROCESS_REIMBURSEMENTS_ERROR');
+  }
+}
+
+
+================================================================================
+FILE: PayrollGenerator.gs
+================================================================================
+
+/**
+ * PayrollGenerator.gs
+ * Utility functions for generating and managing annual payroll runs
+ */
+
+/**
+ * Generate all 26 bi-weekly payroll runs for a given year
+ *
+ * @param {number} year - The year to generate runs for (e.g., 2025)
+ * @param {string} firstRunDate - First payroll run date in YYYY-MM-DD format (e.g., "2025-01-03")
+ * @param {string} adminEmail - Email of admin creating the runs
+ * @returns {number} Number of runs created
+ */
+function generateAnnualPayrollRuns(year, firstRunDate, adminEmail) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_NAMES.PAYROLL_HISTORY);
+
+  if (!sheet) {
+    throw new Error('Payroll_History sheet not found');
+  }
+
+  const colMap = COLUMN_MAPS.PAYROLL_HISTORY;
+  const startDate = new Date(firstRunDate);
+  let runsCreated = 0;
+
+  // Generate 26 bi-weekly runs
+  for (let i = 0; i < 26; i++) {
+    // Calculate dates for this run
+    const runDate = new Date(startDate);
+    runDate.setDate(startDate.getDate() + (i * 14)); // Add 14 days per run
+
+    // Check date is typically 2 business days after run date
+    const checkDate = new Date(runDate);
+    checkDate.setDate(runDate.getDate() + 2);
+
+    // Pay period: 14 days ending on day before run date
+    const payPeriodEnd = new Date(runDate);
+    payPeriodEnd.setDate(runDate.getDate() - 1);
+
+    const payPeriodStart = new Date(payPeriodEnd);
+    payPeriodStart.setDate(payPeriodEnd.getDate() - 13); // 14-day period
+
+    // Format dates as YYYY-MM-DD
+    const formatDate = (date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
+    const runId = Utilities.getUuid();
+    const timestamp = new Date().toISOString();
+
+    // Create row with Pending status and placeholder financial data
+    const row = [];
+    row[colMap.id] = runId;
+    row[colMap.runDate] = formatDate(runDate);
+    row[colMap.checkDate] = formatDate(checkDate);
+    row[colMap.payPeriodStart] = formatDate(payPeriodStart);
+    row[colMap.payPeriodEnd] = formatDate(payPeriodEnd);
+    row[colMap.totalGross] = 0; // Placeholder
+    row[colMap.totalNet] = 0; // Placeholder
+    row[colMap.totalTaxes] = 0; // Placeholder
+    row[colMap.totalDeductions] = 0; // Placeholder
+    row[colMap.status] = 'Pending';
+    row[colMap.processedBy] = adminEmail;
+    row[colMap.notes] = `Auto-generated for ${year}`;
+    row[colMap.source] = 'Manual';
+    row[colMap.createdAt] = timestamp;
+    row[colMap.updatedAt] = timestamp;
+
+    sheet.appendRow(row);
+    runsCreated++;
+  }
+
+  return runsCreated;
+}
+
+/**
+ * Get the next pending payroll run
+ * Returns the earliest pending run that hasn't been filled yet
+ *
+ * @returns {Object|null} The next pending payroll run or null
+ */
+function getNextPendingRun() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_NAMES.PAYROLL_HISTORY);
+
+  if (!sheet) {
+    return null;
+  }
+
+  const data = sheet.getDataRange().getValues();
+  const colMap = COLUMN_MAPS.PAYROLL_HISTORY;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Skip header row
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+
+    if (row[colMap.status] === 'Pending') {
+      const runDate = new Date(row[colMap.runDate]);
+
+      // Return the first pending run (they should be in chronological order)
+      return rowToPayrollHistory(colMap, row);
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Get all pending payroll runs
+ *
+ * @returns {Array} Array of pending payroll runs
+ */
+function getPendingRuns() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_NAMES.PAYROLL_HISTORY);
+
+  if (!sheet) {
+    return [];
+  }
+
+  const data = sheet.getDataRange().getValues();
+  const colMap = COLUMN_MAPS.PAYROLL_HISTORY;
+  const pendingRuns = [];
+
+  // Skip header row
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+
+    if (row[colMap.status] === 'Pending') {
+      pendingRuns.push(rowToPayrollHistory(colMap, row));
+    }
+  }
+
+  return pendingRuns;
+}
+
+/**
+ * Update a pending payroll run with actual data
+ *
+ * @param {string} runId - The ID of the run to update
+ * @param {Object} data - Payroll data to fill in
+ * @returns {Object} The updated payroll run
+ */
+function updatePendingRun(runId, data) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_NAMES.PAYROLL_HISTORY);
+
+  if (!sheet) {
+    throw new Error('Payroll_History sheet not found');
+  }
+
+  const rows = sheet.getDataRange().getValues();
+  const colMap = COLUMN_MAPS.PAYROLL_HISTORY;
+
+  // Find the run
+  for (let i = 1; i < rows.length; i++) {
+    if (rows[i][colMap.id] === runId) {
+      const row = rows[i];
+
+      // Verify it's actually pending
+      if (row[colMap.status] !== 'Pending') {
+        throw new Error('Can only update pending payroll runs');
+      }
+
+      // Update financial data
+      if (data.totalGross !== undefined) {
+        sheet.getRange(i + 1, colMap.totalGross + 1).setValue(data.totalGross);
+      }
+      if (data.totalNet !== undefined) {
+        sheet.getRange(i + 1, colMap.totalNet + 1).setValue(data.totalNet);
+      }
+      if (data.totalTaxes !== undefined) {
+        sheet.getRange(i + 1, colMap.totalTaxes + 1).setValue(data.totalTaxes);
+      }
+      if (data.totalDeductions !== undefined) {
+        sheet.getRange(i + 1, colMap.totalDeductions + 1).setValue(data.totalDeductions);
+      }
+
+      // Update status to Draft (data entered but not yet approved)
+      sheet.getRange(i + 1, colMap.status + 1).setValue('Draft');
+
+      // Update source if provided
+      if (data.source) {
+        sheet.getRange(i + 1, colMap.source + 1).setValue(data.source);
+      }
+
+      // Update notes if provided
+      if (data.notes) {
+        sheet.getRange(i + 1, colMap.notes + 1).setValue(data.notes);
+      }
+
+      // Update timestamp
+      sheet.getRange(i + 1, colMap.updatedAt + 1).setValue(new Date().toISOString());
+
+      // Get updated row
+      const updatedRow = sheet.getRange(i + 1, 1, 1, Object.keys(colMap).length).getValues()[0];
+      return rowToPayrollHistory(colMap, updatedRow);
+    }
+  }
+
+  throw new Error('Payroll run not found');
+}
+
+/**
+ * Handler for generating annual runs (called from frontend)
+ * ADMIN ONLY
+ */
+function handleGenerateAnnualRuns(currentUser, payload) {
+  if (currentUser.userRole !== 'ADMIN') {
+    return errorResponse('Unauthorized: Admin access required', 'FORBIDDEN');
+  }
+
+  const { year, firstRunDate } = payload;
+
+  if (!year || !firstRunDate) {
+    return errorResponse('Missing required fields: year, firstRunDate');
+  }
+
+  try {
+    const count = generateAnnualPayrollRuns(year, firstRunDate, currentUser.email);
+    return successResponse({
+      message: `Successfully generated ${count} payroll runs for ${year}`,
+      count: count
+    });
+  } catch (error) {
+    Logger.log('Error generating annual runs: ' + error.toString());
+    return errorResponse('Failed to generate annual runs: ' + error.toString());
+  }
+}
+
+/**
+ * Handler for getting pending runs
+ */
+function handleGetPendingRuns(currentUser, payload) {
+  if (currentUser.userRole !== 'ADMIN') {
+    return errorResponse('Unauthorized: Admin access required', 'FORBIDDEN');
+  }
+
+  try {
+    const runs = getPendingRuns();
+    return successResponse(runs);
+  } catch (error) {
+    Logger.log('Error getting pending runs: ' + error.toString());
+    return errorResponse('Failed to get pending runs: ' + error.toString());
+  }
+}
+
+/**
+ * Handler for updating a pending run
+ */
+function handleUpdatePendingRun(currentUser, payload) {
+  if (currentUser.userRole !== 'ADMIN') {
+    return errorResponse('Unauthorized: Admin access required', 'FORBIDDEN');
+  }
+
+  const { runId, ...data } = payload;
+
+  if (!runId) {
+    return errorResponse('Missing required field: runId');
+  }
+
+  try {
+    const updated = updatePendingRun(runId, data);
+    return successResponse(updated);
+  } catch (error) {
+    Logger.log('Error updating pending run: ' + error.toString());
+    return errorResponse('Failed to update pending run: ' + error.toString());
+  }
+}
+
+
+================================================================================
+FILE: ReimbursementService.gs
+================================================================================
+
+/**
+ * Reimbursement Service
+ * Handles expense reimbursement requests, approvals, and denials
+ * Supports Section 127 (Educational Assistance), Section 129 (Dependent Care), and general expenses
+ */
+
+/**
+ * Get reimbursements with role-based filtering
+ * @param {Object} currentUser - The authenticated user
+ * @param {Object} payload - Optional filters {status, reimbursementType, userId}
+ * @returns {Object} Success or error response
+ */
+function handleGetReimbursements(currentUser, payload) {
+  try {
+    const allReimbursements = getSheetData(
+      SHEET_NAMES.REIMBURSEMENTS,
+      COLUMN_MAPS.REIMBURSEMENTS,
+      rowToReimbursement
+    );
+
+    // Apply role-based filtering
+    let filtered = allReimbursements.filter(reimb => {
+      // Staff can only see their own
+      if (currentUser.userRole === USER_ROLES.STAFF) {
+        return reimb.staffEmail === currentUser.email;
+      }
+      // Managers and Admins see all
+      return true;
+    });
+
+    // Apply optional filters
+    if (payload.status) {
+      filtered = filtered.filter(reimb => reimb.status === payload.status);
+    }
+
+    if (payload.reimbursementType) {
+      filtered = filtered.filter(reimb => reimb.reimbursementType === payload.reimbursementType);
+    }
+
+    if (payload.userId) {
+      const user = getUserById(payload.userId);
+      if (user) {
+        filtered = filtered.filter(reimb => reimb.staffEmail === user.email);
+      }
+    }
+
+    // Sort by submittedAt descending (most recent first)
+    filtered.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+
+    return successResponse(filtered);
+  } catch (error) {
+    Logger.log('Error in handleGetReimbursements: ' + error.message);
+    return errorResponse('Failed to retrieve reimbursements', 'GET_REIMBURSEMENTS_ERROR');
+  }
+}
+
+/**
+ * Get a single reimbursement by ID
+ * @param {Object} currentUser - The authenticated user
+ * @param {Object} payload - {reimbursementId}
+ * @returns {Object} Success or error response
+ */
+function handleGetReimbursement(currentUser, payload) {
+  const { reimbursementId } = payload;
+
+  if (!reimbursementId) {
+    return errorResponse('Missing reimbursementId parameter', 'MISSING_PARAMETER');
+  }
+
+  try {
+    const allReimbursements = getSheetData(
+      SHEET_NAMES.REIMBURSEMENTS,
+      COLUMN_MAPS.REIMBURSEMENTS,
+      rowToReimbursement
+    );
+
+    const reimbursement = allReimbursements.find(reimb => reimb.id === reimbursementId);
+
+    if (!reimbursement) {
+      return errorResponse('Reimbursement not found', 'NOT_FOUND');
+    }
+
+    // Check authorization
+    if (!canAccessReimbursement(currentUser, reimbursement)) {
+      return errorResponse('Unauthorized: Cannot access this reimbursement', 'UNAUTHORIZED');
+    }
+
+    return successResponse(reimbursement);
+  } catch (error) {
+    Logger.log('Error in handleGetReimbursement: ' + error.message);
+    return errorResponse('Failed to retrieve reimbursement', 'GET_REIMBURSEMENT_ERROR');
+  }
+}
+
+/**
+ * Create a new reimbursement request
+ * @param {Object} currentUser - The authenticated user
+ * @param {Object} payload - Reimbursement data
+ * @returns {Object} Success or error response
+ */
+function handleCreateReimbursement(currentUser, payload) {
+  const {
+    expenseDate,
+    description,
+    amount,
+    reimbursementType,
+    methodOfReimbursement,
+    notes
+  } = payload;
+
+  // Validate required fields
+  if (!expenseDate || !description || amount === undefined || !reimbursementType) {
+    return errorResponse('Missing required fields: expenseDate, description, amount, reimbursementType', 'MISSING_PARAMETERS');
+  }
+
+  // Validate amount is positive
+  if (amount <= 0) {
+    return errorResponse('Amount must be greater than zero', 'INVALID_AMOUNT');
+  }
+
+  // Validate reimbursementType
+  const validTypes = Object.values(REIMBURSEMENT_TYPES);
+  if (!validTypes.includes(reimbursementType)) {
+    return errorResponse('Invalid reimbursementType', 'INVALID_TYPE');
+  }
+
+  try {
+    const ss = SpreadsheetApp.openById(getSpreadsheetId());
+    const sheet = ss.getSheetByName(SHEET_NAMES.REIMBURSEMENTS);
+
+    const now = new Date().toISOString();
+    const reimbursementId = generateId('reimb');
+
+    const rowData = [
+      reimbursementId,
+      currentUser.name,
+      currentUser.email,
+      expenseDate,
+      description,
+      amount,
+      reimbursementType,
+      methodOfReimbursement || REIMBURSEMENT_METHODS.PAYROLL,  // Default to payroll
+      REIMBURSEMENT_STATUSES.PENDING,                           // Initial status
+      now,                                                       // submittedAt
+      '',                                                        // dateReimbursed (empty until processed)
+      '',                                                        // reviewerId (empty until reviewed)
+      '',                                                        // reviewerName (empty until reviewed)
+      notes || '',
+      now,                                                       // createdAt
+      now                                                        // updatedAt
+    ];
+
+    sheet.appendRow(rowData);
+
+    const newReimbursement = {
+      id: reimbursementId,
+      staffName: currentUser.name,
+      staffEmail: currentUser.email,
+      expenseDate: expenseDate,
+      description: description,
+      amount: amount,
+      reimbursementType: reimbursementType,
+      methodOfReimbursement: methodOfReimbursement || REIMBURSEMENT_METHODS.PAYROLL,
+      status: REIMBURSEMENT_STATUSES.PENDING,
+      submittedAt: now,
+      dateReimbursed: null,
+      reviewerId: null,
+      reviewerName: null,
+      notes: notes || '',
+      createdAt: now,
+      updatedAt: now
+    };
+
+    return successResponse(newReimbursement);
+  } catch (error) {
+    Logger.log('Error in handleCreateReimbursement: ' + error.message);
+    return errorResponse('Failed to create reimbursement', 'CREATE_REIMBURSEMENT_ERROR');
+  }
+}
+
+/**
+ * Approve a reimbursement request
+ * @param {Object} currentUser - The authenticated user
+ * @param {Object} payload - {reimbursementId, comment}
+ * @returns {Object} Success or error response
+ */
+function handleApproveReimbursement(currentUser, payload) {
+  // Only managers and admins can approve
+  if (!isManager(currentUser) && !isAdmin(currentUser)) {
+    return errorResponse('Unauthorized: Only managers and admins can approve reimbursements', 'UNAUTHORIZED');
+  }
+
+  const { reimbursementId, comment } = payload;
+
+  if (!reimbursementId) {
+    return errorResponse('Missing reimbursementId', 'MISSING_PARAMETER');
+  }
+
+  try {
+    const ss = SpreadsheetApp.openById(getSpreadsheetId());
+    const sheet = ss.getSheetByName(SHEET_NAMES.REIMBURSEMENTS);
+    const colMap = COLUMN_MAPS.REIMBURSEMENTS;
+
+    const rowIndex = findRowById(sheet, colMap.id, reimbursementId);
+
+    if (rowIndex === -1) {
+      return errorResponse('Reimbursement not found', 'NOT_FOUND');
+    }
+
+    // Check current status - can only approve if Pending
+    const currentStatus = sheet.getRange(rowIndex, colMap.status + 1).getValue();
+
+    if (currentStatus !== REIMBURSEMENT_STATUSES.PENDING) {
+      return errorResponse(`Cannot approve reimbursement with status: ${currentStatus}`, 'INVALID_STATUS');
+    }
+
+    const now = new Date().toISOString();
+
+    // Update reimbursement
+    sheet.getRange(rowIndex, colMap.status + 1).setValue(REIMBURSEMENT_STATUSES.APPROVED);
+    sheet.getRange(rowIndex, colMap.reviewerId + 1).setValue(currentUser.id);
+    sheet.getRange(rowIndex, colMap.reviewerName + 1).setValue(currentUser.name);
+    sheet.getRange(rowIndex, colMap.updatedAt + 1).setValue(now);
+
+    // Add comment to notes if provided
+    if (comment) {
+      const currentNotes = sheet.getRange(rowIndex, colMap.notes + 1).getValue();
+      const updatedNotes = currentNotes
+        ? `${currentNotes}\n\nApproval comment (${now}): ${comment}`
+        : `Approval comment (${now}): ${comment}`;
+      sheet.getRange(rowIndex, colMap.notes + 1).setValue(updatedNotes);
+    }
+
+    // Get updated reimbursement
+    const allReimbursements = getSheetData(
+      SHEET_NAMES.REIMBURSEMENTS,
+      COLUMN_MAPS.REIMBURSEMENTS,
+      rowToReimbursement
+    );
+    const updatedReimbursement = allReimbursements.find(reimb => reimb.id === reimbursementId);
+
+    return successResponse(updatedReimbursement);
+  } catch (error) {
+    Logger.log('Error in handleApproveReimbursement: ' + error.message);
+    return errorResponse('Failed to approve reimbursement', 'APPROVE_REIMBURSEMENT_ERROR');
+  }
+}
+
+/**
+ * Deny a reimbursement request
+ * @param {Object} currentUser - The authenticated user
+ * @param {Object} payload - {reimbursementId, comment (required)}
+ * @returns {Object} Success or error response
+ */
+function handleDenyReimbursement(currentUser, payload) {
+  // Only managers and admins can deny
+  if (!isManager(currentUser) && !isAdmin(currentUser)) {
+    return errorResponse('Unauthorized: Only managers and admins can deny reimbursements', 'UNAUTHORIZED');
+  }
+
+  const { reimbursementId, comment } = payload;
+
+  if (!reimbursementId) {
+    return errorResponse('Missing reimbursementId', 'MISSING_PARAMETER');
+  }
+
+  if (!comment) {
+    return errorResponse('Comment is required when denying a reimbursement', 'MISSING_COMMENT');
+  }
+
+  try {
+    const ss = SpreadsheetApp.openById(getSpreadsheetId());
+    const sheet = ss.getSheetByName(SHEET_NAMES.REIMBURSEMENTS);
+    const colMap = COLUMN_MAPS.REIMBURSEMENTS;
+
+    const rowIndex = findRowById(sheet, colMap.id, reimbursementId);
+
+    if (rowIndex === -1) {
+      return errorResponse('Reimbursement not found', 'NOT_FOUND');
+    }
+
+    // Check current status - can only deny if Pending
+    const currentStatus = sheet.getRange(rowIndex, colMap.status + 1).getValue();
+
+    if (currentStatus !== REIMBURSEMENT_STATUSES.PENDING) {
+      return errorResponse(`Cannot deny reimbursement with status: ${currentStatus}`, 'INVALID_STATUS');
+    }
+
+    const now = new Date().toISOString();
+
+    // Update reimbursement
+    sheet.getRange(rowIndex, colMap.status + 1).setValue(REIMBURSEMENT_STATUSES.DENIED);
+    sheet.getRange(rowIndex, colMap.reviewerId + 1).setValue(currentUser.id);
+    sheet.getRange(rowIndex, colMap.reviewerName + 1).setValue(currentUser.name);
+    sheet.getRange(rowIndex, colMap.updatedAt + 1).setValue(now);
+
+    // Add denial comment to notes
+    const currentNotes = sheet.getRange(rowIndex, colMap.notes + 1).getValue();
+    const updatedNotes = currentNotes
+      ? `${currentNotes}\n\nDenial reason (${now}): ${comment}`
+      : `Denial reason (${now}): ${comment}`;
+    sheet.getRange(rowIndex, colMap.notes + 1).setValue(updatedNotes);
+
+    // Get updated reimbursement
+    const allReimbursements = getSheetData(
+      SHEET_NAMES.REIMBURSEMENTS,
+      COLUMN_MAPS.REIMBURSEMENTS,
+      rowToReimbursement
+    );
+    const updatedReimbursement = allReimbursements.find(reimb => reimb.id === reimbursementId);
+
+    return successResponse(updatedReimbursement);
+  } catch (error) {
+    Logger.log('Error in handleDenyReimbursement: ' + error.message);
+    return errorResponse('Failed to deny reimbursement', 'DENY_REIMBURSEMENT_ERROR');
+  }
+}
+
+/**
+ * Check if user can access a reimbursement
+ * @param {Object} user - The current user
+ * @param {Object} reimbursement - The reimbursement record
+ * @returns {boolean} True if user can access
+ */
+function canAccessReimbursement(user, reimbursement) {
+  // Admins and managers can access all
+  if (isAdmin(user) || isManager(user)) {
+    return true;
+  }
+
+  // Staff can only access their own
+  return reimbursement.staffEmail === user.email;
+}
+
+
+================================================================================
+FILE: EvaluationService.gs
+================================================================================
+
+/**
+ * Evaluation Service
+ * Handles evaluation CRUD operations with row-level security
+ */
+
+/**
+ * Get all evaluations accessible to current user
+ * @param {Object} currentUser - The authenticated user
+ * @param {Object} payload - Request payload (optional filters)
+ * @returns {Object} Success or error response
+ */
+function handleGetEvaluations(currentUser, payload) {
+  try {
+    const sheet = getSheet(SHEET_NAMES.EVALUATIONS);
+    const data = sheet.getDataRange().getValues();
+
+    if (data.length <= 1) {
+      return successResponse([]); // No evaluations
+    }
+
+    const colMap = COLUMN_MAPS.EVALUATIONS;
+    const evaluations = [];
+
+    // Apply row-level security
+    for (let i = 1; i < data.length; i++) {
+      const evaluation = rowToEvaluation(colMap, data[i]);
+
+      if (isAdmin(currentUser)) {
+        // Admins see all
+        evaluations.push(evaluation);
+      } else if (evaluation.employeeId === currentUser.id) {
+        // Users see their own
+        evaluations.push(evaluation);
+      } else if (isManager(currentUser)) {
+        // Managers see direct reports only
+        const directReportIds = getDirectReportIds(currentUser.id);
+        if (directReportIds.includes(evaluation.employeeId)) {
+          evaluations.push(evaluation);
+        }
+      }
+    }
+
+    // Enrich with ratings and goals
+    const enrichedEvaluations = evaluations.map(e => enrichEvaluation(e));
+
+    // Apply optional filters
+    let filteredEvaluations = enrichedEvaluations;
+
+    if (payload.cycleId) {
+      filteredEvaluations = filteredEvaluations.filter(e => e.cycleId === payload.cycleId);
+    }
+
+    if (payload.status) {
+      filteredEvaluations = filteredEvaluations.filter(e => e.status === payload.status);
+    }
+
+    if (payload.type) {
+      filteredEvaluations = filteredEvaluations.filter(e => e.type === payload.type);
+    }
+
+    return successResponse(filteredEvaluations);
+
+  } catch (error) {
+    Logger.log('Error in handleGetEvaluations: ' + error.message);
+    return errorResponse('Failed to retrieve evaluations', 'GET_EVALUATIONS_ERROR');
+  }
+}
+
+/**
+ * Get a single evaluation by ID
+ * @param {Object} currentUser - The authenticated user
+ * @param {Object} payload - Request payload with evaluationId
+ * @returns {Object} Success or error response
+ */
+function handleGetEvaluation(currentUser, payload) {
+  const evaluationId = payload.evaluationId;
+
+  if (!evaluationId) {
+    return errorResponse('Missing evaluationId parameter', 'MISSING_PARAMETER');
+  }
+
+  try {
+    const sheet = getSheet(SHEET_NAMES.EVALUATIONS);
+    const rowIndex = findRowById(sheet, COLUMN_MAPS.EVALUATIONS.id, evaluationId);
+
+    if (rowIndex === -1) {
+      return errorResponse('Evaluation not found', 'EVALUATION_NOT_FOUND');
+    }
+
+    const data = sheet.getDataRange().getValues();
+    const evaluation = rowToEvaluation(COLUMN_MAPS.EVALUATIONS, data[rowIndex - 1]);
+
+    // Authorization check
+    if (!canAccessEvaluation(currentUser, evaluation)) {
+      return errorResponse('Unauthorized: Cannot access this evaluation', 'UNAUTHORIZED');
+    }
+
+    // Enrich with ratings and goals
+    const enrichedEvaluation = enrichEvaluation(evaluation);
+
+    return successResponse(enrichedEvaluation);
+
+  } catch (error) {
+    Logger.log('Error in handleGetEvaluation: ' + error.message);
+    return errorResponse('Failed to retrieve evaluation', 'GET_EVALUATION_ERROR');
+  }
+}
+
+/**
+ * Enrich evaluation with ratings and goals from related tables
+ * @param {Object} evaluation - Base evaluation object
+ * @returns {Object} Enriched evaluation with nested arrays
+ */
+function enrichEvaluation(evaluation) {
+  // Get all ratings for this evaluation
+  const ratingsSheet = getSheet(SHEET_NAMES.RATINGS);
+  const ratingsData = ratingsSheet.getDataRange().getValues();
+  const ratingsColMap = COLUMN_MAPS.RATINGS;
+
+  const selfRatings = [];
+  const peerRatings = [];
+  const managerRatings = [];
+
+  for (let i = 1; i < ratingsData.length; i++) {
+    const rating = rowToRating(ratingsColMap, ratingsData[i]);
+
+    if (rating.evaluationId === evaluation.id) {
+      const ratingObj = {
+        competencyId: rating.competencyId,
+        score: rating.score,
+        comments: rating.comments
+      };
+
+      switch(rating.ratingType) {
+        case RATING_TYPES.SELF:
+          selfRatings.push(ratingObj);
+          break;
+        case RATING_TYPES.PEER:
+          peerRatings.push(ratingObj);
+          break;
+        case RATING_TYPES.MANAGER:
+          managerRatings.push(ratingObj);
+          break;
+      }
+    }
+  }
+
+  // Get all goals for this evaluation
+  const goalsSheet = getSheet(SHEET_NAMES.GOALS);
+  const goalsData = goalsSheet.getDataRange().getValues();
+  const goalsColMap = COLUMN_MAPS.GOALS;
+
+  const goals = [];
+  for (let i = 1; i < goalsData.length; i++) {
+    const goal = rowToGoal(goalsColMap, goalsData[i]);
+
+    if (goal.evaluationId === evaluation.id) {
+      goals.push({
+        id: goal.id,
+        description: goal.description,
+        status: goal.status,
+        achievements: goal.achievements,
+        challenges: goal.challenges
+      });
+    }
+  }
+
+  return {
+    ...evaluation,
+    selfRatings,
+    peerRatings,
+    managerRatings,
+    goals
+  };
+}
+
+/**
+ * Create a new evaluation
+ * @param {Object} currentUser - The authenticated user
+ * @param {Object} payload - Request payload
+ * @returns {Object} Success or error response
+ */
+function handleCreateEvaluation(currentUser, payload) {
+  const { employeeId, cycleId, type } = payload;
+
+  if (!employeeId || !cycleId || !type) {
+    return errorResponse('Missing required fields: employeeId, cycleId, type', 'MISSING_PARAMETERS');
+  }
+
+  // Authorization check
+  if (!canCreateEvaluation(currentUser, employeeId)) {
+    return errorResponse('Unauthorized: Cannot create evaluation for this user', 'UNAUTHORIZED');
+  }
+
+  try {
+    const evaluationId = generateId('e');
+    const now = getCurrentTimestamp();
+
+    const rowData = [
+      evaluationId,                     // id
+      employeeId,                       // employeeId
+      cycleId,                          // cycleId
+      type,                             // type
+      EVALUATION_STATUSES.DRAFT,        // status
+      '',                               // overallSummary
+      now,                              // createdAt
+      now                               // updatedAt
+    ];
+
+    appendRow(SHEET_NAMES.EVALUATIONS, rowData);
+
+    const newEvaluation = {
+      id: evaluationId,
+      employeeId,
+      cycleId,
+      type,
+      status: EVALUATION_STATUSES.DRAFT,
+      overallSummary: null,
+      selfRatings: [],
+      peerRatings: [],
+      managerRatings: [],
+      goals: [],
+      createdAt: now,
+      updatedAt: now
+    };
+
+    return successResponse(newEvaluation);
+
+  } catch (error) {
+    Logger.log('Error in handleCreateEvaluation: ' + error.message);
+    return errorResponse('Failed to create evaluation', 'CREATE_EVALUATION_ERROR');
+  }
+}
+
+/**
+ * Update evaluation status
+ * @param {Object} currentUser - The authenticated user
+ * @param {Object} payload - Request payload with evaluationId and newStatus
+ * @returns {Object} Success or error response
+ */
+function handleUpdateEvaluationStatus(currentUser, payload) {
+  const { evaluationId, newStatus } = payload;
+
+  if (!evaluationId || !newStatus) {
+    return errorResponse('Missing required fields: evaluationId, newStatus', 'MISSING_PARAMETERS');
+  }
+
+  try {
+    const sheet = getSheet(SHEET_NAMES.EVALUATIONS);
+    const rowIndex = findRowById(sheet, COLUMN_MAPS.EVALUATIONS.id, evaluationId);
+
+    if (rowIndex === -1) {
+      return errorResponse('Evaluation not found', 'EVALUATION_NOT_FOUND');
+    }
+
+    const data = sheet.getDataRange().getValues();
+    const evaluation = rowToEvaluation(COLUMN_MAPS.EVALUATIONS, data[rowIndex - 1]);
+
+    // Authorization check
+    if (!canTransitionStatus(currentUser, evaluation)) {
+      return errorResponse('Unauthorized: Cannot update status for this evaluation', 'UNAUTHORIZED');
+    }
+
+    // Verify status transition is valid
+    const expectedNextStatus = getNextStatus(evaluation.status, evaluation.type);
+    if (newStatus !== expectedNextStatus && !isAdmin(currentUser)) {
+      return errorResponse(`Invalid status transition. Expected: ${expectedNextStatus}`, 'INVALID_STATUS');
+    }
+
+    // Update the row
+    const now = getCurrentTimestamp();
+    const updatedRow = data[rowIndex - 1];
+    updatedRow[COLUMN_MAPS.EVALUATIONS.status] = newStatus;
+    updatedRow[COLUMN_MAPS.EVALUATIONS.updatedAt] = now;
+
+    updateRow(SHEET_NAMES.EVALUATIONS, rowIndex, updatedRow);
+
+    const updatedEvaluation = enrichEvaluation({
+      ...evaluation,
+      status: newStatus,
+      updatedAt: now
+    });
+
+    return successResponse(updatedEvaluation);
+
+  } catch (error) {
+    Logger.log('Error in handleUpdateEvaluationStatus: ' + error.message);
+    return errorResponse('Failed to update evaluation status', 'UPDATE_STATUS_ERROR');
+  }
+}
+
+/**
+ * Pull back evaluation (revert status)
+ * @param {Object} currentUser - The authenticated user
+ * @param {Object} payload - Request payload with evaluationId
+ * @returns {Object} Success or error response
+ */
+function handlePullBackEvaluation(currentUser, payload) {
+  const { evaluationId } = payload;
+
+  if (!evaluationId) {
+    return errorResponse('Missing evaluationId parameter', 'MISSING_PARAMETER');
+  }
+
+  try {
+    const sheet = getSheet(SHEET_NAMES.EVALUATIONS);
+    const rowIndex = findRowById(sheet, COLUMN_MAPS.EVALUATIONS.id, evaluationId);
+
+    if (rowIndex === -1) {
+      return errorResponse('Evaluation not found', 'EVALUATION_NOT_FOUND');
+    }
+
+    const data = sheet.getDataRange().getValues();
+    const evaluation = rowToEvaluation(COLUMN_MAPS.EVALUATIONS, data[rowIndex - 1]);
+
+    // Authorization check
+    if (!canPullBackEvaluation(currentUser, evaluation)) {
+      return errorResponse('Unauthorized: Cannot pull back this evaluation', 'UNAUTHORIZED');
+    }
+
+    // Revert to Draft status
+    const now = getCurrentTimestamp();
+    const updatedRow = data[rowIndex - 1];
+    updatedRow[COLUMN_MAPS.EVALUATIONS.status] = EVALUATION_STATUSES.DRAFT;
+    updatedRow[COLUMN_MAPS.EVALUATIONS.updatedAt] = now;
+
+    updateRow(SHEET_NAMES.EVALUATIONS, rowIndex, updatedRow);
+
+    const updatedEvaluation = enrichEvaluation({
+      ...evaluation,
+      status: EVALUATION_STATUSES.DRAFT,
+      updatedAt: now
+    });
+
+    return successResponse(updatedEvaluation);
+
+  } catch (error) {
+    Logger.log('Error in handlePullBackEvaluation: ' + error.message);
+    return errorResponse('Failed to pull back evaluation', 'PULL_BACK_ERROR');
+  }
+}
+
+
+================================================================================
+FILE: RatingService.gs
+================================================================================
+
+/**
+ * Rating Service
+ * Handles saving and updating ratings with type-based authorization
+ */
+
+/**
+ * Save ratings for an evaluation
+ * @param {Object} currentUser - The authenticated user
+ * @param {Object} payload - Request payload with evaluationId, ratingType, ratings, submit
+ * @returns {Object} Success or error response
+ */
+function handleSaveRatings(currentUser, payload) {
+  const { evaluationId, ratingType, ratings, submit } = payload;
+
+  if (!evaluationId || !ratingType || !ratings) {
+    return errorResponse('Missing required fields: evaluationId, ratingType, ratings', 'MISSING_PARAMETERS');
+  }
+
+  // Validate rating type
+  if (!Object.values(RATING_TYPES).includes(ratingType)) {
+    return errorResponse('Invalid rating type', 'INVALID_RATING_TYPE');
+  }
+
+  try {
+    // Get the evaluation
+    const evalSheet = getSheet(SHEET_NAMES.EVALUATIONS);
+    const evalRowIndex = findRowById(evalSheet, COLUMN_MAPS.EVALUATIONS.id, evaluationId);
+
+    if (evalRowIndex === -1) {
+      return errorResponse('Evaluation not found', 'EVALUATION_NOT_FOUND');
+    }
+
+    const evalData = evalSheet.getDataRange().getValues();
+    const evaluation = rowToEvaluation(COLUMN_MAPS.EVALUATIONS, evalData[evalRowIndex - 1]);
+
+    // Authorization check based on rating type
+    const modificationType = ratingType === RATING_TYPES.SELF ? 'SELF_RATING' :
+                            ratingType === RATING_TYPES.MANAGER ? 'MANAGER_RATING' :
+                            'PEER_RATING';
+
+    if (!canModifyEvaluation(currentUser, evaluation, modificationType)) {
+      return errorResponse('Unauthorized: Cannot save ' + ratingType.toLowerCase() + ' ratings for this evaluation', 'UNAUTHORIZED');
+    }
+
+    // Delete existing ratings of this type for this evaluation
+    const ratingsSheet = getSheet(SHEET_NAMES.RATINGS);
+    const ratingsData = ratingsSheet.getDataRange().getValues();
+    const ratingsColMap = COLUMN_MAPS.RATINGS;
+
+    // Find and delete old ratings (from bottom to top to avoid index shifting)
+    for (let i = ratingsData.length - 1; i >= 1; i--) {
+      const rating = rowToRating(ratingsColMap, ratingsData[i]);
+      if (rating.evaluationId === evaluationId && rating.ratingType === ratingType) {
+        // For peer ratings, also check reviewer
+        if (ratingType === RATING_TYPES.PEER && rating.reviewerId !== currentUser.id) {
+          continue; // Don't delete other reviewers' ratings
+        }
+        deleteRow(SHEET_NAMES.RATINGS, i + 1);
+      }
+    }
+
+    // Insert new ratings
+    const now = getCurrentTimestamp();
+    for (const rating of ratings) {
+      const ratingId = generateId('r');
+      const rowData = [
+        ratingId,                     // id
+        evaluationId,                 // evaluationId
+        ratingType,                   // ratingType
+        rating.competencyId,          // competencyId
+        rating.score,                 // score
+        rating.comments || '',        // comments
+        ratingType === RATING_TYPES.PEER ? currentUser.id : '', // reviewerId
+        now,                          // createdAt
+        now                           // updatedAt
+      ];
+
+      appendRow(SHEET_NAMES.RATINGS, rowData);
+    }
+
+    // If submit flag is true and this is a self-assessment, update status
+    if (submit && ratingType === RATING_TYPES.SELF) {
+      const nextStatus = getNextStatus(evaluation.status, evaluation.type);
+      if (nextStatus) {
+        const updatedEvalRow = evalData[evalRowIndex - 1];
+        updatedEvalRow[COLUMN_MAPS.EVALUATIONS.status] = nextStatus;
+        updatedEvalRow[COLUMN_MAPS.EVALUATIONS.updatedAt] = now;
+        updateRow(SHEET_NAMES.EVALUATIONS, evalRowIndex, updatedEvalRow);
+        evaluation.status = nextStatus;
+      }
+    }
+
+    // Return enriched evaluation
+    const enrichedEvaluation = enrichEvaluation({
+      ...evaluation,
+      updatedAt: now
+    });
+
+    return successResponse(enrichedEvaluation);
+
+  } catch (error) {
+    Logger.log('Error in handleSaveRatings: ' + error.message);
+    return errorResponse('Failed to save ratings', 'SAVE_RATINGS_ERROR');
+  }
+}
+
+
+================================================================================
+FILE: GoalService.gs
+================================================================================
+
+/**
+ * Goal Service
+ * Handles goal CRUD operations
+ */
+
+/**
+ * Save goals for an evaluation
+ * @param {Object} currentUser - The authenticated user
+ * @param {Object} payload - Request payload with evaluationId and goals array
+ * @returns {Object} Success or error response
+ */
+function handleSaveGoals(currentUser, payload) {
+  const { evaluationId, goals } = payload;
+
+  if (!evaluationId || !goals) {
+    return errorResponse('Missing required fields: evaluationId, goals', 'MISSING_PARAMETERS');
+  }
+
+  try {
+    // Get the evaluation
+    const evalSheet = getSheet(SHEET_NAMES.EVALUATIONS);
+    const evalRowIndex = findRowById(evalSheet, COLUMN_MAPS.EVALUATIONS.id, evaluationId);
+
+    if (evalRowIndex === -1) {
+      return errorResponse('Evaluation not found', 'EVALUATION_NOT_FOUND');
+    }
+
+    const evalData = evalSheet.getDataRange().getValues();
+    const evaluation = rowToEvaluation(COLUMN_MAPS.EVALUATIONS, evalData[evalRowIndex - 1]);
+
+    // Authorization check
+    if (!canModifyEvaluation(currentUser, evaluation, 'GOALS')) {
+      return errorResponse('Unauthorized: Cannot save goals for this evaluation', 'UNAUTHORIZED');
+    }
+
+    // Delete existing goals for this evaluation
+    const goalsSheet = getSheet(SHEET_NAMES.GOALS);
+    const goalsData = goalsSheet.getDataRange().getValues();
+    const goalsColMap = COLUMN_MAPS.GOALS;
+
+    // Delete from bottom to top to avoid index shifting
+    for (let i = goalsData.length - 1; i >= 1; i--) {
+      const goal = rowToGoal(goalsColMap, goalsData[i]);
+      if (goal.evaluationId === evaluationId) {
+        deleteRow(SHEET_NAMES.GOALS, i + 1);
+      }
+    }
+
+    // Insert new goals
+    const now = getCurrentTimestamp();
+    for (const goal of goals) {
+      const goalId = goal.id || generateId('g');
+      const rowData = [
+        goalId,                       // id
+        evaluationId,                 // evaluationId
+        goal.description || '',       // description
+        goal.status || GOAL_STATUSES.NOT_STARTED, // status
+        goal.achievements || '',      // achievements
+        goal.challenges || '',        // challenges
+        now,                          // createdAt
+        now                           // updatedAt
+      ];
+
+      appendRow(SHEET_NAMES.GOALS, rowData);
+    }
+
+    // Update evaluation timestamp
+    const updatedEvalRow = evalData[evalRowIndex - 1];
+    updatedEvalRow[COLUMN_MAPS.EVALUATIONS.updatedAt] = now;
+    updateRow(SHEET_NAMES.EVALUATIONS, evalRowIndex, updatedEvalRow);
+
+    // Return enriched evaluation
+    const enrichedEvaluation = enrichEvaluation({
+      ...evaluation,
+      updatedAt: now
+    });
+
+    return successResponse(enrichedEvaluation);
+
+  } catch (error) {
+    Logger.log('Error in handleSaveGoals: ' + error.message);
+    return errorResponse('Failed to save goals', 'SAVE_GOALS_ERROR');
+  }
+}
+
+
+================================================================================
+FILE: PeerReviewService.gs
+================================================================================
+
+/**
+ * Peer Review Service
+ * Handles peer review requests and submissions
+ */
+
+/**
+ * Get peer review requests for the current user
+ * @param {Object} currentUser - The authenticated user
+ * @returns {Object} Success or error response
+ */
+function handleGetPeerReviewRequests(currentUser) {
+  try {
+    const sheet = getSheet(SHEET_NAMES.PEER_REVIEW_REQUESTS);
+    const data = sheet.getDataRange().getValues();
+
+    if (data.length <= 1) {
+      return successResponse([]); // No requests
+    }
+
+    const colMap = COLUMN_MAPS.PEER_REVIEW_REQUESTS;
+    const requests = [];
+
+    // Get requests where current user is the reviewer
+    for (let i = 1; i < data.length; i++) {
+      const request = rowToPeerRequest(colMap, data[i]);
+
+      if (request.reviewerId === currentUser.id) {
+        // Enrich with ratings if completed
+        if (request.status === PEER_REQUEST_STATUSES.COMPLETED) {
+          const ratingsSheet = getSheet(SHEET_NAMES.RATINGS);
+          const ratingsData = ratingsSheet.getDataRange().getValues();
+          const ratingsColMap = COLUMN_MAPS.RATINGS;
+
+          const ratings = [];
+          for (let j = 1; j < ratingsData.length; j++) {
+            const rating = rowToRating(ratingsColMap, ratingsData[j]);
+            if (rating.evaluationId === request.evaluationId &&
+                rating.ratingType === RATING_TYPES.PEER &&
+                rating.reviewerId === currentUser.id) {
+              ratings.push({
+                competencyId: rating.competencyId,
+                score: rating.score,
+                comments: rating.comments
+              });
+            }
+          }
+
+          request.ratings = ratings;
+        } else {
+          request.ratings = [];
+        }
+
+        requests.push(request);
+      }
+    }
+
+    return successResponse(requests);
+
+  } catch (error) {
+    Logger.log('Error in handleGetPeerReviewRequests: ' + error.message);
+    return errorResponse('Failed to retrieve peer review requests', 'GET_PEER_REQUESTS_ERROR');
+  }
+}
+
+/**
+ * Submit a peer review
+ * @param {Object} currentUser - The authenticated user
+ * @param {Object} payload - Request payload with requestId and ratings
+ * @returns {Object} Success or error response
+ */
+function handleSubmitPeerReview(currentUser, payload) {
+  const { requestId, ratings } = payload;
+
+  if (!requestId || !ratings) {
+    return errorResponse('Missing required fields: requestId, ratings', 'MISSING_PARAMETERS');
+  }
+
+  try {
+    // Get the peer review request
+    const requestSheet = getSheet(SHEET_NAMES.PEER_REVIEW_REQUESTS);
+    const requestRowIndex = findRowById(requestSheet, COLUMN_MAPS.PEER_REVIEW_REQUESTS.id, requestId);
+
+    if (requestRowIndex === -1) {
+      return errorResponse('Peer review request not found', 'REQUEST_NOT_FOUND');
+    }
+
+    const requestData = requestSheet.getDataRange().getValues();
+    const request = rowToPeerRequest(COLUMN_MAPS.PEER_REVIEW_REQUESTS, requestData[requestRowIndex - 1]);
+
+    // Authorization: must be the assigned reviewer
+    if (request.reviewerId !== currentUser.id) {
+      return errorResponse('Unauthorized: You are not the assigned reviewer', 'UNAUTHORIZED');
+    }
+
+    // Check if already completed
+    if (request.status === PEER_REQUEST_STATUSES.COMPLETED) {
+      return errorResponse('This peer review has already been submitted', 'ALREADY_COMPLETED');
+    }
+
+    const evaluationId = request.evaluationId;
+
+    // Delete existing peer ratings from this reviewer for this evaluation
+    const ratingsSheet = getSheet(SHEET_NAMES.RATINGS);
+    const ratingsData = ratingsSheet.getDataRange().getValues();
+    const ratingsColMap = COLUMN_MAPS.RATINGS;
+
+    for (let i = ratingsData.length - 1; i >= 1; i--) {
+      const rating = rowToRating(ratingsColMap, ratingsData[i]);
+      if (rating.evaluationId === evaluationId &&
+          rating.ratingType === RATING_TYPES.PEER &&
+          rating.reviewerId === currentUser.id) {
+        deleteRow(SHEET_NAMES.RATINGS, i + 1);
+      }
+    }
+
+    // Insert new peer ratings
+    const now = getCurrentTimestamp();
+    for (const rating of ratings) {
+      const ratingId = generateId('r');
+      const rowData = [
+        ratingId,                     // id
+        evaluationId,                 // evaluationId
+        RATING_TYPES.PEER,            // ratingType
+        rating.competencyId,          // competencyId
+        rating.score,                 // score
+        rating.comments || '',        // comments
+        currentUser.id,               // reviewerId
+        now,                          // createdAt
+        now                           // updatedAt
+      ];
+
+      appendRow(SHEET_NAMES.RATINGS, rowData);
+    }
+
+    // Update request status to Completed
+    const updatedRequestRow = requestData[requestRowIndex - 1];
+    updatedRequestRow[COLUMN_MAPS.PEER_REVIEW_REQUESTS.status] = PEER_REQUEST_STATUSES.COMPLETED;
+    updatedRequestRow[COLUMN_MAPS.PEER_REVIEW_REQUESTS.updatedAt] = now;
+    updateRow(SHEET_NAMES.PEER_REVIEW_REQUESTS, requestRowIndex, updatedRequestRow);
+
+    // Return updated request
+    const updatedRequest = {
+      ...request,
+      status: PEER_REQUEST_STATUSES.COMPLETED,
+      ratings: ratings,
+      updatedAt: now
+    };
+
+    return successResponse(updatedRequest);
+
+  } catch (error) {
+    Logger.log('Error in handleSubmitPeerReview: ' + error.message);
+    return errorResponse('Failed to submit peer review', 'SUBMIT_PEER_REVIEW_ERROR');
+  }
+}
+
+/**
+ * Create a peer review request
+ * @param {Object} currentUser - The authenticated user
+ * @param {Object} payload - Request payload with evaluationId, reviewerId
+ * @returns {Object} Success or error response
+ */
+function handleCreatePeerReviewRequest(currentUser, payload) {
+  const { evaluationId, reviewerId } = payload;
+
+  if (!evaluationId || !reviewerId) {
+    return errorResponse('Missing required fields: evaluationId, reviewerId', 'MISSING_PARAMETERS');
+  }
+
+  try {
+    // Get the evaluation
+    const evalSheet = getSheet(SHEET_NAMES.EVALUATIONS);
+    const evalRowIndex = findRowById(evalSheet, COLUMN_MAPS.EVALUATIONS.id, evaluationId);
+
+    if (evalRowIndex === -1) {
+      return errorResponse('Evaluation not found', 'EVALUATION_NOT_FOUND');
+    }
+
+    const evalData = evalSheet.getDataRange().getValues();
+    const evaluation = rowToEvaluation(COLUMN_MAPS.EVALUATIONS, evalData[evalRowIndex - 1]);
+
+    // Authorization: must be manager or admin
+    if (!isManager(currentUser) && !isAdmin(currentUser)) {
+      return errorResponse('Unauthorized: Only managers can create peer review requests', 'UNAUTHORIZED');
+    }
+
+    // Get reviewer and target user info
+    const reviewer = getUserById(reviewerId);
+    const targetUser = getUserById(evaluation.employeeId);
+
+    if (!reviewer || !targetUser) {
+      return errorResponse('Reviewer or target user not found', 'USER_NOT_FOUND');
+    }
+
+    // Create the request
+    const requestId = generateId('pr');
+    const now = getCurrentTimestamp();
+
+    const rowData = [
+      requestId,                             // id
+      evaluationId,                          // evaluationId
+      reviewerId,                            // reviewerId
+      evaluation.employeeId,                 // targetUserId
+      targetUser.name,                       // targetUserName (denormalized)
+      PEER_REQUEST_STATUSES.PENDING,         // status
+      now,                                   // createdAt
+      now                                    // updatedAt
+    ];
+
+    appendRow(SHEET_NAMES.PEER_REVIEW_REQUESTS, rowData);
+
+    const newRequest = {
+      id: requestId,
+      evaluationId,
+      reviewerId,
+      targetUserId: evaluation.employeeId,
+      targetUserName: targetUser.name,
+      status: PEER_REQUEST_STATUSES.PENDING,
+      ratings: [],
+      createdAt: now,
+      updatedAt: now
+    };
+
+    return successResponse(newRequest);
+
+  } catch (error) {
+    Logger.log('Error in handleCreatePeerReviewRequest: ' + error.message);
+    return errorResponse('Failed to create peer review request', 'CREATE_REQUEST_ERROR');
+  }
+}
+
+
+================================================================================
+FILE: CycleService.gs
+================================================================================
+
+/**
+ * Cycle Service
+ * Handles evaluation cycle operations
+ */
+
+/**
+ * Get all evaluation cycles
+ * @param {Object} currentUser - The authenticated user
+ * @returns {Object} Success or error response
+ */
+function handleGetCycles(currentUser) {
+  try {
+    const cycles = getSheetData(
+      SHEET_NAMES.EVALUATION_CYCLES,
+      COLUMN_MAPS.EVALUATION_CYCLES,
+      rowToCycle
+    );
+
+    return successResponse(cycles);
+
+  } catch (error) {
+    Logger.log('Error in handleGetCycles: ' + error.message);
+    return errorResponse('Failed to retrieve cycles', 'GET_CYCLES_ERROR');
+  }
+}
+
+/**
+ * Get the active evaluation cycle
+ * @param {Object} currentUser - The authenticated user
+ * @returns {Object} Success or error response
+ */
+function handleGetActiveCycle(currentUser) {
+  try {
+    const cycles = getSheetData(
+      SHEET_NAMES.EVALUATION_CYCLES,
+      COLUMN_MAPS.EVALUATION_CYCLES,
+      rowToCycle
+    );
+
+    // Find the first active cycle
+    const activeCycle = cycles.find(c => c.status === 'Active');
+
+    if (!activeCycle) {
+      return errorResponse('No active cycle found', 'NO_ACTIVE_CYCLE');
+    }
+
+    return successResponse(activeCycle);
+
+  } catch (error) {
+    Logger.log('Error in handleGetActiveCycle: ' + error.message);
+    return errorResponse('Failed to retrieve active cycle', 'GET_ACTIVE_CYCLE_ERROR');
+  }
+}
+
+
+================================================================================
+FILE: CompetencyService.gs
+================================================================================
+
+/**
+ * Competency Service
+ * Handles custom competency CRUD operations
+ */
+
+/**
+ * Get all competencies (built-in from constants.ts + custom from sheet)
+ * @param {Object} currentUser - The authenticated user
+ * @returns {Object} Success or error response
+ */
+function handleGetCompetencies(currentUser) {
+  try {
+    // Get custom competencies from sheet
+    const customCompetencies = getSheetData(
+      SHEET_NAMES.COMPETENCIES,
+      COLUMN_MAPS.COMPETENCIES,
+      rowToCompetency
+    );
+
+    // Note: Built-in competencies are defined in the frontend (constants.ts)
+    // This endpoint only returns custom competencies
+    // The frontend will merge them with built-in ones
+
+    return successResponse(customCompetencies);
+
+  } catch (error) {
+    Logger.log('Error in handleGetCompetencies: ' + error.message);
+    return errorResponse('Failed to retrieve competencies', 'GET_COMPETENCIES_ERROR');
+  }
+}
+
+/**
+ * Save (create or update) a custom competency
+ * @param {Object} currentUser - The authenticated user
+ * @param {Object} payload - Request payload with competency data
+ * @returns {Object} Success or error response
+ */
+function handleSaveCustomCompetency(currentUser, payload) {
+  const { id, name, description, category, roleType } = payload;
+
+  if (!name || !description || !category) {
+    return errorResponse('Missing required fields: name, description, category', 'MISSING_PARAMETERS');
+  }
+
+  // Authorization: Admin only
+  if (!canManageCompetencies(currentUser)) {
+    return errorResponse('Unauthorized: Admin access required', 'UNAUTHORIZED');
+  }
+
+  try {
+    const sheet = getSheet(SHEET_NAMES.COMPETENCIES);
+    const now = getCurrentTimestamp();
+
+    if (id) {
+      // Update existing
+      const rowIndex = findRowById(sheet, COLUMN_MAPS.COMPETENCIES.id, id);
+
+      if (rowIndex === -1) {
+        return errorResponse('Competency not found', 'COMPETENCY_NOT_FOUND');
+      }
+
+      const data = sheet.getDataRange().getValues();
+      const updatedRow = data[rowIndex - 1];
+      updatedRow[COLUMN_MAPS.COMPETENCIES.name] = name;
+      updatedRow[COLUMN_MAPS.COMPETENCIES.description] = description;
+      updatedRow[COLUMN_MAPS.COMPETENCIES.category] = category;
+      updatedRow[COLUMN_MAPS.COMPETENCIES.roleType] = roleType || '';
+
+      updateRow(SHEET_NAMES.COMPETENCIES, rowIndex, updatedRow);
+
+      const updatedCompetency = {
+        id,
+        name,
+        description,
+        category,
+        roleType: roleType || null,
+        isCustom: true,
+        createdAt: updatedRow[COLUMN_MAPS.COMPETENCIES.createdAt]
+      };
+
+      return successResponse(updatedCompetency);
+
+    } else {
+      // Create new
+      const competencyId = generateId('custom');
+
+      const rowData = [
+        competencyId,           // id
+        name,                   // name
+        description,            // description
+        category,               // category
+        roleType || '',         // roleType
+        true,                   // isCustom
+        now                     // createdAt
+      ];
+
+      appendRow(SHEET_NAMES.COMPETENCIES, rowData);
+
+      const newCompetency = {
+        id: competencyId,
+        name,
+        description,
+        category,
+        roleType: roleType || null,
+        isCustom: true,
+        createdAt: now
+      };
+
+      return successResponse(newCompetency);
+    }
+
+  } catch (error) {
+    Logger.log('Error in handleSaveCustomCompetency: ' + error.message);
+    return errorResponse('Failed to save competency', 'SAVE_COMPETENCY_ERROR');
+  }
+}
+
+/**
+ * Delete a custom competency
+ * @param {Object} currentUser - The authenticated user
+ * @param {Object} payload - Request payload with competencyId
+ * @returns {Object} Success or error response
+ */
+function handleDeleteCustomCompetency(currentUser, payload) {
+  const { competencyId } = payload;
+
+  if (!competencyId) {
+    return errorResponse('Missing competencyId parameter', 'MISSING_PARAMETER');
+  }
+
+  // Authorization: Admin only
+  if (!canManageCompetencies(currentUser)) {
+    return errorResponse('Unauthorized: Admin access required', 'UNAUTHORIZED');
+  }
+
+  try {
+    const sheet = getSheet(SHEET_NAMES.COMPETENCIES);
+    const rowIndex = findRowById(sheet, COLUMN_MAPS.COMPETENCIES.id, competencyId);
+
+    if (rowIndex === -1) {
+      return errorResponse('Competency not found', 'COMPETENCY_NOT_FOUND');
+    }
+
+    // TODO: Check if competency is used in any ratings before deleting
+    // For now, just delete it
+
+    deleteRow(SHEET_NAMES.COMPETENCIES, rowIndex);
+
+    return successResponse({ deleted: true, competencyId });
+
+  } catch (error) {
+    Logger.log('Error in handleDeleteCustomCompetency: ' + error.message);
+    return errorResponse('Failed to delete competency', 'DELETE_COMPETENCY_ERROR');
+  }
+}

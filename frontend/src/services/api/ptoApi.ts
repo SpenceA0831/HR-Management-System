@@ -7,28 +7,28 @@ import type {
   SystemConfig,
   ApiResponse
 } from '../../types';
-import {
-  mockSystemConfig,
-  mockHolidays,
-  mockBlackoutDates,
-  mockPtoBalance,
-  mockPtoRequests,
-  generateId,
-} from './mockData';
+// Mock data imports disabled - using real backend
+// import {
+//   mockSystemConfig,
+//   mockHolidays,
+//   mockBlackoutDates,
+//   mockPtoBalance,
+//   mockPtoRequests,
+//   generateId,
+// } from './mockData';
 
 /**
  * PTO API Service
  * Handles all PTO-related API calls to Google Apps Script backend
- * Falls back to mock data when backend is not configured
  */
 
 const API_BASE_URL = import.meta.env.VITE_APPS_SCRIPT_URL;
-const USE_MOCK_DATA = !API_BASE_URL || API_BASE_URL.includes('YOUR_DEPLOYMENT_ID');
+const USE_MOCK_DATA = false; // Disabled - using real backend
 
-// In-memory storage for mock data (persists during session)
-let mockHolidayData = [...mockHolidays];
-let mockBlackoutData = [...mockBlackoutDates];
-let mockConfigData = { ...mockSystemConfig };
+// Mock data storage disabled
+// let mockHolidayData = [...mockHolidays];
+// let mockBlackoutData = [...mockBlackoutDates];
+// let mockConfigData = { ...mockSystemConfig };
 
 // ============================================================================
 // PTO Requests

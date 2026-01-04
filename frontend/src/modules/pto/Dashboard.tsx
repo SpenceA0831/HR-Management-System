@@ -576,7 +576,7 @@ export default function PtoDashboard() {
                                     variant="outlined"
                                     startIcon={<FileText size={18} />}
                                     sx={{ justifyContent: 'flex-start', py: 1.5 }}
-                                    onClick={() => window.open('/lev-policy.pdf', '_blank')}
+                                    onClick={() => window.open('https://drive.google.com/file/d/1Jjd7HIsklJN7DmFo0aDVYuU_X517ggNJ/view?usp=drive_link', '_blank')}
                                 >
                                     LEV Policy
                                 </Button>
@@ -913,10 +913,7 @@ export default function PtoDashboard() {
                                 <CardContent sx={{ p: 3 }}>
                                     <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>Quick Actions</Typography>
                                     <Stack spacing={1.5}>
-                                        <Button fullWidth variant="outlined" startIcon={<CheckCircle2 size={18} />} sx={{ justifyContent: 'flex-start', py: 1.5 }} onClick={() => navigate('/pto/requests?status=Submitted')}>
-                                            Review Submitted
-                                        </Button>
-                                        <Button fullWidth variant="outlined" startIcon={<CalendarIcon size={18} />} sx={{ justifyContent: 'flex-start', py: 1.5 }} onClick={() => navigate('/pto/calendar')}>
+                                        <Button fullWidth variant="outlined" startIcon={<CalendarIcon size={18} />} sx={{ justifyContent: 'flex-start', py: 1.5 }} onClick={() => window.open('https://calendar.google.com/calendar/embed?src=c_bbe5eba035ea3848deef6d1e6949f8b8dca77f3f14e8e6b9bdd727953c107631%40group.calendar.google.com&ctz=America%2FNew_York', '_blank')}>
                                             Team Calendar
                                         </Button>
                                     </Stack>

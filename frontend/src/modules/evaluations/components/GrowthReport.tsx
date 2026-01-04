@@ -11,12 +11,11 @@ import {
   Chip,
   Alert,
   Stack,
-  Grid2 as Grid,
+  Grid,
 } from '@mui/material';
 import { PieChart } from 'lucide-react';
 import type { Competency, Rating } from '../../../types';
 import RadarChart from './RadarChart';
-import { RATING_LABELS } from '../../../constants/evaluations';
 
 interface GrowthReportProps {
   competencies: Competency[];

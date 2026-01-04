@@ -10,7 +10,6 @@ interface StatusChipProps extends Omit<ChipProps, 'color'> {
 const statusColorMap: Record<PtoStatus, any> = {
     'Draft': 'default',
     'Submitted': 'warning',
-    'Pending': 'warning',
     'Approved': 'success',
     'Denied': 'error',
     'ChangesRequested': 'secondary',
@@ -20,7 +19,6 @@ const statusColorMap: Record<PtoStatus, any> = {
 const statusLabelMap: Record<PtoStatus, string> = {
     'Draft': 'Draft',
     'Submitted': 'Awaiting Approval',
-    'Pending': 'Pending',
     'Approved': 'Approved',
     'Denied': 'Denied',
     'ChangesRequested': 'Changes Requested',

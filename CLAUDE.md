@@ -4,18 +4,27 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-HR Management System is a unified platform combining **PTO (Paid Time Off) tracking** and **Staff Evaluations** in a single application. The system uses a non-traditional architecture with Google Apps Script as the backend, Google Sheets as the database, and React as the frontend.
+HR Management System is a unified platform combining **PTO (Paid Time Off) tracking**, **Payroll & Reimbursements**, and **Staff Evaluations** in a single application. The system uses a non-traditional architecture with Google Apps Script as the backend, Google Sheets as the database, and React as the frontend.
 
 **Architecture Stack:**
 - **Frontend**: React 19 + TypeScript + Material-UI v7 + Zustand + React Router v7
 - **Backend**: Google Apps Script (deployed as Web App)
-- **Database**: Google Sheets (12 sheets)
+- **Database**: Google Sheets (14 sheets: Users, PTO_Requests, PTO_Balances, Holidays, Blackout_Dates, System_Config, Payroll_History, Reimbursements, + 6 evaluation sheets)
 - **Auth**: Google Workspace OAuth (with demo mode for local dev)
+- **Dependencies**: pdfjs-dist (PDF parsing), recharts (data visualization)
 
 **Module Status:**
-- **PTO Tracker**: Fully implemented with request management, approval workflows, balance tracking
-- **Staff Evaluations**: Foundation in place, not fully implemented
-- **Admin Panel**: Configuration management for both modules
+- **PTO Tracker**: ✅ Fully implemented with request management, approval workflows, balance tracking
+- **Payroll & Reimbursements**: 🟡 Backend complete, frontend 90% complete (see NEXT_STEPS.md)
+  - Pre-populated bi-weekly payroll runs (26/year)
+  - Paychex PDF parsing support
+  - Expense reimbursement workflow with manager approval
+  - Integration: approved reimbursements → payroll processing
+- **Staff Evaluations**: 🟡 Components created, routes/dashboard pending
+  - 360° review system with self, peer, and manager ratings
+  - Growth reports with perception gap analysis
+  - Competency-based evaluation framework
+- **Admin Panel**: ✅ Configuration management for PTO and evaluations
 
 ## Repository Structure
 
@@ -116,37 +125,54 @@ The application has a module selector pattern:
 
 ```
 Unauthenticated → SignIn page
-Authenticated → ModuleSelector → Choose PTO or Evaluations
+Authenticated → ModuleSelector → Choose PTO, Payroll, Evaluations, or Admin
               → /pto → PTO Dashboard (consolidated view with all requests)
               → /pto/requests/new → New PTO Request form
               → /pto/requests/:id → PTO Request detail/edit
-              → /evaluations → Evaluations Dashboard & features
+              → /payroll → Payroll Dashboard (recent runs, reimbursements)
+              → /payroll/approval → Process approved reimbursements (Admin only)
+              → /payroll/history → All payroll runs (Admin only)
+              → /payroll/upload → Upload Paychex PDF or manual entry (Admin only)
+              → /payroll/reimbursements → View/manage reimbursements
+              → /payroll/reimbursements/new → Submit reimbursement request
+              → /payroll/reimbursements/:id → Reimbursement detail/approval
+              → /evaluations → Evaluations Dashboard & features (pending)
               → /admin → Admin settings (ADMIN role only)
 ```
 
 **Important**: The `/pto/requests` list page was removed - all request viewing is consolidated into the main `/pto` dashboard with DataGrid, filters, and inline actions.
 
-Active module is stored in Zustand state (`activeModule: 'pto' | 'evaluations' | 'admin'`). Each module dashboard automatically sets its `activeModule` on mount to ensure the home button appears in the navigation.
+Active module is stored in Zustand state (`activeModule: 'pto' | 'evaluations' | 'payroll' | 'admin'`). Each module dashboard automatically sets its `activeModule` on mount to ensure the home button appears in the navigation.
 
 ### 5. Backend Service Layer Organization
 
 Backend code is organized by service:
 
+**Core Infrastructure:**
 - **Code.gs**: Main router (doGet/doPost handlers)
 - **Config.gs**: Sheet names, column mappings, enums
 - **Auth.gs**: Authentication and authorization
 - **Utils.gs**: Helper functions, converters, response builders
+
+**PTO Module:**
 - **UserService.gs**: User CRUD operations
 - **PtoService.gs**: PTO request management
 - **PtoBalanceService.gs**: PTO balance calculations
 - **HolidayService.gs**: Holidays and blackout dates
 - **ConfigService.gs**: System configuration
+
+**Payroll & Reimbursements Module:**
+- **PayrollService.gs**: Payroll run CRUD, status management
+- **PayrollGenerator.gs**: Pre-populate annual payroll runs, pending run management
+- **ReimbursementService.gs**: Reimbursement CRUD, approval workflow
+
+**Evaluations Module:**
 - **EvaluationService.gs**: Evaluation CRUD
 - **RatingService.gs**, **GoalService.gs**, **PeerReviewService.gs**, **CycleService.gs**, **CompetencyService.gs**: Evaluation features
 
 All services follow the same pattern:
 1. Handler function in Code.gs routes to service function
-2. Service function validates permissions
+2. Service function validates permissions (ADMIN/MANAGER/STAFF)
 3. Service accesses Google Sheets via Config.gs mappings
 4. Returns `successResponse(data)` or `errorResponse(message, code)`
 
@@ -174,8 +200,9 @@ All services follow the same pattern:
 All API calls go through service layers in `frontend/src/services/api/`:
 
 - `apiClient.ts`: Core HTTP client with demo mode support
-- `ptoApi.ts`: PTO endpoints
-- `evaluationsApi.ts`: Evaluation endpoints
+- `ptoApi.ts`: PTO endpoints (requests, balances, holidays, blackout dates, config)
+- `payrollApi.ts`: Payroll & reimbursement endpoints (runs, reimbursements, pending runs)
+- `evaluationsApi.ts`: Evaluation endpoints (cycles, competencies)
 - `debugApi.ts`: Debugging utilities (exposed as `window.debugApi` in dev)
 
 **Never call fetch() directly** - always use the service layer functions.
@@ -186,10 +213,46 @@ All TypeScript types are centralized in `frontend/src/types/index.ts`:
 
 - **User types**: `User`, `UserRole`, `RoleType`, `EmploymentType`
 - **PTO types**: `PtoRequest`, `PtoBalance`, `PtoStatus`, `Holiday`, `BlackoutDate`, `SystemConfig`
+- **Payroll types**: `PayrollRun`, `PayrollStatus` (Pending/Draft/Approved/Processed), `PayrollSource`, `Reimbursement`, `ReimbursementStatus`, `ReimbursementType`, `ReimbursementMethod`
 - **Evaluation types**: `Evaluation`, `Rating`, `Goal`, `Competency`, `PeerReviewRequest`, `EvaluationCycle`
 - **API types**: `ApiResponse<T>` - wrapper for all API responses
 
 Backend types are maintained separately in `backend/Config.gs` as Google Apps Script constants.
+
+## Payroll & Reimbursements Workflow
+
+### Pre-Populated Payroll Runs
+
+The system supports pre-populating all 26 bi-weekly payroll runs for the year:
+
+1. **One-time setup** (start of year):
+   - Admin runs `generateAnnualRuns(year, firstRunDate)`
+   - System creates 26 runs with status "Pending"
+   - Each run has dates but $0 placeholders for financial data
+
+2. **Bi-weekly workflow**:
+   - Admin goes to PayrollUpload
+   - Sees list of pending runs
+   - Uploads Paychex PDF OR manually enters data
+   - System calls `updatePendingRun()` to fill financial data
+   - Status changes: Pending → Draft → Approved → Processed
+
+### Reimbursement Workflow
+
+1. **Staff submits** reimbursement request → Status: "Pending"
+2. **Manager/Admin reviews** and approves → Status: "Approved"
+3. **Approved reimbursements appear** in Payroll Approval module
+4. **Admin processes** with payroll run → Status: "Reimbursed" (with dateReimbursed)
+
+**Reimbursement Types** (IRS tax-advantaged + general):
+- Section 129 Plan - Dependent Care
+- Section 127 Plan - Educational Assistance
+- Expense Reimbursement
+
+**Reimbursement Methods**:
+- Payroll Expense Reimbursement (default - included in next paycheck)
+- Check
+- Direct Deposit
 
 ## Environment Variables
 

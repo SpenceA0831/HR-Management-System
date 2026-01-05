@@ -423,13 +423,29 @@ function handleCancelPtoRequest(currentUser, payload) {
  * Add approved PTO request to Google Calendar
  * @param {Object} request - The PTO request object
  */
+/**
+ * Add approved PTO request to Google Calendar
+ * @param {Object} request - The PTO request object
+ */
 function addPtoToCalendar(request) {
   try {
-    const calendarId = 'c_bbe5eba035ea3848deef6d1e6949f8b8dca77f3f14e8e6b9bdd727953c107631@group.calendar.google.com';
+    // Get calendar ID from system config
+    const configResponse = handleGetSystemConfig(null);
+    if (!configResponse.success || !configResponse.data) {
+      throw new Error('Failed to retrieve system configuration for calendar ID');
+    }
+
+    const calendarId = configResponse.data.sharedCalendarId;
+
+    if (!calendarId) {
+      Logger.log('No shared calendar ID configured. Skipping calendar event creation.');
+      return; 
+    }
+
     const calendar = CalendarApp.getCalendarById(calendarId);
 
     if (!calendar) {
-      throw new Error('Calendar not found or no access');
+      throw new Error('Calendar not found or no access with ID: ' + calendarId);
     }
 
     // Parse dates

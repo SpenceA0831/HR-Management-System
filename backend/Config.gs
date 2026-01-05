@@ -109,7 +109,8 @@ const COLUMN_MAPS = {
     defaultPartTimeHours: 1,
     prorateByHireDate: 2,
     fullTeamCalendarVisible: 3,
-    shortNoticeThresholdDays: 4
+    shortNoticeThresholdDays: 4,
+    sharedCalendarId: 5
   },
 
   PAYROLL_HISTORY: {

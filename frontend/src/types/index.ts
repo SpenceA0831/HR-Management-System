@@ -116,6 +116,7 @@ export interface SystemConfig {
   prorateByHireDate: boolean;
   fullTeamCalendarVisible: boolean;
   shortNoticeThresholdDays: number;
+  sharedCalendarId: string;
 }
 
 // ============================================================================

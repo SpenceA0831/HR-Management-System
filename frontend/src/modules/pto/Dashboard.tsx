@@ -5,7 +5,7 @@ import {
 } from '@mui/material';
 import {
     Plus, Calendar as CalendarIcon, Clock,
-    CheckCircle2, FileText, Users, Edit, X
+    FileText, Users, Edit, X
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
@@ -63,82 +63,82 @@ export default function PtoDashboard() {
             if (reqsResponse.success && reqsResponse.data) {
                 const allRequests = reqsResponse.data;
 
-                    // Split requests for managers: their own vs team's
-                    if (isManager) {
-                        // Match by userId
-                        const myReqs = allRequests.filter(r =>
-                            r.userId === user.id
-                        );
-                        // Team requests: only show submitted requests that need approval
-                        const teamReqs = allRequests.filter(r =>
-                            r.userId !== user.id &&
-                            r.status === 'Submitted'
-                        );
-                        setMyRequests(myReqs);
-                        setTeamRequests(teamReqs);
-                    } else {
-                        setMyRequests(allRequests);
-                    }
-                }
-
-                if (balResponse.success && balResponse.data) {
-                    setBalance(balResponse.data);
-                }
-
-                if (holidaysResponse.success && holidaysResponse.data) {
-                    // Filter holidays to next 3 months
-                    const today = startOfDay(new Date());
-                    const threeMonthsFromNow = addDays(today, 90);
-                    const upcomingHolidays = holidaysResponse.data
-                        .filter(h => {
-                            const holidayDate = parseISO(h.date);
-                            return (isAfter(holidayDate, today) || format(holidayDate, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd'))
-                                && isBefore(holidayDate, threeMonthsFromNow);
-                        })
-                        .slice(0, 10);
-                    setHolidays(upcomingHolidays);
-                }
-
-                if (blackoutResponse.success && blackoutResponse.data) {
-                    // Filter blackout dates to next 3 months
-                    const today = startOfDay(new Date());
-                    const threeMonthsFromNow = addDays(today, 90);
-                    const upcomingBlackouts = blackoutResponse.data
-                        .filter(b => {
-                            const blackoutDate = parseISO(b.date);
-                            return (isAfter(blackoutDate, today) || format(blackoutDate, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd'))
-                                && isBefore(blackoutDate, threeMonthsFromNow);
-                        })
-                        .slice(0, 10);
-                    setBlackoutDates(upcomingBlackouts);
-                }
-
-                // For managers: get team PTO data (exclude own requests)
-                if (isManager && reqsResponse.success && reqsResponse.data) {
-                    const today = startOfDay(new Date());
-                    const todayStr = format(today, 'yyyy-MM-dd');
-                    const twoWeeksFromNow = addDays(today, 14);
-
-                    const teamApprovedRequests = reqsResponse.data.filter(r =>
-                        r.userId !== user.id && r.status === 'Approved'
+                // Split requests for managers: their own vs team's
+                if (isManager) {
+                    // Match by userId
+                    const myReqs = allRequests.filter(r =>
+                        r.userId === user.id
                     );
-
-                    // Team out today
-                    const outToday = teamApprovedRequests.filter(r =>
-                        r.startDate <= todayStr && r.endDate >= todayStr
+                    // Team requests: only show submitted requests that need approval
+                    const teamReqs = allRequests.filter(r =>
+                        r.userId !== user.id &&
+                        r.status === 'Submitted'
                     );
-                    setTeamOutToday(outToday);
-
-                    // Upcoming team PTO (next 2 weeks)
-                    const upcoming = teamApprovedRequests
-                        .filter(r =>
-                            isAfter(parseISO(r.startDate), today) &&
-                            isBefore(parseISO(r.startDate), twoWeeksFromNow)
-                        )
-                        .sort((a, b) => a.startDate.localeCompare(b.startDate))
-                        .slice(0, 5);
-                    setUpcomingTeamPto(upcoming);
+                    setMyRequests(myReqs);
+                    setTeamRequests(teamReqs);
+                } else {
+                    setMyRequests(allRequests);
                 }
+            }
+
+            if (balResponse.success && balResponse.data) {
+                setBalance(balResponse.data);
+            }
+
+            if (holidaysResponse.success && holidaysResponse.data) {
+                // Filter holidays to next 3 months
+                const today = startOfDay(new Date());
+                const threeMonthsFromNow = addDays(today, 90);
+                const upcomingHolidays = holidaysResponse.data
+                    .filter(h => {
+                        const holidayDate = parseISO(h.date);
+                        return (isAfter(holidayDate, today) || format(holidayDate, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd'))
+                            && isBefore(holidayDate, threeMonthsFromNow);
+                    })
+                    .slice(0, 10);
+                setHolidays(upcomingHolidays);
+            }
+
+            if (blackoutResponse.success && blackoutResponse.data) {
+                // Filter blackout dates to next 3 months
+                const today = startOfDay(new Date());
+                const threeMonthsFromNow = addDays(today, 90);
+                const upcomingBlackouts = blackoutResponse.data
+                    .filter(b => {
+                        const blackoutDate = parseISO(b.date);
+                        return (isAfter(blackoutDate, today) || format(blackoutDate, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd'))
+                            && isBefore(blackoutDate, threeMonthsFromNow);
+                    })
+                    .slice(0, 10);
+                setBlackoutDates(upcomingBlackouts);
+            }
+
+            // For managers: get team PTO data (exclude own requests)
+            if (isManager && reqsResponse.success && reqsResponse.data) {
+                const today = startOfDay(new Date());
+                const todayStr = format(today, 'yyyy-MM-dd');
+                const twoWeeksFromNow = addDays(today, 14);
+
+                const teamApprovedRequests = reqsResponse.data.filter(r =>
+                    r.userId !== user.id && r.status === 'Approved'
+                );
+
+                // Team out today
+                const outToday = teamApprovedRequests.filter(r =>
+                    r.startDate <= todayStr && r.endDate >= todayStr
+                );
+                setTeamOutToday(outToday);
+
+                // Upcoming team PTO (next 2 weeks)
+                const upcoming = teamApprovedRequests
+                    .filter(r =>
+                        isAfter(parseISO(r.startDate), today) &&
+                        isBefore(parseISO(r.startDate), twoWeeksFromNow)
+                    )
+                    .sort((a, b) => a.startDate.localeCompare(b.startDate))
+                    .slice(0, 5);
+                setUpcomingTeamPto(upcoming);
+            }
         } catch (error) {
             console.error('Error fetching dashboard data:', error);
         } finally {
@@ -338,6 +338,7 @@ export default function PtoDashboard() {
             field: 'actions',
             headerName: 'Actions',
             width: 250,
+            resizable: false,
             sortable: false,
             headerAlign: 'center',
             align: 'center',
@@ -695,279 +696,279 @@ export default function PtoDashboard() {
                         />
                     </Paper>
                 </Box>
-        </Box>
-
-        {/* Team Management Section - Managers Only */}
-        {isManager && (
-            <Box sx={{ mt: 6 }}>
-                <Typography variant="h5" sx={{ fontWeight: 700, mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Users size={24} />
-                    Team Management
-                </Typography>
-
-                {/* Team Metrics */}
-                <Grid container spacing={3} sx={{ mb: 3 }}>
-                    {/* Team Requests Pending */}
-                    <Grid size={{ xs: 12, sm: 4 }}>
-                        <Card sx={{ borderRadius: 4, height: '100%' }}>
-                            <CardContent sx={{ p: 3 }}>
-                                <Stack direction="row" spacing={2} alignItems="center">
-                                    <Box sx={{
-                                        width: 48, height: 48, borderRadius: 2,
-                                        bgcolor: 'warning.light', color: 'warning.main',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
-                                    }}>
-                                        <Clock size={24} />
-                                    </Box>
-                                    <Box>
-                                        <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                                            {teamRequests.filter(r => r.status === 'Submitted').length}
-                                        </Typography>
-                                        <Typography variant="body2" color="text.secondary">
-                                            Pending Approvals
-                                        </Typography>
-                                    </Box>
-                                </Stack>
-                            </CardContent>
-                        </Card>
-                    </Grid>
-
-                    {/* Team Out Today */}
-                    <Grid size={{ xs: 12, sm: 4 }}>
-                        <Card sx={{ borderRadius: 4, height: '100%' }}>
-                            <CardContent sx={{ p: 3 }}>
-                                <Stack direction="row" spacing={2} alignItems="center">
-                                    <Box sx={{
-                                        width: 48, height: 48, borderRadius: 2,
-                                        bgcolor: 'info.light', color: 'info.main',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
-                                    }}>
-                                        <Users size={24} />
-                                    </Box>
-                                    <Box>
-                                        <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                                            {teamOutToday.length}
-                                        </Typography>
-                                        <Typography variant="body2" color="text.secondary">
-                                            Team Out Today
-                                        </Typography>
-                                    </Box>
-                                </Stack>
-                            </CardContent>
-                        </Card>
-                    </Grid>
-
-                    {/* Upcoming Team PTO Count */}
-                    <Grid size={{ xs: 12, sm: 4 }}>
-                        <Card sx={{ borderRadius: 4, height: '100%' }}>
-                            <CardContent sx={{ p: 3 }}>
-                                <Stack direction="row" spacing={2} alignItems="center">
-                                    <Box sx={{
-                                        width: 48, height: 48, borderRadius: 2,
-                                        bgcolor: 'success.light', color: 'success.main',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
-                                    }}>
-                                        <CalendarIcon size={24} />
-                                    </Box>
-                                    <Box>
-                                        <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                                            {upcomingTeamPto.length}
-                                        </Typography>
-                                        <Typography variant="body2" color="text.secondary">
-                                            Upcoming (2 weeks)
-                                        </Typography>
-                                    </Box>
-                                </Stack>
-                            </CardContent>
-                        </Card>
-                    </Grid>
-                </Grid>
-
-                {/* Team Management Details */}
-                <Grid container spacing={3}>
-                    {/* Left Column - Team PTO Requests */}
-                    <Grid size={{ xs: 12, lg: 8 }}>
-                        <Card sx={{ borderRadius: 4 }}>
-                            <Box sx={{ p: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <Box>
-                                    <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                                        Team PTO Requests
-                                    </Typography>
-                                    <Typography variant="caption" color="text.secondary">
-                                        {teamRequests.filter(r => r.status === 'Submitted').length} awaiting your review
-                                    </Typography>
-                                </Box>
-                                <Button onClick={() => navigate('/pto/requests?status=Submitted')} endIcon={<FileText size={16} />}>
-                                    View All
-                                </Button>
-                            </Box>
-                            <Divider />
-                            <Box>
-                                {teamRequests.length === 0 ? (
-                                    <Box sx={{ p: 6, textAlign: 'center' }}>
-                                        <Users size={48} style={{ opacity: 0.3, marginBottom: 16 }} />
-                                        <Typography color="text.secondary">No team requests yet</Typography>
-                                        <Typography variant="caption" color="text.secondary">
-                                            Requests from your team will appear here
-                                        </Typography>
-                                    </Box>
-                                ) : (
-                                    teamRequests.map((req, idx) => {
-                                        const needsApproval = req.status === 'Submitted';
-                                        return (
-                                            <Box
-                                                key={req.id}
-                                                sx={{
-                                                    p: 2,
-                                                    display: 'flex',
-                                                    alignItems: 'flex-start',
-                                                    justifyContent: 'space-between',
-                                                    bgcolor: needsApproval ? 'rgba(255, 152, 0, 0.08)' : 'transparent',
-                                                    '&:hover': { bgcolor: needsApproval ? 'rgba(255, 152, 0, 0.15)' : 'action.hover' },
-                                                    borderBottom: idx !== teamRequests.length - 1 ? '1px solid' : 'none',
-                                                    borderColor: 'divider',
-                                                    cursor: 'pointer',
-                                                    borderLeft: needsApproval ? '4px solid' : 'none',
-                                                    borderLeftColor: 'warning.main',
-                                                }}
-                                                onClick={(e) => {
-                                                    if ((e.target as HTMLElement).tagName !== 'BUTTON') {
-                                                        navigate(`/pto/requests/${req.id}`);
-                                                    }
-                                                }}
-                                            >
-                                                <Stack direction="row" spacing={2} alignItems="flex-start" flex={1}>
-                                                    <Box sx={{
-                                                        width: 40, height: 40, borderRadius: 2,
-                                                        bgcolor: needsApproval ? 'warning.main' : 'secondary.light',
-                                                        color: needsApproval ? 'warning.contrastText' : 'secondary.main',
-                                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
-                                                    }}>
-                                                        {needsApproval ? <Clock size={20} /> : <CalendarIcon size={20} />}
-                                                    </Box>
-                                                    <Box flex={1}>
-                                                        <Stack direction="row" spacing={1} alignItems="center" mb={0.5}>
-                                                            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                                                                {req.userName || 'Unknown User'}
-                                                            </Typography>
-                                                            <TypeChip type={req.type} />
-                                                            <StatusChip status={req.status} />
-                                                        </Stack>
-                                                        <Typography variant="body2" color="text.secondary" mb={0.5}>
-                                                            {formatPtoDates(req.startDate, req.endDate)} • {req.totalHours} hours ({req.totalHours / 8} days)
-                                                        </Typography>
-                                                        {req.reason && (
-                                                            <Typography variant="caption" color="text.secondary" sx={{
-                                                                display: '-webkit-box',
-                                                                WebkitLineClamp: 1,
-                                                                WebkitBoxOrient: 'vertical',
-                                                                overflow: 'hidden',
-                                                                fontStyle: 'italic'
-                                                            }}>
-                                                                "{req.reason}"
-                                                            </Typography>
-                                                        )}
-                                                    </Box>
-                                                </Stack>
-                                                {needsApproval && (
-                                                    <Stack direction="row" spacing={1} sx={{ alignSelf: 'center' }}>
-                                                        <Button
-                                                            size="small"
-                                                            variant="outlined"
-                                                            color="error"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleDeny(req.id);
-                                                            }}
-                                                            sx={{ minWidth: 70 }}
-                                                        >
-                                                            Deny
-                                                        </Button>
-                                                        <Button
-                                                            size="small"
-                                                            variant="contained"
-                                                            color="success"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleApprove(req.id);
-                                                            }}
-                                                            sx={{ minWidth: 80 }}
-                                                        >
-                                                            Approve
-                                                        </Button>
-                                                    </Stack>
-                                                )}
-                                            </Box>
-                                        );
-                                    })
-                                )}
-                            </Box>
-                        </Card>
-                    </Grid>
-
-                    {/* Right Column - Upcoming Team PTO & Quick Actions */}
-                    <Grid size={{ xs: 12, lg: 4 }}>
-                        <Stack spacing={3}>
-                            {/* Manager Quick Actions */}
-                            <Card sx={{ borderRadius: 4, bgcolor: 'background.paper' }}>
-                                <CardContent sx={{ p: 3 }}>
-                                    <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>Quick Actions</Typography>
-                                    <Stack spacing={1.5}>
-                                        <Button fullWidth variant="outlined" startIcon={<CalendarIcon size={18} />} sx={{ justifyContent: 'flex-start', py: 1.5 }} onClick={() => window.open('https://calendar.google.com/calendar/embed?src=c_bbe5eba035ea3848deef6d1e6949f8b8dca77f3f14e8e6b9bdd727953c107631%40group.calendar.google.com&ctz=America%2FNew_York', '_blank')}>
-                                            Team Calendar
-                                        </Button>
-                                    </Stack>
-                                </CardContent>
-                            </Card>
-
-                            {/* Upcoming Team PTO */}
-                            <Card sx={{ borderRadius: 4 }}>
-                                <CardContent sx={{ p: 3 }}>
-                                    <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
-                                        <Users size={20} />
-                                        <Typography variant="h6" sx={{ fontWeight: 700 }}>Upcoming Team PTO</Typography>
-                                    </Stack>
-                                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
-                                        Next 2 weeks
-                                    </Typography>
-                                    {upcomingTeamPto.length === 0 ? (
-                                        <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
-                                            No upcoming PTO in the next 2 weeks
-                                        </Typography>
-                                    ) : (
-                                        <Stack spacing={2}>
-                                            {upcomingTeamPto.map((pto) => (
-                                                <Box
-                                                    key={pto.id}
-                                                    sx={{
-                                                        display: 'flex',
-                                                        justifyContent: 'space-between',
-                                                        alignItems: 'center',
-                                                        cursor: 'pointer',
-                                                        p: 1,
-                                                        borderRadius: 1,
-                                                        '&:hover': { bgcolor: 'action.hover' }
-                                                    }}
-                                                    onClick={() => navigate(`/pto/requests/${pto.id}`)}
-                                                >
-                                                    <Box>
-                                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{pto.userName}</Typography>
-                                                        <Typography variant="caption" color="text.secondary">
-                                                            {formatPtoDates(pto.startDate, pto.endDate)}
-                                                        </Typography>
-                                                    </Box>
-                                                    <TypeChip type={pto.type} size="small" />
-                                                </Box>
-                                            ))}
-                                        </Stack>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        </Stack>
-                    </Grid>
-                </Grid>
             </Box>
-        )}
-    </Box>
+
+            {/* Team Management Section - Managers Only */}
+            {isManager && (
+                <Box sx={{ mt: 6 }}>
+                    <Typography variant="h5" sx={{ fontWeight: 700, mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Users size={24} />
+                        Team Management
+                    </Typography>
+
+                    {/* Team Metrics */}
+                    <Grid container spacing={3} sx={{ mb: 3 }}>
+                        {/* Team Requests Pending */}
+                        <Grid size={{ xs: 12, sm: 4 }}>
+                            <Card sx={{ borderRadius: 4, height: '100%' }}>
+                                <CardContent sx={{ p: 3 }}>
+                                    <Stack direction="row" spacing={2} alignItems="center">
+                                        <Box sx={{
+                                            width: 48, height: 48, borderRadius: 2,
+                                            bgcolor: 'warning.light', color: 'warning.main',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                        }}>
+                                            <Clock size={24} />
+                                        </Box>
+                                        <Box>
+                                            <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                                                {teamRequests.filter(r => r.status === 'Submitted').length}
+                                            </Typography>
+                                            <Typography variant="body2" color="text.secondary">
+                                                Pending Approvals
+                                            </Typography>
+                                        </Box>
+                                    </Stack>
+                                </CardContent>
+                            </Card>
+                        </Grid>
+
+                        {/* Team Out Today */}
+                        <Grid size={{ xs: 12, sm: 4 }}>
+                            <Card sx={{ borderRadius: 4, height: '100%' }}>
+                                <CardContent sx={{ p: 3 }}>
+                                    <Stack direction="row" spacing={2} alignItems="center">
+                                        <Box sx={{
+                                            width: 48, height: 48, borderRadius: 2,
+                                            bgcolor: 'info.light', color: 'info.main',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                        }}>
+                                            <Users size={24} />
+                                        </Box>
+                                        <Box>
+                                            <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                                                {teamOutToday.length}
+                                            </Typography>
+                                            <Typography variant="body2" color="text.secondary">
+                                                Team Out Today
+                                            </Typography>
+                                        </Box>
+                                    </Stack>
+                                </CardContent>
+                            </Card>
+                        </Grid>
+
+                        {/* Upcoming Team PTO Count */}
+                        <Grid size={{ xs: 12, sm: 4 }}>
+                            <Card sx={{ borderRadius: 4, height: '100%' }}>
+                                <CardContent sx={{ p: 3 }}>
+                                    <Stack direction="row" spacing={2} alignItems="center">
+                                        <Box sx={{
+                                            width: 48, height: 48, borderRadius: 2,
+                                            bgcolor: 'success.light', color: 'success.main',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                        }}>
+                                            <CalendarIcon size={24} />
+                                        </Box>
+                                        <Box>
+                                            <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                                                {upcomingTeamPto.length}
+                                            </Typography>
+                                            <Typography variant="body2" color="text.secondary">
+                                                Upcoming (2 weeks)
+                                            </Typography>
+                                        </Box>
+                                    </Stack>
+                                </CardContent>
+                            </Card>
+                        </Grid>
+                    </Grid>
+
+                    {/* Team Management Details */}
+                    <Grid container spacing={3}>
+                        {/* Left Column - Team PTO Requests */}
+                        <Grid size={{ xs: 12, lg: 8 }}>
+                            <Card sx={{ borderRadius: 4 }}>
+                                <Box sx={{ p: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Box>
+                                        <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                                            Team PTO Requests
+                                        </Typography>
+                                        <Typography variant="caption" color="text.secondary">
+                                            {teamRequests.filter(r => r.status === 'Submitted').length} awaiting your review
+                                        </Typography>
+                                    </Box>
+                                    <Button onClick={() => navigate('/pto/requests?status=Submitted')} endIcon={<FileText size={16} />}>
+                                        View All
+                                    </Button>
+                                </Box>
+                                <Divider />
+                                <Box>
+                                    {teamRequests.length === 0 ? (
+                                        <Box sx={{ p: 6, textAlign: 'center' }}>
+                                            <Users size={48} style={{ opacity: 0.3, marginBottom: 16 }} />
+                                            <Typography color="text.secondary">No team requests yet</Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                Requests from your team will appear here
+                                            </Typography>
+                                        </Box>
+                                    ) : (
+                                        teamRequests.map((req, idx) => {
+                                            const needsApproval = req.status === 'Submitted';
+                                            return (
+                                                <Box
+                                                    key={req.id}
+                                                    sx={{
+                                                        p: 2,
+                                                        display: 'flex',
+                                                        alignItems: 'flex-start',
+                                                        justifyContent: 'space-between',
+                                                        bgcolor: needsApproval ? 'rgba(255, 152, 0, 0.08)' : 'transparent',
+                                                        '&:hover': { bgcolor: needsApproval ? 'rgba(255, 152, 0, 0.15)' : 'action.hover' },
+                                                        borderBottom: idx !== teamRequests.length - 1 ? '1px solid' : 'none',
+                                                        borderColor: 'divider',
+                                                        cursor: 'pointer',
+                                                        borderLeft: needsApproval ? '4px solid' : 'none',
+                                                        borderLeftColor: 'warning.main',
+                                                    }}
+                                                    onClick={(e) => {
+                                                        if ((e.target as HTMLElement).tagName !== 'BUTTON') {
+                                                            navigate(`/pto/requests/${req.id}`);
+                                                        }
+                                                    }}
+                                                >
+                                                    <Stack direction="row" spacing={2} alignItems="flex-start" flex={1}>
+                                                        <Box sx={{
+                                                            width: 40, height: 40, borderRadius: 2,
+                                                            bgcolor: needsApproval ? 'warning.main' : 'secondary.light',
+                                                            color: needsApproval ? 'warning.contrastText' : 'secondary.main',
+                                                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                                        }}>
+                                                            {needsApproval ? <Clock size={20} /> : <CalendarIcon size={20} />}
+                                                        </Box>
+                                                        <Box flex={1}>
+                                                            <Stack direction="row" spacing={1} alignItems="center" mb={0.5}>
+                                                                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                                                                    {req.userName || 'Unknown User'}
+                                                                </Typography>
+                                                                <TypeChip type={req.type} />
+                                                                <StatusChip status={req.status} />
+                                                            </Stack>
+                                                            <Typography variant="body2" color="text.secondary" mb={0.5}>
+                                                                {formatPtoDates(req.startDate, req.endDate)} • {req.totalHours} hours ({req.totalHours / 8} days)
+                                                            </Typography>
+                                                            {req.reason && (
+                                                                <Typography variant="caption" color="text.secondary" sx={{
+                                                                    display: '-webkit-box',
+                                                                    WebkitLineClamp: 1,
+                                                                    WebkitBoxOrient: 'vertical',
+                                                                    overflow: 'hidden',
+                                                                    fontStyle: 'italic'
+                                                                }}>
+                                                                    "{req.reason}"
+                                                                </Typography>
+                                                            )}
+                                                        </Box>
+                                                    </Stack>
+                                                    {needsApproval && (
+                                                        <Stack direction="row" spacing={1} sx={{ alignSelf: 'center' }}>
+                                                            <Button
+                                                                size="small"
+                                                                variant="outlined"
+                                                                color="error"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleDeny(req.id);
+                                                                }}
+                                                                sx={{ minWidth: 70 }}
+                                                            >
+                                                                Deny
+                                                            </Button>
+                                                            <Button
+                                                                size="small"
+                                                                variant="contained"
+                                                                color="success"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleApprove(req.id);
+                                                                }}
+                                                                sx={{ minWidth: 80 }}
+                                                            >
+                                                                Approve
+                                                            </Button>
+                                                        </Stack>
+                                                    )}
+                                                </Box>
+                                            );
+                                        })
+                                    )}
+                                </Box>
+                            </Card>
+                        </Grid>
+
+                        {/* Right Column - Upcoming Team PTO & Quick Actions */}
+                        <Grid size={{ xs: 12, lg: 4 }}>
+                            <Stack spacing={3}>
+                                {/* Manager Quick Actions */}
+                                <Card sx={{ borderRadius: 4, bgcolor: 'background.paper' }}>
+                                    <CardContent sx={{ p: 3 }}>
+                                        <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>Quick Actions</Typography>
+                                        <Stack spacing={1.5}>
+                                            <Button fullWidth variant="outlined" startIcon={<CalendarIcon size={18} />} sx={{ justifyContent: 'flex-start', py: 1.5 }} onClick={() => window.open('https://calendar.google.com/calendar/embed?src=c_bbe5eba035ea3848deef6d1e6949f8b8dca77f3f14e8e6b9bdd727953c107631%40group.calendar.google.com&ctz=America%2FNew_York', '_blank')}>
+                                                Team Calendar
+                                            </Button>
+                                        </Stack>
+                                    </CardContent>
+                                </Card>
+
+                                {/* Upcoming Team PTO */}
+                                <Card sx={{ borderRadius: 4 }}>
+                                    <CardContent sx={{ p: 3 }}>
+                                        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+                                            <Users size={20} />
+                                            <Typography variant="h6" sx={{ fontWeight: 700 }}>Upcoming Team PTO</Typography>
+                                        </Stack>
+                                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
+                                            Next 2 weeks
+                                        </Typography>
+                                        {upcomingTeamPto.length === 0 ? (
+                                            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
+                                                No upcoming PTO in the next 2 weeks
+                                            </Typography>
+                                        ) : (
+                                            <Stack spacing={2}>
+                                                {upcomingTeamPto.map((pto) => (
+                                                    <Box
+                                                        key={pto.id}
+                                                        sx={{
+                                                            display: 'flex',
+                                                            justifyContent: 'space-between',
+                                                            alignItems: 'center',
+                                                            cursor: 'pointer',
+                                                            p: 1,
+                                                            borderRadius: 1,
+                                                            '&:hover': { bgcolor: 'action.hover' }
+                                                        }}
+                                                        onClick={() => navigate(`/pto/requests/${pto.id}`)}
+                                                    >
+                                                        <Box>
+                                                            <Typography variant="body2" sx={{ fontWeight: 600 }}>{pto.userName}</Typography>
+                                                            <Typography variant="caption" color="text.secondary">
+                                                                {formatPtoDates(pto.startDate, pto.endDate)}
+                                                            </Typography>
+                                                        </Box>
+                                                        <TypeChip type={pto.type} size="small" />
+                                                    </Box>
+                                                ))}
+                                            </Stack>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            </Stack>
+                        </Grid>
+                    </Grid>
+                </Box>
+            )}
+        </Box>
     );
 }

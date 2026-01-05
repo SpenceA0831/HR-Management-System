@@ -127,6 +127,9 @@ function handleRequest(e, method) {
       case 'getDirectReports':
         result = handleGetDirectReports(currentUser);
         break;
+      case 'createUser':
+        result = handleCreateUser(currentUser, payload);
+        break;
 
       // ========================================================================
       // PTO MODULE ENDPOINTS

@@ -367,6 +367,39 @@ export default function PtoSettings() {
                 sx={{ maxWidth: 300 }}
               />
             </Box>
+          </CardContent>
+        </Card>
+
+        {/* Google Calendar Integration */}
+        <Card variant="outlined" sx={{ mb: 3, borderRadius: 2 }}>
+          <CardContent>
+            <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+              Google Calendar Integration
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Configure the shared Google Calendar for approved PTO requests
+            </Typography>
+
+            <TextField
+              label="Shared Calendar ID"
+              value={config.sharedCalendarId || ''}
+              onChange={(e) =>
+                setConfig({
+                  ...config,
+                  sharedCalendarId: e.target.value,
+                })
+              }
+              helperText={
+                <span>
+                  The ID of the Google Calendar to add PTO events to (e.g., c_...group.calendar.google.com).
+                  <br />
+                  Make sure to share this calendar with the service account email.
+                </span>
+              }
+              fullWidth
+              placeholder="e.g. c_bbe5eba035ea3848deef6d1e6949f8b8dca77f3f14e8e6b9bdd727953c107631@group.calendar.google.com"
+            />
+
 
             <Divider sx={{ my: 3 }} />
 

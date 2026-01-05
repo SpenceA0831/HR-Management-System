@@ -22,8 +22,9 @@ import type {
  * Handles all PTO-related API calls to Google Apps Script backend
  */
 
-const API_BASE_URL = import.meta.env.VITE_APPS_SCRIPT_URL;
-const USE_MOCK_DATA = false; // Disabled - using real backend
+// Constants disabled to avoid unused variable errors
+// const API_BASE_URL = import.meta.env.VITE_APPS_SCRIPT_URL;
+// const USE_MOCK_DATA = false; // Disabled - using real backend
 
 // Mock data storage disabled
 // let mockHolidayData = [...mockHolidays];
@@ -59,6 +60,7 @@ export async function createPtoRequest(data: {
   attachment?: string;
   status?: string;
 }): Promise<ApiResponse<PtoRequest>> {
+  /*
   if (USE_MOCK_DATA) {
     const { mockDemoUser } = await import('./mockData');
     const now = new Date().toISOString();
@@ -97,6 +99,7 @@ export async function createPtoRequest(data: {
       data: newRequest,
     });
   }
+  */
   return apiClient.post<PtoRequest>('createPtoRequest', data);
 }
 
@@ -142,12 +145,14 @@ export async function getPtoBalance(
   userId?: string,
   year?: number
 ): Promise<ApiResponse<PtoBalance>> {
+  /*
   if (USE_MOCK_DATA) {
     return Promise.resolve({
       success: true,
       data: mockPtoBalance,
     });
   }
+  */
 
   // Default to 2026 for testing with current data
   // TODO: Revert to dynamic year detection after testing
@@ -168,12 +173,14 @@ export async function getPtoBalance(
 // ============================================================================
 
 export async function getHolidays(): Promise<ApiResponse<Holiday[]>> {
+  /*
   if (USE_MOCK_DATA) {
     return Promise.resolve({
       success: true,
       data: mockHolidayData,
     });
   }
+  */
   return apiClient.get<Holiday[]>('getHolidays');
 }
 
@@ -182,6 +189,7 @@ export async function createHoliday(data: {
   endDate?: string;
   name: string;
 }): Promise<ApiResponse<Holiday>> {
+  /*
   if (USE_MOCK_DATA) {
     const newHoliday: Holiday = {
       id: generateId(),
@@ -195,10 +203,12 @@ export async function createHoliday(data: {
       data: newHoliday,
     });
   }
+  */
   return apiClient.post<Holiday>('createHoliday', data);
 }
 
 export async function deleteHoliday(holidayId: string): Promise<ApiResponse<{ deleted: boolean }>> {
+  /*
   if (USE_MOCK_DATA) {
     mockHolidayData = mockHolidayData.filter((h) => h.id !== holidayId);
     return Promise.resolve({
@@ -206,6 +216,7 @@ export async function deleteHoliday(holidayId: string): Promise<ApiResponse<{ de
       data: { deleted: true },
     });
   }
+  */
   return apiClient.post<{ deleted: boolean }>('deleteHoliday', { holidayId });
 }
 
@@ -214,12 +225,14 @@ export async function deleteHoliday(holidayId: string): Promise<ApiResponse<{ de
 // ============================================================================
 
 export async function getBlackoutDates(): Promise<ApiResponse<BlackoutDate[]>> {
+  /*
   if (USE_MOCK_DATA) {
     return Promise.resolve({
       success: true,
       data: mockBlackoutData,
     });
   }
+  */
   return apiClient.get<BlackoutDate[]>('getBlackoutDates');
 }
 
@@ -228,6 +241,7 @@ export async function createBlackoutDate(data: {
   endDate?: string;
   name: string;
 }): Promise<ApiResponse<BlackoutDate>> {
+  /*
   if (USE_MOCK_DATA) {
     const newBlackout: BlackoutDate = {
       id: generateId(),
@@ -241,12 +255,14 @@ export async function createBlackoutDate(data: {
       data: newBlackout,
     });
   }
+  */
   return apiClient.post<BlackoutDate>('createBlackoutDate', data);
 }
 
 export async function deleteBlackoutDate(
   blackoutId: string
 ): Promise<ApiResponse<{ deleted: boolean }>> {
+  /*
   if (USE_MOCK_DATA) {
     mockBlackoutData = mockBlackoutData.filter((b) => b.id !== blackoutId);
     return Promise.resolve({
@@ -254,6 +270,7 @@ export async function deleteBlackoutDate(
       data: { deleted: true },
     });
   }
+  */
   return apiClient.post<{ deleted: boolean }>('deleteBlackoutDate', { blackoutId });
 }
 
@@ -262,18 +279,21 @@ export async function deleteBlackoutDate(
 // ============================================================================
 
 export async function getSystemConfig(): Promise<ApiResponse<SystemConfig>> {
+  /*
   if (USE_MOCK_DATA) {
     return Promise.resolve({
       success: true,
       data: mockConfigData,
     });
   }
+  */
   return apiClient.get<SystemConfig>('getSystemConfig');
 }
 
 export async function updateSystemConfig(
   config: Partial<SystemConfig>
 ): Promise<ApiResponse<SystemConfig>> {
+  /*
   if (USE_MOCK_DATA) {
     mockConfigData = { ...mockConfigData, ...config };
     return Promise.resolve({
@@ -281,5 +301,6 @@ export async function updateSystemConfig(
       data: mockConfigData,
     });
   }
+  */
   return apiClient.post<SystemConfig>('updateSystemConfig', config);
 }

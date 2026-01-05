@@ -110,3 +110,72 @@ function handleGetDirectReports(currentUser) {
     return errorResponse('Failed to retrieve direct reports', 'GET_REPORTS_ERROR');
   }
 }
+
+/**
+ * Create a new user (Admin only)
+ * @param {Object} currentUser - The authenticated user
+ * @param {Object} payload - User data
+ * @returns {Object} Success or error response
+ */
+function handleCreateUser(currentUser, payload) {
+  if (!isAdmin(currentUser)) {
+    return errorResponse('Unauthorized: Admin access required', 'UNAUTHORIZED');
+  }
+
+  try {
+    const { name, email, userRole, teamId, managerId, employmentType, hireDate, roleType } = payload;
+
+    // Validate required fields
+    if (!name || !email || !userRole) {
+      return errorResponse('Missing required fields: name, email, or userRole', 'INVALID_DATA');
+    }
+
+    // Check if user already exists
+    const allUsers = getSheetData(SHEET_NAMES.USERS, COLUMN_MAPS.USERS, rowToUser);
+    const existingUser = allUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+    if (existingUser) {
+      return errorResponse('User with this email already exists', 'DUPLICATE_USER');
+    }
+
+    const newUser = {
+      id: generateId('user'),
+      name,
+      email,
+      userRole,
+      teamId: teamId || '',
+      managerId: managerId || '',
+      employmentType: employmentType || '',
+      hireDate: hireDate || '',
+      roleType: roleType || '',
+      avatar: '',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    // Construct row based on COLUMN_MAPS.USERS
+    // Mappings: id:0, name:1, email:2, userRole:3, teamId:4, managerId:5, 
+    // employmentType:6, hireDate:7, roleType:8, avatar:9, createdAt:10, updatedAt:11
+    const row = [];
+    const map = COLUMN_MAPS.USERS;
+    
+    row[map.id] = newUser.id;
+    row[map.name] = newUser.name;
+    row[map.email] = newUser.email;
+    row[map.userRole] = newUser.userRole;
+    row[map.teamId] = newUser.teamId;
+    row[map.managerId] = newUser.managerId;
+    row[map.employmentType] = newUser.employmentType;
+    row[map.hireDate] = newUser.hireDate;
+    row[map.roleType] = newUser.roleType;
+    row[map.avatar] = newUser.avatar;
+    row[map.createdAt] = newUser.createdAt;
+    row[map.updatedAt] = newUser.updatedAt;
+
+    appendRow(SHEET_NAMES.USERS, row);
+
+    return successResponse(newUser);
+  } catch (error) {
+    Logger.log('Error in handleCreateUser: ' + error.message);
+    return errorResponse('Failed to create user', 'CREATE_USER_ERROR');
+  }
+}

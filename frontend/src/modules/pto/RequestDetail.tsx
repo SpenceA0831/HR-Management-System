@@ -132,7 +132,7 @@ export default function RequestDetail() {
 
   const isOwner = request?.userId === currentUser?.id;
   const isManager = currentUser?.userRole === 'MANAGER' || currentUser?.userRole === 'ADMIN';
-  const canEdit = isOwner && request && ['Draft', 'ChangesRequested'].includes(request.status);
+  const canEdit = isOwner && request && ['Draft', 'ChangesRequested', 'Submitted'].includes(request.status);
   const canCancel = isOwner && request && ['Draft', 'Submitted'].includes(request.status);
   const canApprove = isManager && request?.status === 'Submitted';
 

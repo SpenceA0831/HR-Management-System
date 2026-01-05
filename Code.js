@@ -114,7 +114,7 @@ function handleRequest(e, method) {
 
     // Route to appropriate handler
     let result;
-    switch(action) {
+    switch (action) {
       // ========================================================================
       // USER ENDPOINTS
       // ========================================================================
@@ -126,6 +126,9 @@ function handleRequest(e, method) {
         break;
       case 'getDirectReports':
         result = handleGetDirectReports(currentUser);
+        break;
+      case 'createUser':
+        result = handleCreateUser(currentUser, payload);
         break;
 
       // ========================================================================

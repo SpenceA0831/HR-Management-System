@@ -20,7 +20,8 @@ function handleGetSystemConfig(currentUser) {
         defaultPartTimeHours: 60,
         prorateByHireDate: true,
         fullTeamCalendarVisible: true,
-        shortNoticeThresholdDays: 7
+        shortNoticeThresholdDays: 7,
+        sharedCalendarId: 'c_bbe5eba035ea3848deef6d1e6949f8b8dca77f3f14e8e6b9bdd727953c107631@group.calendar.google.com'
       });
     }
 
@@ -32,7 +33,8 @@ function handleGetSystemConfig(currentUser) {
       defaultPartTimeHours: row[colMap.defaultPartTimeHours] || 60,
       prorateByHireDate: row[colMap.prorateByHireDate] === true || row[colMap.prorateByHireDate] === 'TRUE',
       fullTeamCalendarVisible: row[colMap.fullTeamCalendarVisible] === true || row[colMap.fullTeamCalendarVisible] === 'TRUE',
-      shortNoticeThresholdDays: row[colMap.shortNoticeThresholdDays] || 7
+      shortNoticeThresholdDays: row[colMap.shortNoticeThresholdDays] || 7,
+      sharedCalendarId: row[colMap.sharedCalendarId] || 'c_bbe5eba035ea3848deef6d1e6949f8b8dca77f3f14e8e6b9bdd727953c107631@group.calendar.google.com'
     };
 
     return successResponse(config);
@@ -81,6 +83,9 @@ function handleUpdateSystemConfig(currentUser, payload) {
     if (payload.shortNoticeThresholdDays !== undefined) {
       rowData[colMap.shortNoticeThresholdDays] = payload.shortNoticeThresholdDays;
     }
+    if (payload.sharedCalendarId !== undefined) {
+      rowData[colMap.sharedCalendarId] = payload.sharedCalendarId;
+    }
 
     // Update or create row
     if (data.length >= 2) {
@@ -94,7 +99,8 @@ function handleUpdateSystemConfig(currentUser, payload) {
       defaultPartTimeHours: rowData[colMap.defaultPartTimeHours],
       prorateByHireDate: rowData[colMap.prorateByHireDate],
       fullTeamCalendarVisible: rowData[colMap.fullTeamCalendarVisible],
-      shortNoticeThresholdDays: rowData[colMap.shortNoticeThresholdDays]
+      shortNoticeThresholdDays: rowData[colMap.shortNoticeThresholdDays],
+      sharedCalendarId: rowData[colMap.sharedCalendarId]
     };
 
     return successResponse(config);

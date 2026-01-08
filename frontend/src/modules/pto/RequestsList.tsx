@@ -200,7 +200,8 @@ export default function RequestsList() {
     {
       field: 'actions',
       headerName: 'Actions',
-      width: 250,
+      width: 200,
+      resizable: false,
       sortable: false,
       headerAlign: 'center',
       align: 'center',
@@ -212,7 +213,7 @@ export default function RequestsList() {
         const canApprove = isManager && request.status === 'Submitted';
 
         return (
-          <Stack direction="row" spacing={0.5} alignItems="center"  justifyContent="center">
+          <Stack direction="row" spacing={0.5} alignItems="center" justifyContent="center">
             <Tooltip title="Edit">
               <IconButton
                 size="small"

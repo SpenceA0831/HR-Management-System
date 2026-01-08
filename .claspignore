@@ -1,0 +1,37 @@
+# System and Config
+.git/
+.firebase/
+.firebaserc
+.DS_Store
+.clasp.json
+.gitignore
+.claspignore
+node_modules/
+
+# Frontend (Full Exclusion)
+**/frontend/**
+frontend/**
+dist/
+**/dist/**
+
+# Documentation and Metadata
+**/*.md
+.gemini/
+package.json
+package-lock.json
+firebase.json
+BACKEND_FILES_TO_COPY.txt
+
+# Temporary / Debug / Redundant Scripts (Root)
+# We prioritize files in the 'backend/' directory.
+# Ignoring specific debug files
+debugbalance.js
+debugptocalc.js
+pendingcalc.js
+
+# Test Files
+clasp_test_push.js
+clasp_test_pull.js
+
+# Exceptions (Keep these if they are unique/needed in root)
+!testCalendar.js

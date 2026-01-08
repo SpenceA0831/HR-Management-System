@@ -337,7 +337,7 @@ export default function PtoDashboard() {
         {
             field: 'actions',
             headerName: 'Actions',
-            width: 250,
+            width: 200,
             resizable: false,
             sortable: false,
             headerAlign: 'center',

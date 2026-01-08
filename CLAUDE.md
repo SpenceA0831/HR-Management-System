@@ -31,9 +31,12 @@ HR Management System is a unified platform combining **PTO (Paid Time Off) track
 ```
 /
 ├── frontend/           # React application (see frontend/CLAUDE.md for details)
-├── backend/            # Google Apps Script files (*.gs)
-├── scripts/            # Setup automation (SetupGoogleSheets.gs)
+├── backend/            # Google Apps Script files (*.js - deployed as .gs via Clasp)
+├── scripts/            # Setup automation (*.js - deployed as .gs via Clasp)
 ├── docs/               # Documentation (SETUP.md, GOOGLE_SHEETS_STRUCTURE.md, etc.)
+├── .clasp.json         # Clasp configuration (script ID, file extensions)
+├── .claspignore        # Files to exclude from deployment
+├── appsscript.json     # Apps Script manifest (scopes, settings)
 └── CLAUDE.md          # This file
 ```
 
@@ -55,16 +58,28 @@ npm run lint
 npm run preview
 ```
 
-### Backend Deployment
+### Backend Deployment (Automated with Clasp)
 
-The backend is Google Apps Script and must be deployed manually through the Google Apps Script editor:
+**IMPORTANT**: This project uses Clasp (Command Line Apps Script Projects) for automated deployment. Claude Code can edit backend files directly and deploy them with a single command.
 
-1. Open Google Sheet → Extensions → Apps Script
-2. Copy `.gs` files from `/backend` directory
-3. Deploy → New deployment → Web app
-4. Copy deployment URL to frontend `.env` file
+```bash
+# Deploy all backend changes to Google Apps Script
+clasp push
 
-See `/backend/README.md` for detailed deployment instructions.
+# Check deployment status
+clasp status
+
+# View deployed project in browser
+# Open: https://script.google.com/d/1DC7gl386BsUuT_kBlfMlNc5mIDqIMyacc3ZzU2RALCLvfQkj-FJroDZi/edit
+```
+
+**How It Works:**
+- Edit `.js` files in `backend/` or `scripts/` directories
+- Run `clasp push` to deploy to Google Apps Script (script ID: `1DC7gl386BsUuT_kBlfMlNc5mIDqIMyacc3ZzU2RALCLvfQkj-FJroDZi`)
+- Files are automatically converted from `.js` to `.gs` during deployment
+- Changes appear instantly in the Apps Script editor
+
+See "Clasp Integration Workflow" section below for detailed instructions.
 
 ### Database Setup
 
@@ -217,7 +232,97 @@ All TypeScript types are centralized in `frontend/src/types/index.ts`:
 - **Evaluation types**: `Evaluation`, `Rating`, `Goal`, `Competency`, `PeerReviewRequest`, `EvaluationCycle`
 - **API types**: `ApiResponse<T>` - wrapper for all API responses
 
-Backend types are maintained separately in `backend/Config.gs` as Google Apps Script constants.
+Backend types are maintained separately in `backend/Config.js` as Google Apps Script constants.
+
+## Clasp Integration Workflow
+
+**CRITICAL**: This project uses Clasp (Command Line Apps Script Projects) to enable automated deployment of Google Apps Script code. This allows Claude Code to edit backend files directly and deploy them instantly without manual copy/paste.
+
+### Setup (Already Configured)
+
+The project is pre-configured with Clasp integration:
+
+**Configuration Files:**
+- `.clasp.json` - Contains script ID and file extension mappings
+- `.claspignore` - Excludes frontend, docs, and test files from deployment
+- `appsscript.json` - Apps Script manifest with OAuth scopes and settings
+
+**Connected Script:**
+- Script ID: `1DC7gl386BsUuT_kBlfMlNc5mIDqIMyacc3ZzU2RALCLvfQkj-FJroDZi`
+- Script URL: https://script.google.com/d/1DC7gl386BsUuT_kBlfMlNc5mIDqIMyacc3ZzU2RALCLvfQkj-FJroDZi/edit
+
+### Claude Code Workflow (Automated Deployment)
+
+When Claude Code makes backend changes, it follows this workflow:
+
+1. **Edit Backend Files** - Modify `.js` files in `backend/` or `scripts/` directories
+2. **Deploy with Clasp** - Run `clasp push` to sync changes to Google Apps Script
+3. **Verify Deployment** - Changes appear instantly in the Apps Script editor
+
+**Example Session:**
+```
+User: "Add a new endpoint to get user preferences"
+Claude:
+  1. Edits backend/UserService.js to add getUserPreferences() function
+  2. Edits backend/Code.js to add route case for 'getUserPreferences'
+  3. Runs: clasp push
+  4. Confirms: "Pushed 34 files" - Deployment successful
+```
+
+### File Organization
+
+**Source Files (Local):**
+- `backend/*.js` - Service files (Auth, Code, Config, PtoService, PayrollService, etc.)
+- `scripts/*.js` - Utility scripts (SetupGoogleSheets, debug tools)
+
+**Deployed Files (Google Apps Script):**
+- Files automatically converted from `.js` → `.gs` during `clasp push`
+- Appear in Apps Script editor as `.gs` files
+- Identical content, just different extension
+
+### Important Notes
+
+1. **Always use Clasp for deployment** - Never manually copy/paste code into Apps Script editor
+2. **Source of truth is local** - The `backend/` and `scripts/` directories contain the canonical code
+3. **Two-way sync available** - Use `clasp pull` to sync changes from Apps Script back to local (rarely needed)
+4. **Automatic conversion** - Clasp handles `.js` → `.gs` conversion transparently
+5. **No deployment lag** - Changes appear in Apps Script immediately after `clasp push`
+
+### Clasp Commands Reference
+
+```bash
+# Deploy local changes to Google Apps Script
+clasp push
+
+# Pull changes from Google Apps Script to local (if someone edited in browser)
+clasp pull
+
+# View tracked files
+clasp status
+
+# View Apps Script project in browser
+# Open: https://script.google.com/d/1DC7gl386BsUuT_kBlfMlNc5mIDqIMyacc3ZzU2RALCLvfQkj-FJroDZi/edit
+```
+
+### Authentication
+
+Clasp is authenticated as: `aaron@lifteveryvoicephilly.org`
+
+If authentication expires, re-run: `clasp login`
+
+### Troubleshooting
+
+**"Script is already up to date"** - No changes detected, files are synced
+**"invalid_grant" error** - Authentication expired, run `clasp login`
+**Files not appearing** - Check `.claspignore` to ensure files aren't excluded
+
+### Benefits of This Workflow
+
+✅ **No manual copying** - Edit and deploy in one command
+✅ **Version control** - All changes tracked in git
+✅ **IDE support** - Full TypeScript/JavaScript tooling
+✅ **Automated by Claude** - No user intervention needed
+✅ **Instant deployment** - Changes live in seconds
 
 ## Payroll & Reimbursements Workflow
 
@@ -270,21 +375,25 @@ VITE_GEMINI_API_KEY=<your-gemini-api-key>
 
 ## Common Development Workflows
 
-### Adding a New API Endpoint
+### Adding a New API Endpoint (with Clasp)
 
 1. **Backend** (`backend/` directory):
-   - Add handler function in appropriate service file (e.g., `PtoService.gs`)
-   - Add route case in `Code.gs` handleRequest() switch statement
-   - Add any new constants to `Config.gs`
+   - Add handler function in appropriate service file (e.g., `PtoService.js`)
+   - Add route case in `Code.js` handleRequest() switch statement
+   - Add any new constants to `Config.js`
 
-2. **Frontend** (`frontend/src/` directory):
+2. **Deploy Backend**:
+   - Run `clasp push` to deploy changes to Google Apps Script
+   - Verify: "Pushed 34 files" confirms successful deployment
+
+3. **Frontend** (`frontend/src/` directory):
    - Add TypeScript type to `types/index.ts` if needed
    - Add API function to appropriate service in `services/api/` (e.g., `ptoApi.ts`)
    - Use the API function in your component
 
-3. **Deploy**:
-   - Save changes in Apps Script editor
-   - Deploy → Manage deployments → Edit → New version → Deploy
+4. **Test**:
+   - Test endpoint with demo users
+   - Check browser DevTools network tab for API responses
 
 ### Adding a New Module Feature (PTO Example)
 
@@ -297,10 +406,10 @@ VITE_GEMINI_API_KEY=<your-gemini-api-key>
 ### Updating Google Sheets Structure
 
 1. Update sheet structure in Google Sheets
-2. Update `backend/Config.gs` column mappings
+2. Update `backend/Config.js` column mappings
 3. Update TypeScript types in `frontend/src/types/index.ts`
 4. Update any affected service functions
-5. Redeploy backend
+5. Deploy backend with `clasp push`
 
 ## Permission Patterns
 

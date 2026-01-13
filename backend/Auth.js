@@ -194,10 +194,11 @@ function canModifyPtoRequest(currentUser, ptoRequest, action) {
           ptoRequest.status === PTO_STATUSES.CHANGES_REQUESTED);
 
     case 'CANCEL':
-      // Owner can cancel from Draft or Submitted status
+      // Owner can cancel from Draft, Submitted, or Approved status
       return ptoRequest.userId === currentUser.id &&
         (ptoRequest.status === PTO_STATUSES.DRAFT ||
-          ptoRequest.status === PTO_STATUSES.SUBMITTED);
+          ptoRequest.status === PTO_STATUSES.SUBMITTED ||
+          ptoRequest.status === PTO_STATUSES.APPROVED);
 
     case 'APPROVE':
     case 'DENY':

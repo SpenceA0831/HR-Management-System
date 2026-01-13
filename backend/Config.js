@@ -67,7 +67,7 @@ const COLUMN_MAPS = {
     endDate: 5,
     isHalfDayStart: 6,
     isHalfDayEnd: 7,
-    totalHours: 8,
+    totalDays: 8,
     reason: 9,
     attachment: 10,
     status: 11,
@@ -83,9 +83,9 @@ const COLUMN_MAPS = {
   PTO_BALANCES: {
     userId: 0,
     year: 1,
-    availableHours: 2,  // Stores totalHours (for backwards compatibility)
-    usedHours: 3,
-    pendingHours: 4
+    totalDays: 2,
+    usedDays: 3,
+    pendingDays: 4
   },
 
   HOLIDAYS: {
@@ -105,8 +105,8 @@ const COLUMN_MAPS = {
   },
 
   SYSTEM_CONFIG: {
-    defaultFullTimeHours: 0,
-    defaultPartTimeHours: 1,
+    defaultFullTimeDays: 0,
+    defaultPartTimeDays: 1,
     prorateByHireDate: 2,
     fullTeamCalendarVisible: 3,
     shortNoticeThresholdDays: 4,

@@ -180,9 +180,9 @@ function rowToPtoBalance(colMap, row) {
   return {
     userId: row[colMap.userId] || '',
     year: row[colMap.year] || 0,
-    availableHours: row[colMap.availableHours] || 0,
-    usedHours: row[colMap.usedHours] || 0,
-    pendingHours: row[colMap.pendingHours] || 0
+    totalDays: row[colMap.totalDays] || 0,
+    usedDays: row[colMap.usedDays] || 0,
+    pendingDays: row[colMap.pendingDays] || 0
   };
 }
 

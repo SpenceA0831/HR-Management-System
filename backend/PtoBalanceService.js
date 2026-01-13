@@ -124,9 +124,9 @@ function syncBalanceToSheet(userId, year) {
   const rowData = new Array(Object.keys(colMap).length);
   rowData[colMap.userId] = balance.userId;
   rowData[colMap.year] = balance.year;
-  rowData[colMap.availableHours] = balance.totalDays;  // Write totalDays to availableHours column
-  rowData[colMap.usedHours] = balance.usedDays;
-  rowData[colMap.pendingHours] = balance.pendingDays;
+  rowData[colMap.totalDays] = balance.totalDays;
+  rowData[colMap.usedDays] = balance.usedDays;
+  rowData[colMap.pendingDays] = balance.pendingDays;
 
   if (rowIndex > 0) {
     // Update existing record

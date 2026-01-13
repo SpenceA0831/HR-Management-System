@@ -4,6 +4,8 @@ import { useStore } from '../../store/useStore';
 const API_BASE_URL = import.meta.env.VITE_APPS_SCRIPT_URL;
 const USE_MOCK_DATA = !API_BASE_URL || API_BASE_URL.includes('YOUR_DEPLOYMENT_ID');
 
+console.log('🔗 API Base URL:', API_BASE_URL);
+
 if (USE_MOCK_DATA) {
   console.info('🎭 Mock mode enabled - using local mock data instead of backend API');
 }

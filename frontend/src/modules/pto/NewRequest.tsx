@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -21,6 +21,8 @@ import { ArrowLeft, Save, Send } from 'lucide-react';
 import * as ptoApi from '../../services/api/ptoApi';
 import { useStore } from '../../store/useStore';
 import { calculatePtoDays, isShortNotice } from '../../utils/ptoUtils';
+import type { BlackoutDate } from '../../types';
+import { parseISO, isWithinInterval } from 'date-fns';
 
 const ptoRequestSchema = z.object({
   type: z.enum(['Vacation', 'Sick', 'Other'] as const),
@@ -36,10 +38,40 @@ const ptoRequestSchema = z.object({
 
 type FormData = z.infer<typeof ptoRequestSchema>;
 
+/**
+ * Check if a date range conflicts with any blackout dates
+ */
+function checkBlackoutConflict(
+  startDate: Date | undefined,
+  endDate: Date | undefined,
+  blackoutDates: BlackoutDate[]
+): { hasConflict: boolean; conflictingDate: BlackoutDate | null } {
+  if (!startDate || !endDate || blackoutDates.length === 0) {
+    return { hasConflict: false, conflictingDate: null };
+  }
+
+  for (const blackout of blackoutDates) {
+    const blackoutStart = parseISO(blackout.date);
+    const blackoutEnd = blackout.endDate ? parseISO(blackout.endDate) : blackoutStart;
+
+    // Check if any day in the request range overlaps with blackout range
+    let currentDate = new Date(startDate);
+    while (currentDate <= endDate) {
+      if (isWithinInterval(currentDate, { start: blackoutStart, end: blackoutEnd })) {
+        return { hasConflict: true, conflictingDate: blackout };
+      }
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+  }
+
+  return { hasConflict: false, conflictingDate: null };
+}
+
 export default function NewRequest() {
   const navigate = useNavigate();
   const { currentUser } = useStore();
   const [balance, setBalance] = useState<{ totalDays?: number; availableDays: number; usedDays: number; pendingDays: number } | null>(null);
+  const [blackoutDates, setBlackoutDates] = useState<BlackoutDate[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [submitAction, setSubmitAction] = useState<'draft' | 'submit' | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -71,32 +103,48 @@ export default function NewRequest() {
     : 0;
 
   // Calculate actual available days
-  // Handle backward compatibility - backend may return hours or days
-  const balanceAny = balance as any;
   const actualAvailable = balance
-    ? (balance.totalDays !== undefined ? balance.totalDays : (balance.availableDays !== undefined ? balance.availableDays : (balanceAny?.totalHours !== undefined ? balanceAny.totalHours / 8 : (balanceAny?.availableHours !== undefined ? balanceAny.availableHours / 8 : 0))))
-    - (balance.usedDays !== undefined ? balance.usedDays : (balanceAny?.usedHours !== undefined ? balanceAny.usedHours / 8 : 0))
-    - (balance.pendingDays !== undefined ? balance.pendingDays : (balanceAny?.pendingHours !== undefined ? balanceAny.pendingHours / 8 : 0))
+    ? (balance.totalDays ?? 0) - (balance.usedDays ?? 0) - (balance.pendingDays ?? 0)
     : 0;
 
   const showShortNoticeWarning = startDate ? isShortNotice(startDate) : false;
 
+  // Check for blackout date conflicts
+  const blackoutConflict = useMemo(() => {
+    return checkBlackoutConflict(startDate, endDate, blackoutDates);
+  }, [startDate, endDate, blackoutDates]);
+
   useEffect(() => {
-    const loadBalance = async () => {
+    const loadData = async () => {
       try {
-        const response = await ptoApi.getPtoBalance();
-        if (response.success && response.data) {
-          setBalance(response.data);
+        // Load balance and blackout dates in parallel
+        const [balResponse, blackoutResponse] = await Promise.all([
+          ptoApi.getPtoBalance(),
+          ptoApi.getBlackoutDates()
+        ]);
+
+        if (balResponse.success && balResponse.data) {
+          setBalance(balResponse.data);
+        }
+
+        if (blackoutResponse.success && blackoutResponse.data) {
+          setBlackoutDates(blackoutResponse.data);
         }
       } catch (error) {
-        console.error('Failed to load PTO balance:', error);
+        console.error('Failed to load data:', error);
       }
     };
-    loadBalance();
+    loadData();
   }, []);
 
   const onSubmit = async (data: FormData, submit: boolean = false) => {
     if (!currentUser) return;
+
+    // Block submission if there's a blackout conflict
+    if (submit && blackoutConflict.hasConflict) {
+      setError(`Cannot submit: Your request conflicts with a blackout date (${blackoutConflict.conflictingDate?.name}).`);
+      return;
+    }
 
     try {
       setSubmitting(true);
@@ -287,6 +335,13 @@ export default function NewRequest() {
               </Alert>
             )}
 
+            {blackoutConflict.hasConflict && (
+              <Alert severity="error">
+                <strong>Blackout Date Conflict:</strong> Your request overlaps with a blackout period
+                ({blackoutConflict.conflictingDate?.name}). PTO requests cannot be submitted during blackout dates.
+              </Alert>
+            )}
+
             <Controller
               name="reason"
               control={control}
@@ -327,7 +382,7 @@ export default function NewRequest() {
                 type="submit"
                 variant="contained"
                 startIcon={submitAction === 'submit' ? <CircularProgress size={20} /> : <Send size={20} />}
-                disabled={submitting}
+                disabled={submitting || blackoutConflict.hasConflict}
               >
                 Submit Request
               </Button>

@@ -16,8 +16,8 @@ function handleGetSystemConfig(currentUser) {
     if (data.length < 2) {
       // Return default config if none exists
       return successResponse({
-        defaultFullTimeHours: 120,
-        defaultPartTimeHours: 60,
+        defaultFullTimeDays: 15,
+        defaultPartTimeDays: 8,
         prorateByHireDate: true,
         fullTeamCalendarVisible: true,
         shortNoticeThresholdDays: 7,
@@ -29,8 +29,8 @@ function handleGetSystemConfig(currentUser) {
     const row = data[1]; // Second row (first row is headers)
 
     const config = {
-      defaultFullTimeHours: row[colMap.defaultFullTimeHours] || 120,
-      defaultPartTimeHours: row[colMap.defaultPartTimeHours] || 60,
+      defaultFullTimeDays: row[colMap.defaultFullTimeDays] || 15,
+      defaultPartTimeDays: row[colMap.defaultPartTimeDays] || 8,
       prorateByHireDate: row[colMap.prorateByHireDate] === true || row[colMap.prorateByHireDate] === 'TRUE',
       fullTeamCalendarVisible: row[colMap.fullTeamCalendarVisible] === true || row[colMap.fullTeamCalendarVisible] === 'TRUE',
       shortNoticeThresholdDays: row[colMap.shortNoticeThresholdDays] || 7,
@@ -68,11 +68,11 @@ function handleUpdateSystemConfig(currentUser, payload) {
     }
 
     // Update values from payload
-    if (payload.defaultFullTimeHours !== undefined) {
-      rowData[colMap.defaultFullTimeHours] = payload.defaultFullTimeHours;
+    if (payload.defaultFullTimeDays !== undefined) {
+      rowData[colMap.defaultFullTimeDays] = payload.defaultFullTimeDays;
     }
-    if (payload.defaultPartTimeHours !== undefined) {
-      rowData[colMap.defaultPartTimeHours] = payload.defaultPartTimeHours;
+    if (payload.defaultPartTimeDays !== undefined) {
+      rowData[colMap.defaultPartTimeDays] = payload.defaultPartTimeDays;
     }
     if (payload.prorateByHireDate !== undefined) {
       rowData[colMap.prorateByHireDate] = payload.prorateByHireDate;
@@ -95,8 +95,8 @@ function handleUpdateSystemConfig(currentUser, payload) {
     }
 
     const config = {
-      defaultFullTimeHours: rowData[colMap.defaultFullTimeHours],
-      defaultPartTimeHours: rowData[colMap.defaultPartTimeHours],
+      defaultFullTimeDays: rowData[colMap.defaultFullTimeDays],
+      defaultPartTimeDays: rowData[colMap.defaultPartTimeDays],
       prorateByHireDate: rowData[colMap.prorateByHireDate],
       fullTeamCalendarVisible: rowData[colMap.fullTeamCalendarVisible],
       shortNoticeThresholdDays: rowData[colMap.shortNoticeThresholdDays],

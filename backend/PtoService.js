@@ -159,6 +159,16 @@ function handleCreatePtoRequest(currentUser, payload) {
     appendRow(SHEET_NAMES.PTO_REQUESTS, rowData);
 
     const request = rowToPtoRequest(colMap, rowData);
+
+    // Send email notification if submitted
+    if (requestStatus === PTO_STATUSES.SUBMITTED) {
+      try {
+        sendPtoSubmissionEmail(request, currentUser, approver);
+      } catch (emailError) {
+        Logger.log('Failed to send submission email: ' + emailError.message);
+      }
+    }
+
     return successResponse(request);
   } catch (error) {
     Logger.log('Error in handleCreatePtoRequest: ' + error.message);
@@ -297,6 +307,16 @@ function handleApprovePtoRequest(currentUser, payload) {
       // Continue - don't fail the approval if calendar fails
     }
 
+    // Send approval email notification
+    try {
+      const employee = getUserById(request.userId);
+      if (employee) {
+        sendPtoApprovalEmail(request, employee, currentUser);
+      }
+    } catch (emailError) {
+      Logger.log('Failed to send approval email: ' + emailError.message);
+    }
+
     const updatedRequest = rowToPtoRequest(colMap, rowData);
     return successResponse(updatedRequest);
   } catch (error) {
@@ -358,6 +378,16 @@ function handleDenyPtoRequest(currentUser, payload) {
       // Continue - don't fail the denial if balance sync fails
     }
 
+    // Send denial email notification
+    try {
+      const employee = getUserById(request.userId);
+      if (employee) {
+        sendPtoDenialEmail(request, employee, currentUser, comment);
+      }
+    } catch (emailError) {
+      Logger.log('Failed to send denial email: ' + emailError.message);
+    }
+
     const updatedRequest = rowToPtoRequest(colMap, rowData);
     return successResponse(updatedRequest);
   } catch (error) {
@@ -396,6 +426,8 @@ function handleCancelPtoRequest(currentUser, payload) {
       return errorResponse('Unauthorized: Cannot cancel this request', 'UNAUTHORIZED');
     }
 
+    const wasApproved = request.status === PTO_STATUSES.APPROVED;
+
     // Update status to Cancelled
     rowData[colMap.status] = PTO_STATUSES.CANCELLED;
     rowData[colMap.updatedAt] = getCurrentTimestamp();
@@ -406,10 +438,26 @@ function handleCancelPtoRequest(currentUser, payload) {
       currentUser.id,
       currentUser.name,
       'Cancelled',
-      'Request cancelled by employee'
+      wasApproved ? 'Approved request cancelled by employee' : 'Request cancelled by employee'
     );
 
     updateRow(SHEET_NAMES.PTO_REQUESTS, rowIndex, rowData);
+
+    // Sync balance to sheet after cancellation (to replenish used/pending days)
+    try {
+      const requestYear = new Date(request.startDate).getFullYear();
+      syncBalanceToSheet(request.userId, requestYear);
+    } catch (balanceError) {
+      Logger.log('Failed to sync balance after cancellation: ' + balanceError.message);
+    }
+
+    // Send cancellation email notification
+    try {
+      const approver = getUserById(request.approverId);
+      sendPtoCancellationEmail(request, currentUser, approver, wasApproved);
+    } catch (emailError) {
+      Logger.log('Failed to send cancellation email: ' + emailError.message);
+    }
 
     const updatedRequest = rowToPtoRequest(colMap, rowData);
     return successResponse(updatedRequest);

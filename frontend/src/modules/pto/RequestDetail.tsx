@@ -133,20 +133,16 @@ export default function RequestDetail() {
   const isOwner = request?.userId === currentUser?.id;
   const isAdmin = currentUser?.userRole === 'ADMIN';
   const canEdit = isOwner && request && ['Draft', 'ChangesRequested', 'Submitted'].includes(request.status);
-  const canCancel = isOwner && request && ['Draft', 'Submitted'].includes(request.status);
+  const canCancel = isOwner && request && ['Draft', 'Submitted', 'Approved'].includes(request.status);
   // Only the assigned approver can approve/deny, and they cannot approve their own requests
   const isAssignedApprover = request?.approverId === currentUser?.id;
   const canApprove = isAssignedApprover && !isOwner && request?.status === 'Submitted';
 
-  // Computed values with backward compatibility for hours/days
-  const balanceAny = balance as any;
-  const requestAny = request as any;
+  // Computed values
   const availablePtoDays = balance
-    ? (balance.availableDays !== undefined ? balance.availableDays : (balanceAny?.availableHours !== undefined ? balanceAny.availableHours / 8 : (balanceAny?.totalHours !== undefined ? balanceAny.totalHours / 8 : 0)))
+    ? (balance.availableDays ?? 0)
     : 0;
-  const requestTotalDays = request
-    ? (request.totalDays !== undefined ? request.totalDays : (requestAny?.totalHours !== undefined ? requestAny.totalHours / 8 : 0))
-    : 0;
+  const requestTotalDays = request?.totalDays ?? 0;
 
   const onSubmit = async (data: FormData, submit: boolean = false) => {
     if (!id || !request) return;

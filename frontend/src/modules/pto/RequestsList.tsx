@@ -171,11 +171,7 @@ export default function RequestsList() {
       type: 'number',
       headerAlign: 'center',
       align: 'center',
-      valueGetter: (_value, row) => {
-        // Backward compatibility: use totalDays if present, else convert totalHours
-        const days = row.totalDays ?? (row.totalHours !== undefined ? row.totalHours / 8 : 0);
-        return days;
-      },
+      valueGetter: (_value, row) => row.totalDays ?? 0,
     },
     {
       field: 'status',
@@ -214,7 +210,7 @@ export default function RequestsList() {
         const request = params.row as PtoRequest;
         const isOwner = request.userId === currentUser?.id;
         const isAdmin = currentUser?.userRole === 'ADMIN';
-        const canCancel = isOwner && ['Draft', 'Submitted'].includes(request.status);
+        const canCancel = isOwner && ['Draft', 'Submitted', 'Approved'].includes(request.status);
         const isAssignedApprover = request.approverId === currentUser?.id;
         const canApprove = isAssignedApprover && !isOwner && request.status === 'Submitted';
 

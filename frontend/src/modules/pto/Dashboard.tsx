@@ -44,6 +44,7 @@ export default function PtoDashboard() {
 
     // Filter states for DataGrid
     const [statusFilter, setStatusFilter] = useState<PtoStatus | 'ALL'>('ALL');
+    const [teamStatusFilter, setTeamStatusFilter] = useState<PtoStatus | 'ALL'>('ALL');
 
     const [startDateFilter, setStartDateFilter] = useState<Date | null>(null);
     const [endDateFilter, setEndDateFilter] = useState<Date | null>(null);
@@ -72,10 +73,9 @@ export default function PtoDashboard() {
                     const myReqs = allRequests.filter(r =>
                         r.userId === user.id
                     );
-                    // Team requests: only show submitted requests that need approval
+                    // Team requests: show all team requests (all statuses)
                     const teamReqs = allRequests.filter(r =>
-                        r.userId !== user.id &&
-                        r.status === 'Submitted'
+                        r.userId !== user.id
                     );
                     setMyRequests(myReqs);
                     setTeamRequests(teamReqs);
@@ -103,17 +103,10 @@ export default function PtoDashboard() {
             }
 
             if (blackoutResponse.success && blackoutResponse.data) {
-                // Filter blackout dates to next 3 months
-                const today = startOfDay(new Date());
-                const threeMonthsFromNow = addDays(today, 90);
-                const upcomingBlackouts = blackoutResponse.data
-                    .filter(b => {
-                        const blackoutDate = parseISO(b.date);
-                        return (isAfter(blackoutDate, today) || format(blackoutDate, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd'))
-                            && isBefore(blackoutDate, threeMonthsFromNow);
-                    })
-                    .slice(0, 10);
-                setBlackoutDates(upcomingBlackouts);
+                // Show all blackout dates (past and future) - sorted by date
+                const allBlackouts = blackoutResponse.data
+                    .sort((a, b) => a.date.localeCompare(b.date));
+                setBlackoutDates(allBlackouts);
             }
 
             // For managers: get team PTO data (exclude own requests)
@@ -170,11 +163,9 @@ export default function PtoDashboard() {
     const isSupervisor = user?.userRole === 'ADMIN';
 
     // Calculate personal PTO balance (for both staff and supervisors)
-    // Handle backward compatibility - backend may return hours or days
-    const balanceAny = balance as any;
-    const used = balance?.usedDays !== undefined ? balance.usedDays : (balanceAny?.usedHours !== undefined ? balanceAny.usedHours / 8 : 0);
-    const pending = balance?.pendingDays !== undefined ? balance.pendingDays : (balanceAny?.pendingHours !== undefined ? balanceAny.pendingHours / 8 : 0);
-    const total = balance?.totalDays !== undefined ? balance.totalDays : (balance?.availableDays !== undefined ? balance.availableDays : (balanceAny?.totalHours !== undefined ? balanceAny.totalHours / 8 : (balanceAny?.availableHours !== undefined ? balanceAny.availableHours / 8 : 15)));
+    const used = balance?.usedDays ?? 0;
+    const pending = balance?.pendingDays ?? 0;
+    const total = balance?.totalDays ?? 15;
     const remaining = total - used - pending;
 
     const pieData = [
@@ -311,11 +302,7 @@ export default function PtoDashboard() {
             type: 'number',
             headerAlign: 'center',
             align: 'center',
-            valueGetter: (_value, row) => {
-                // Backward compatibility: use totalDays if present, else convert totalHours
-                const days = row.totalDays ?? (row.totalHours !== undefined ? row.totalHours / 8 : 0);
-                return days;
-            },
+            valueGetter: (_value, row) => row.totalDays ?? 0,
         },
         {
             field: 'status',
@@ -353,7 +340,7 @@ export default function PtoDashboard() {
             renderCell: (params: GridRenderCellParams) => {
                 const request = params.row as PtoRequest;
                 const isOwner = request.userId === user?.id;
-                const canCancel = isOwner && ['Draft', 'Submitted'].includes(request.status);
+                const canCancel = isOwner && ['Draft', 'Submitted', 'Approved'].includes(request.status);
                 const isAssignedApprover = request.approverId === user?.id;
                 const canApprove = isAssignedApprover && !isOwner && request.status === 'Submitted';
 
@@ -616,15 +603,26 @@ export default function PtoDashboard() {
                             <Card sx={{ borderRadius: 4, bgcolor: 'background.paper', height: '100%' }}>
                                 <CardContent sx={{ p: 3 }}>
                                     <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>Helpful Links</Typography>
-                                    <Button
-                                        fullWidth
-                                        variant="outlined"
-                                        startIcon={<FileText size={18} />}
-                                        sx={{ justifyContent: 'flex-start', py: 1.5 }}
-                                        onClick={() => window.open('https://drive.google.com/file/d/1Jjd7HIsklJN7DmFo0aDVYuU_X517ggNJ/view?usp=drive_link', '_blank')}
-                                    >
-                                        LEV Policy
-                                    </Button>
+                                    <Stack spacing={1.5}>
+                                        <Button
+                                            fullWidth
+                                            variant="outlined"
+                                            startIcon={<CalendarIcon size={18} />}
+                                            sx={{ justifyContent: 'flex-start', py: 1.5 }}
+                                            onClick={() => window.open('https://calendar.google.com/calendar/embed?src=c_bbe5eba035ea3848deef6d1e6949f8b8dca77f3f14e8e6b9bdd727953c107631%40group.calendar.google.com&ctz=America%2FNew_York', '_blank')}
+                                        >
+                                            Team Calendar
+                                        </Button>
+                                        <Button
+                                            fullWidth
+                                            variant="outlined"
+                                            startIcon={<FileText size={18} />}
+                                            sx={{ justifyContent: 'flex-start', py: 1.5 }}
+                                            onClick={() => window.open('https://drive.google.com/file/d/1Jjd7HIsklJN7DmFo0aDVYuU_X517ggNJ/view?usp=drive_link', '_blank')}
+                                        >
+                                            LEV Policy
+                                        </Button>
+                                    </Stack>
                                 </CardContent>
                             </Card>
                         </Grid>
@@ -819,7 +817,7 @@ export default function PtoDashboard() {
                         {/* Left Column - Team PTO Requests */}
                         <Grid size={{ xs: 12, lg: 8 }}>
                             <Card sx={{ borderRadius: 4 }}>
-                                <Box sx={{ p: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <Box sx={{ p: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
                                     <Box>
                                         <Typography variant="h6" sx={{ fontWeight: 700 }}>
                                             Team PTO Requests
@@ -828,22 +826,49 @@ export default function PtoDashboard() {
                                             {teamRequests.filter(r => r.status === 'Submitted').length} awaiting your review
                                         </Typography>
                                     </Box>
-                                    <Button onClick={() => setIsTeamRequestsModalOpen(true)} endIcon={<FileText size={16} />}>
-                                        View All
-                                    </Button>
+                                    <Stack direction="row" spacing={2} alignItems="center">
+                                        <TextField
+                                            select
+                                            label="Status"
+                                            value={teamStatusFilter}
+                                            onChange={(e) => setTeamStatusFilter(e.target.value as PtoStatus | 'ALL')}
+                                            size="small"
+                                            sx={{ minWidth: 140 }}
+                                        >
+                                            <MenuItem value="ALL">All Statuses</MenuItem>
+                                            <MenuItem value="Submitted">Awaiting Approval</MenuItem>
+                                            <MenuItem value="Approved">Approved</MenuItem>
+                                            <MenuItem value="Denied">Denied</MenuItem>
+                                            <MenuItem value="Cancelled">Cancelled</MenuItem>
+                                        </TextField>
+                                        <Button onClick={() => setIsTeamRequestsModalOpen(true)} endIcon={<FileText size={16} />}>
+                                            View All
+                                        </Button>
+                                    </Stack>
                                 </Box>
                                 <Divider />
                                 <Box>
-                                    {teamRequests.length === 0 ? (
-                                        <Box sx={{ p: 6, textAlign: 'center' }}>
-                                            <Users size={48} style={{ opacity: 0.3, marginBottom: 16 }} />
-                                            <Typography color="text.secondary">No team requests yet</Typography>
-                                            <Typography variant="caption" color="text.secondary">
-                                                Requests from your team will appear here
-                                            </Typography>
-                                        </Box>
-                                    ) : (
-                                        teamRequests.map((req, idx) => {
+                                    {(() => {
+                                        // Filter and sort team requests
+                                        const filteredTeamRequests = teamRequests
+                                            .filter(r => teamStatusFilter === 'ALL' || r.status === teamStatusFilter)
+                                            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+                                        if (filteredTeamRequests.length === 0) {
+                                            return (
+                                                <Box sx={{ p: 6, textAlign: 'center' }}>
+                                                    <Users size={48} style={{ opacity: 0.3, marginBottom: 16 }} />
+                                                    <Typography color="text.secondary">
+                                                        {teamStatusFilter === 'ALL' ? 'No team requests yet' : `No ${teamStatusFilter.toLowerCase()} requests`}
+                                                    </Typography>
+                                                    <Typography variant="caption" color="text.secondary">
+                                                        {teamStatusFilter === 'ALL' ? 'Requests from your team will appear here' : 'Try a different status filter'}
+                                                    </Typography>
+                                                </Box>
+                                            );
+                                        }
+
+                                        return filteredTeamRequests.map((req, idx) => {
                                             const needsApproval = req.status === 'Submitted';
                                             return (
                                                 <Box
@@ -855,7 +880,7 @@ export default function PtoDashboard() {
                                                         justifyContent: 'space-between',
                                                         bgcolor: needsApproval ? 'rgba(255, 152, 0, 0.08)' : 'transparent',
                                                         '&:hover': { bgcolor: needsApproval ? 'rgba(255, 152, 0, 0.15)' : 'action.hover' },
-                                                        borderBottom: idx !== teamRequests.length - 1 ? '1px solid' : 'none',
+                                                        borderBottom: idx !== filteredTeamRequests.length - 1 ? '1px solid' : 'none',
                                                         borderColor: 'divider',
                                                         cursor: 'pointer',
                                                         borderLeft: needsApproval ? '4px solid' : 'none',
@@ -930,8 +955,8 @@ export default function PtoDashboard() {
                                                     )}
                                                 </Box>
                                             );
-                                        })
-                                    )}
+                                        });
+                                    })()}
                                 </Box>
                             </Card>
                         </Grid>

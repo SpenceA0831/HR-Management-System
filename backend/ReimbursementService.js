@@ -185,9 +185,9 @@ function handleCreateReimbursement(currentUser, payload) {
  * @returns {Object} Success or error response
  */
 function handleApproveReimbursement(currentUser, payload) {
-  // Only managers and admins can approve
-  if (!isManager(currentUser) && !isAdmin(currentUser)) {
-    return errorResponse('Unauthorized: Only managers and admins can approve reimbursements', 'UNAUTHORIZED');
+  // Only supervisors can approve
+  if (!isAdmin(currentUser)) {
+    return errorResponse('Unauthorized: Only supervisors can approve reimbursements', 'UNAUTHORIZED');
   }
 
   const { reimbursementId, comment } = payload;
@@ -253,9 +253,9 @@ function handleApproveReimbursement(currentUser, payload) {
  * @returns {Object} Success or error response
  */
 function handleDenyReimbursement(currentUser, payload) {
-  // Only managers and admins can deny
-  if (!isManager(currentUser) && !isAdmin(currentUser)) {
-    return errorResponse('Unauthorized: Only managers and admins can deny reimbursements', 'UNAUTHORIZED');
+  // Only supervisors can deny
+  if (!isAdmin(currentUser)) {
+    return errorResponse('Unauthorized: Only supervisors can deny reimbursements', 'UNAUTHORIZED');
   }
 
   const { reimbursementId, comment } = payload;
@@ -323,8 +323,8 @@ function handleDenyReimbursement(currentUser, payload) {
  * @returns {boolean} True if user can access
  */
 function canAccessReimbursement(user, reimbursement) {
-  // Admins and managers can access all
-  if (isAdmin(user) || isManager(user)) {
+  // Supervisors can access all
+  if (isAdmin(user)) {
     return true;
   }
 

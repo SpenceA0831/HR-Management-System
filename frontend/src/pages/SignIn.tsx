@@ -1,23 +1,11 @@
-import { useState, useEffect } from 'react';
-import { Box, Button, Typography, Paper, Container, Alert, Menu, MenuItem, CircularProgress } from '@mui/material';
+import { useState } from 'react';
+import { Box, Typography, Paper, Container, Alert } from '@mui/material';
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
 import { useStore } from '../store/useStore';
-import { getDemoUsers } from '../services/api/usersApi';
-import type { User } from '../types';
 
 export default function SignIn() {
   const { setCurrentUser, setIsAuthenticated } = useStore();
   const [error, setError] = useState<string | null>(null);
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [users, setUsers] = useState<User[]>([]);
-  const [loadingUsers, setLoadingUsers] = useState(true);
-  const open = Boolean(anchorEl);
-
-  // Demo mode disabled for production
-  useEffect(() => {
-    setLoadingUsers(false);
-    // Demo users no longer loaded - using real OAuth only
-  }, []);
 
   const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
     try {
@@ -65,20 +53,6 @@ export default function SignIn() {
     }
   };
 
-  const handleDemoLogin = (user: User) => {
-    setCurrentUser(user);
-    setIsAuthenticated(true);
-    setAnchorEl(null);
-  };
-
-  const handleOpenMenu = (event: React.MouseEvent<HTMLButtonElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleCloseMenu = () => {
-    setAnchorEl(null);
-  };
-
   return (
     <Container maxWidth="sm">
       <Box
@@ -100,23 +74,16 @@ export default function SignIn() {
           }}
         >
           <Box
+            component="img"
+            src="/logo.png"
+            alt="Lift Every Voice Philly"
             sx={{
-              width: 64,
-              height: 64,
-              borderRadius: 2,
-              bgcolor: 'primary.main',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'white',
-              fontWeight: 'bold',
-              fontSize: 32,
+              width: 120,
+              height: 'auto',
               mx: 'auto',
               mb: 3,
             }}
-          >
-            HR
-          </Box>
+          />
 
           <Typography variant="h4" gutterBottom fontWeight={700}>
             HR Management System
@@ -132,76 +99,11 @@ export default function SignIn() {
             </Alert>
           )}
 
-          <Box sx={{ mb: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {import.meta.env.VITE_GOOGLE_CLIENT_ID &&
-             import.meta.env.VITE_GOOGLE_CLIENT_ID !== 'YOUR_CLIENT_ID.apps.googleusercontent.com' ? (
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={() => setError('Google Sign-In failed')}
-                useOneTap
-              />
-            ) : (
-              <Alert severity="info" sx={{ textAlign: 'left' }}>
-                Google OAuth not configured. Using demo mode.
-              </Alert>
-            )}
-
-            <Button
-              variant="outlined"
-              size="large"
-              fullWidth
-              onClick={handleOpenMenu}
-              disabled={loadingUsers}
-              sx={{ py: 1.5 }}
-            >
-              {loadingUsers ? (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <CircularProgress size={20} />
-                  <span>Loading users...</span>
-                </Box>
-              ) : (
-                'Sign In (Demo Mode)'
-              )}
-            </Button>
-            <Menu
-              anchorEl={anchorEl}
-              open={open}
-              onClose={handleCloseMenu}
-              anchorOrigin={{
-                vertical: 'bottom',
-                horizontal: 'center',
-              }}
-              transformOrigin={{
-                vertical: 'top',
-                horizontal: 'center',
-              }}
-              PaperProps={{
-                sx: { minWidth: anchorEl?.offsetWidth || 200 }
-              }}
-            >
-              {users.length === 0 ? (
-                <MenuItem disabled>
-                  <Typography variant="body2" color="text.secondary">
-                    No users available
-                  </Typography>
-                </MenuItem>
-              ) : (
-                users.map((user) => (
-                  <MenuItem
-                    key={user.id}
-                    onClick={() => handleDemoLogin(user)}
-                    sx={{ flexDirection: 'column', alignItems: 'flex-start', py: 1.5 }}
-                  >
-                    <Typography variant="body1" fontWeight={600}>
-                      {user.name}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {user.userRole} • {user.email}
-                    </Typography>
-                  </MenuItem>
-                ))
-              )}
-            </Menu>
+          <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => setError('Google Sign-In failed')}
+            />
           </Box>
 
           <Typography variant="caption" color="text.secondary">

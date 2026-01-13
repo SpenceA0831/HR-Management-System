@@ -2,7 +2,7 @@
 // SHARED TYPES
 // ============================================================================
 
-export type UserRole = 'STAFF' | 'MANAGER' | 'ADMIN';
+export type UserRole = 'STAFF' | 'ADMIN';
 
 export type RoleType =
   | 'ORGANIZER'
@@ -72,7 +72,7 @@ export interface PtoRequest {
   endDate: string; // yyyy-MM-dd
   isHalfDayStart: boolean;
   isHalfDayEnd: boolean;
-  totalHours: number;
+  totalDays: number;
   reason?: string;
   attachment?: string;
   status: PtoStatus;
@@ -88,10 +88,10 @@ export interface PtoRequest {
 export interface PtoBalance {
   userId: string;
   year: number;
-  totalHours: number; // Total yearly allocation
-  availableHours: number; // Calculated: totalHours - usedHours - pendingHours (deprecated, use totalHours)
-  usedHours: number;
-  pendingHours: number;
+  totalDays: number; // Total yearly allocation in days
+  availableDays: number; // Calculated: totalDays - usedDays - pendingDays (deprecated, use totalDays)
+  usedDays: number;
+  pendingDays: number;
 }
 
 export interface Holiday {
@@ -111,8 +111,8 @@ export interface BlackoutDate {
 }
 
 export interface SystemConfig {
-  defaultFullTimeHours: number;
-  defaultPartTimeHours: number;
+  defaultFullTimeDays: number;
+  defaultPartTimeDays: number;
   prorateByHireDate: boolean;
   fullTeamCalendarVisible: boolean;
   shortNoticeThresholdDays: number;

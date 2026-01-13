@@ -39,9 +39,9 @@ export default function PayrollDashboard() {
 
     setLoading(true);
     try {
-      const isAdmin = user.userRole === 'ADMIN';
+      const isSupervisor = user.userRole === 'ADMIN';
 
-      if (isAdmin) {
+      if (isSupervisor) {
         // Admin: Fetch payroll history and all reimbursements
         const [payrollResponse, reimbursementsResponse] = await Promise.all([
           payrollApi.getPayrollHistory(),
@@ -100,7 +100,7 @@ export default function PayrollDashboard() {
     );
   }
 
-  const isAdmin = user?.userRole === 'ADMIN';
+  const isSupervisor = user?.userRole === 'ADMIN';
 
   // Calculate reimbursement stats for non-admin users
   const totalRequested = myReimbursements.reduce((sum, r) => sum + r.amount, 0);
@@ -195,15 +195,15 @@ export default function PayrollDashboard() {
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Box>
           <Typography variant="h4" gutterBottom sx={{ fontWeight: 800 }}>
-            {isAdmin ? 'Payroll & Reimbursements' : `Welcome back, ${user?.name.split(' ')[0]}!`}
+            {isSupervisor ? 'Payroll & Reimbursements' : `Welcome back, ${user?.name.split(' ')[0]}!`}
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            {isAdmin
+            {isSupervisor
               ? 'Manage payroll runs and process reimbursements.'
               : 'Track your expense reimbursements and submit new requests.'}
           </Typography>
         </Box>
-        {!isAdmin && (
+        {!isSupervisor && (
           <Button
             variant="contained"
             startIcon={<Plus size={18} />}
@@ -217,7 +217,7 @@ export default function PayrollDashboard() {
       </Box>
 
       {/* ADMIN VIEW */}
-      {isAdmin && (
+      {isSupervisor && (
         <>
           {/* Admin Stats */}
           <Grid container spacing={3} sx={{ mb: 4 }}>
@@ -511,7 +511,7 @@ export default function PayrollDashboard() {
       )}
 
       {/* STAFF/MANAGER VIEW */}
-      {!isAdmin && (
+      {!isSupervisor && (
         <>
           {/* Stats Cards */}
           <Grid container spacing={3} sx={{ mb: 4 }}>

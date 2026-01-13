@@ -156,7 +156,7 @@ function rowToPtoRequest(colMap, row) {
     endDate: row[colMap.endDate] || null,
     isHalfDayStart: row[colMap.isHalfDayStart] === true || row[colMap.isHalfDayStart] === 'TRUE',
     isHalfDayEnd: row[colMap.isHalfDayEnd] === true || row[colMap.isHalfDayEnd] === 'TRUE',
-    totalHours: row[colMap.totalHours] || 0,
+    totalDays: row[colMap.totalDays] || 0,
     reason: row[colMap.reason] || '',
     attachment: row[colMap.attachment] || null,
     status: row[colMap.status] || '',
@@ -468,41 +468,41 @@ function parseLocalDate(dateStr) {
 }
 
 /**
- * Calculate total working hours for a PTO request
+ * Calculate total working days for a PTO request
  * @param {string} startDate - Start date (yyyy-MM-dd)
  * @param {string} endDate - End date (yyyy-MM-dd)
  * @param {boolean} isHalfDayStart - Half day on start
  * @param {boolean} isHalfDayEnd - Half day on end
  * @param {Array} holidays - Array of holidays
- * @returns {number} Total hours
+ * @returns {number} Total days (0.5 for half days)
  */
-function calculateTotalHours(startDate, endDate, isHalfDayStart, isHalfDayEnd, holidays) {
-  let totalHours = 0;
+function calculateTotalDays(startDate, endDate, isHalfDayStart, isHalfDayEnd, holidays) {
+  let totalDays = 0;
   const start = parseLocalDate(startDate);
   const end = parseLocalDate(endDate);
   let currentDate = new Date(start);
 
   while (currentDate <= end) {
     if (!isWeekend(currentDate) && !isHoliday(currentDate, holidays)) {
-      let dayHours = 8; // Standard full day
+      let dayValue = 1; // Standard full day
 
       const currentDateStr = Utilities.formatDate(currentDate, Session.getScriptTimeZone(), 'yyyy-MM-dd');
       const startDateStr = Utilities.formatDate(start, Session.getScriptTimeZone(), 'yyyy-MM-dd');
       const endDateStr = Utilities.formatDate(end, Session.getScriptTimeZone(), 'yyyy-MM-dd');
 
       if (currentDateStr === startDateStr && isHalfDayStart) {
-        dayHours = 4;
+        dayValue = 0.5;
       } else if (currentDateStr === endDateStr && isHalfDayEnd) {
-        dayHours = 4;
+        dayValue = 0.5;
       }
 
-      totalHours += dayHours;
+      totalDays += dayValue;
     }
 
     currentDate.setDate(currentDate.getDate() + 1);
   }
 
-  return totalHours;
+  return totalDays;
 }
 
 /**

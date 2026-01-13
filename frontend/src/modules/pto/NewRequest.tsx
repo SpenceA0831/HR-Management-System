@@ -20,7 +20,7 @@ import { DatePicker } from '@mui/x-date-pickers';
 import { ArrowLeft, Save, Send } from 'lucide-react';
 import * as ptoApi from '../../services/api/ptoApi';
 import { useStore } from '../../store/useStore';
-import { calculatePtoHours, isShortNotice } from '../../utils/ptoUtils';
+import { calculatePtoDays, isShortNotice } from '../../utils/ptoUtils';
 
 const ptoRequestSchema = z.object({
   type: z.enum(['Vacation', 'Sick', 'Other'] as const),
@@ -39,7 +39,7 @@ type FormData = z.infer<typeof ptoRequestSchema>;
 export default function NewRequest() {
   const navigate = useNavigate();
   const { currentUser } = useStore();
-  const [balance, setBalance] = useState<{ totalHours?: number; availableHours: number; usedHours: number; pendingHours: number } | null>(null);
+  const [balance, setBalance] = useState<{ totalDays?: number; availableDays: number; usedDays: number; pendingDays: number } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitAction, setSubmitAction] = useState<'draft' | 'submit' | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -66,13 +66,17 @@ export default function NewRequest() {
   const isHalfDayStart = watch('isHalfDayStart');
   const isHalfDayEnd = watch('isHalfDayEnd');
 
-  const totalHours = startDate && endDate
-    ? calculatePtoHours(startDate, endDate, isHalfDayStart, isHalfDayEnd)
+  const totalDays = startDate && endDate
+    ? calculatePtoDays(startDate, endDate, isHalfDayStart, isHalfDayEnd)
     : 0;
 
-  // Calculate actual available hours
+  // Calculate actual available days
+  // Handle backward compatibility - backend may return hours or days
+  const balanceAny = balance as any;
   const actualAvailable = balance
-    ? (balance.totalHours || balance.availableHours) - (balance.usedHours || 0) - (balance.pendingHours || 0)
+    ? (balance.totalDays !== undefined ? balance.totalDays : (balance.availableDays !== undefined ? balance.availableDays : (balanceAny?.totalHours !== undefined ? balanceAny.totalHours / 8 : (balanceAny?.availableHours !== undefined ? balanceAny.availableHours / 8 : 0))))
+    - (balance.usedDays !== undefined ? balance.usedDays : (balanceAny?.usedHours !== undefined ? balanceAny.usedHours / 8 : 0))
+    - (balance.pendingDays !== undefined ? balance.pendingDays : (balanceAny?.pendingHours !== undefined ? balanceAny.pendingHours / 8 : 0))
     : 0;
 
   const showShortNoticeWarning = startDate ? isShortNotice(startDate) : false;
@@ -142,7 +146,7 @@ export default function NewRequest() {
         </Alert>
       )}
 
-      {balance && totalHours > 0 && (
+      {balance && totalDays > 0 && (
         <Alert
           severity="info"
           sx={{ mb: 3 }}
@@ -154,7 +158,7 @@ export default function NewRequest() {
                 Available PTO
               </Typography>
               <Typography variant="h6" fontWeight={600}>
-                {actualAvailable}h
+                {actualAvailable} days
               </Typography>
             </Box>
             <Box>
@@ -162,7 +166,7 @@ export default function NewRequest() {
                 This Request
               </Typography>
               <Typography variant="h6" fontWeight={600}>
-                {totalHours}h
+                {totalDays} {totalDays === 1 ? 'day' : 'days'}
               </Typography>
             </Box>
             <Box>
@@ -172,13 +176,13 @@ export default function NewRequest() {
               <Typography
                 variant="h6"
                 fontWeight={600}
-                color={actualAvailable - totalHours < 0 ? 'error.main' : 'success.main'}
+                color={actualAvailable - totalDays < 0 ? 'error.main' : 'success.main'}
               >
-                {actualAvailable - totalHours}h
+                {actualAvailable - totalDays} days
               </Typography>
             </Box>
           </Stack>
-          {actualAvailable - totalHours < 0 && (
+          {actualAvailable - totalDays < 0 && (
             <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
               ⚠️ This request exceeds your available PTO balance
             </Typography>
@@ -270,9 +274,9 @@ export default function NewRequest() {
               />
             </Stack>
 
-            {totalHours > 0 && (
+            {totalDays > 0 && (
               <Alert severity="info">
-                Total hours: {totalHours} ({totalHours / 8} day{totalHours !== 8 ? 's' : ''})
+                Total: {totalDays} {totalDays === 1 ? 'day' : 'days'}
               </Alert>
             )}
 
@@ -331,6 +335,6 @@ export default function NewRequest() {
           </Stack>
         </form>
       </Paper>
-    </Box>
+    </Box >
   );
 }

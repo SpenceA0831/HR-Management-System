@@ -259,41 +259,41 @@ export default function PtoSettings() {
           </Alert>
         )}
 
-        {/* Default Hours Configuration */}
+        {/* Default Days Configuration */}
         <Card variant="outlined" sx={{ mb: 3, borderRadius: 2 }}>
           <CardContent>
             <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-              Default Hours Configuration
+              Default Days Configuration
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Set the number of PTO hours employees receive at the start of each year
+              Set the number of PTO days employees receive at the start of each year
             </Typography>
 
             <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
               <TextField
-                label="Full-Time Default Hours"
+                label="Full-Time Default Days"
                 type="number"
-                value={config.defaultFullTimeHours}
+                value={config.defaultFullTimeDays}
                 onChange={(e) =>
                   setConfig({
                     ...config,
-                    defaultFullTimeHours: parseInt(e.target.value) || 0,
+                    defaultFullTimeDays: parseInt(e.target.value) || 0,
                   })
                 }
-                helperText="Annual PTO hours for full-time employees"
+                helperText="Annual PTO days for full-time employees"
                 fullWidth
               />
               <TextField
-                label="Part-Time Default Hours"
+                label="Part-Time Default Days"
                 type="number"
-                value={config.defaultPartTimeHours}
+                value={config.defaultPartTimeDays}
                 onChange={(e) =>
                   setConfig({
                     ...config,
-                    defaultPartTimeHours: parseInt(e.target.value) || 0,
+                    defaultPartTimeDays: parseInt(e.target.value) || 0,
                   })
                 }
-                helperText="Annual PTO hours for part-time employees"
+                helperText="Annual PTO days for part-time employees"
                 fullWidth
               />
             </Box>

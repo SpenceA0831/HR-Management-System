@@ -18,7 +18,7 @@ export default function Layout() {
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
-  const { currentUser, mode, toggleMode, clearState, activeModule } = useStore();
+  const { currentUser, mode, toggleMode, clearState, activeModule, setActiveModule } = useStore();
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -34,6 +34,7 @@ export default function Layout() {
   };
 
   const handleHomeClick = () => {
+    setActiveModule(null);
     navigate('/');
   };
 
@@ -64,15 +65,18 @@ export default function Layout() {
                 width: 32,
                 height: 32,
                 borderRadius: 1.5,
-                bgcolor: 'primary.main',
+                bgcolor: mode === 'dark' ? 'white' : 'transparent',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: 'white',
-                fontWeight: 'bold',
+                padding: mode === 'dark' ? '2px' : 0,
               }}
             >
-              HR
+              <img
+                src="/logo.png"
+                alt="HR Management System"
+                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+              />
             </Box>
             <Typography variant="h6" sx={{ fontWeight: 700 }}>
               {getModuleName()}

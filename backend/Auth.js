@@ -120,21 +120,12 @@ function getDirectReportIds(managerId) {
 }
 
 /**
- * Check if a user is an admin
+ * Check if a user is an admin (has access to admin features)
  * @param {Object} user - User object
  * @returns {boolean} True if user is admin
  */
 function isAdmin(user) {
   return user && user.userRole === USER_ROLES.ADMIN;
-}
-
-/**
- * Check if a user is a manager
- * @param {Object} user - User object
- * @returns {boolean} True if user is manager or admin
- */
-function isManager(user) {
-  return user && (user.userRole === USER_ROLES.MANAGER || user.userRole === USER_ROLES.ADMIN);
 }
 
 // ============================================================================
@@ -173,7 +164,7 @@ function canAccessPtoRequest(currentUser, ptoRequest) {
   }
 
   // Managers can access direct reports' requests
-  if (isManager(currentUser)) {
+  if (isAdmin(currentUser)) {
     const directReportIds = getDirectReportIds(currentUser.id);
     if (directReportIds.includes(ptoRequest.userId)) {
       return true;
@@ -199,14 +190,14 @@ function canModifyPtoRequest(currentUser, ptoRequest, action) {
     case 'EDIT':
       // Only owner can edit, and only in Draft or ChangesRequested status
       return ptoRequest.userId === currentUser.id &&
-             (ptoRequest.status === PTO_STATUSES.DRAFT ||
-              ptoRequest.status === PTO_STATUSES.CHANGES_REQUESTED);
+        (ptoRequest.status === PTO_STATUSES.DRAFT ||
+          ptoRequest.status === PTO_STATUSES.CHANGES_REQUESTED);
 
     case 'CANCEL':
       // Owner can cancel from Draft or Submitted status
       return ptoRequest.userId === currentUser.id &&
-             (ptoRequest.status === PTO_STATUSES.DRAFT ||
-              ptoRequest.status === PTO_STATUSES.SUBMITTED);
+        (ptoRequest.status === PTO_STATUSES.DRAFT ||
+          ptoRequest.status === PTO_STATUSES.SUBMITTED);
 
     case 'APPROVE':
     case 'DENY':
@@ -271,7 +262,7 @@ function canAccessEvaluation(currentUser, evaluation) {
   }
 
   // Managers can access direct reports
-  if (isManager(currentUser)) {
+  if (isAdmin(currentUser)) {
     const directReportIds = getDirectReportIds(currentUser.id);
     if (directReportIds.includes(evaluation.employeeId)) {
       return true;
@@ -299,14 +290,14 @@ function canModifyEvaluation(currentUser, evaluation, modificationType) {
     case 'SELF_RATING':
       // Only the employee can modify self ratings, and only in Draft status
       return evaluation.employeeId === currentUser.id &&
-             evaluation.status === EVALUATION_STATUSES.DRAFT;
+        evaluation.status === EVALUATION_STATUSES.DRAFT;
 
     case 'MANAGER_RATING':
       // Only the manager can modify manager ratings, in Manager-Review status
       const targetUser = getUserById(evaluation.employeeId);
       return targetUser &&
-             targetUser.managerId === currentUser.id &&
-             evaluation.status === EVALUATION_STATUSES.MANAGER_REVIEW;
+        targetUser.managerId === currentUser.id &&
+        evaluation.status === EVALUATION_STATUSES.MANAGER_REVIEW;
 
     case 'PEER_RATING':
       // Handled separately in peer review requests
@@ -315,8 +306,8 @@ function canModifyEvaluation(currentUser, evaluation, modificationType) {
     case 'GOALS':
       // Employee can modify goals during Draft and Submitted status
       return evaluation.employeeId === currentUser.id &&
-             (evaluation.status === EVALUATION_STATUSES.DRAFT ||
-              evaluation.status === EVALUATION_STATUSES.SUBMITTED);
+        (evaluation.status === EVALUATION_STATUSES.DRAFT ||
+          evaluation.status === EVALUATION_STATUSES.SUBMITTED);
 
     case 'STATUS':
       // Different rules for status transitions
@@ -361,22 +352,22 @@ function canTransitionStatus(currentUser, evaluation) {
 
   // Employee can submit from Draft to Submitted
   if (currentStatus === EVALUATION_STATUSES.DRAFT &&
-      nextStatus === EVALUATION_STATUSES.SUBMITTED &&
-      evaluation.employeeId === currentUser.id) {
+    nextStatus === EVALUATION_STATUSES.SUBMITTED &&
+    evaluation.employeeId === currentUser.id) {
     return true;
   }
 
   // Manager can approve self-assessment
   if (currentStatus === EVALUATION_STATUSES.SUBMITTED &&
-      nextStatus === EVALUATION_STATUSES.APPROVED &&
-      isManager(currentUser)) {
+    nextStatus === EVALUATION_STATUSES.APPROVED &&
+    isAdmin(currentUser)) {
     const targetUser = getUserById(evaluation.employeeId);
     return targetUser && targetUser.managerId === currentUser.id;
   }
 
   // Manager can complete manager review
   if (currentStatus === EVALUATION_STATUSES.MANAGER_REVIEW &&
-      isManager(currentUser)) {
+    isAdmin(currentUser)) {
     const targetUser = getUserById(evaluation.employeeId);
     return targetUser && targetUser.managerId === currentUser.id;
   }
@@ -401,7 +392,7 @@ function canPullBackEvaluation(currentUser, evaluation) {
   }
 
   // Only managers can pull back
-  if (!isManager(currentUser)) {
+  if (!isAdmin(currentUser)) {
     return false;
   }
 
@@ -412,7 +403,7 @@ function canPullBackEvaluation(currentUser, evaluation) {
 
   // Can pull back from Submitted or Approved status back to Draft
   return evaluation.status === EVALUATION_STATUSES.SUBMITTED ||
-         evaluation.status === EVALUATION_STATUSES.APPROVED;
+    evaluation.status === EVALUATION_STATUSES.APPROVED;
 }
 
 /**
@@ -432,7 +423,7 @@ function canCreateEvaluation(currentUser, forUserId) {
   }
 
   // Managers can create for direct reports
-  if (isManager(currentUser)) {
+  if (isAdmin(currentUser)) {
     const directReportIds = getDirectReportIds(currentUser.id);
     if (directReportIds.includes(forUserId)) {
       return true;

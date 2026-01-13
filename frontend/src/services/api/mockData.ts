@@ -9,8 +9,8 @@ import type {
 
 // Mock System Configuration
 export const mockSystemConfig: SystemConfig = {
-  defaultFullTimeHours: 160,
-  defaultPartTimeHours: 80,
+  defaultFullTimeDays: 15,
+  defaultPartTimeDays: 8,
   prorateByHireDate: true,
   fullTeamCalendarVisible: true,
   shortNoticeThresholdDays: 14,
@@ -73,10 +73,10 @@ export const mockBlackoutDates: BlackoutDate[] = [
 export const mockPtoBalance: PtoBalance = {
   userId: 'demo-user-id',
   year: 2025,
-  totalHours: 120,
-  availableHours: 120, // Deprecated, use totalHours
-  usedHours: 24,
-  pendingHours: 16,
+  totalDays: 15,
+  availableDays: 15, // Deprecated, use totalDays
+  usedDays: 3,
+  pendingDays: 2,
 };
 
 // Mock PTO Requests
@@ -88,7 +88,7 @@ export const mockPtoRequests: PtoRequest[] = [
     type: 'Vacation',
     startDate: '2025-02-10',
     endDate: '2025-02-14',
-    totalHours: 40,
+    totalDays: 5,
     isHalfDayStart: false,
     isHalfDayEnd: false,
     reason: 'Family vacation',
@@ -128,7 +128,7 @@ export const mockPtoRequests: PtoRequest[] = [
     type: 'Sick',
     startDate: '2025-01-20',
     endDate: '2025-01-20',
-    totalHours: 8,
+    totalDays: 1,
     isHalfDayStart: false,
     isHalfDayEnd: false,
     reason: 'Doctor appointment',

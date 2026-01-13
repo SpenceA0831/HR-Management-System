@@ -24,7 +24,7 @@ import { DatePicker } from '@mui/x-date-pickers';
 import { ArrowLeft, Save, Send, X, Check, XCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import * as ptoApi from '../../services/api/ptoApi';
 import { useStore } from '../../store/useStore';
-import { calculatePtoHours, isShortNotice, formatPtoDates } from '../../utils/ptoUtils';
+import { calculatePtoDays, isShortNotice, formatPtoDates } from '../../utils/ptoUtils';
 import { StatusChip } from '../../components/StatusChip';
 import { TypeChip } from '../../components/TypeChip';
 import type { PtoRequest } from '../../types';
@@ -48,7 +48,7 @@ export default function RequestDetail() {
   const navigate = useNavigate();
   const { currentUser } = useStore();
   const [request, setRequest] = useState<PtoRequest | null>(null);
-  const [balance, setBalance] = useState<{ availableHours: number; usedHours: number; pendingHours: number } | null>(null);
+  const [balance, setBalance] = useState<{ availableDays: number; usedDays: number; pendingDays: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [submitAction, setSubmitAction] = useState<'draft' | 'submit' | null>(null);
@@ -124,17 +124,29 @@ export default function RequestDetail() {
   const isHalfDayStart = watch('isHalfDayStart');
   const isHalfDayEnd = watch('isHalfDayEnd');
 
-  const totalHours = startDate && endDate
-    ? calculatePtoHours(startDate, endDate, isHalfDayStart, isHalfDayEnd)
+  const totalDays = startDate && endDate
+    ? calculatePtoDays(startDate, endDate, isHalfDayStart, isHalfDayEnd)
     : 0;
 
   const showShortNoticeWarning = startDate ? isShortNotice(startDate) : false;
 
   const isOwner = request?.userId === currentUser?.id;
-  const isManager = currentUser?.userRole === 'MANAGER' || currentUser?.userRole === 'ADMIN';
+  const isAdmin = currentUser?.userRole === 'ADMIN';
   const canEdit = isOwner && request && ['Draft', 'ChangesRequested', 'Submitted'].includes(request.status);
   const canCancel = isOwner && request && ['Draft', 'Submitted'].includes(request.status);
-  const canApprove = isManager && request?.status === 'Submitted';
+  // Only the assigned approver can approve/deny, and they cannot approve their own requests
+  const isAssignedApprover = request?.approverId === currentUser?.id;
+  const canApprove = isAssignedApprover && !isOwner && request?.status === 'Submitted';
+
+  // Computed values with backward compatibility for hours/days
+  const balanceAny = balance as any;
+  const requestAny = request as any;
+  const availablePtoDays = balance
+    ? (balance.availableDays !== undefined ? balance.availableDays : (balanceAny?.availableHours !== undefined ? balanceAny.availableHours / 8 : (balanceAny?.totalHours !== undefined ? balanceAny.totalHours / 8 : 0)))
+    : 0;
+  const requestTotalDays = request
+    ? (request.totalDays !== undefined ? request.totalDays : (requestAny?.totalHours !== undefined ? requestAny.totalHours / 8 : 0))
+    : 0;
 
   const onSubmit = async (data: FormData, submit: boolean = false) => {
     if (!id || !request) return;
@@ -151,7 +163,7 @@ export default function RequestDetail() {
         isHalfDayStart: data.isHalfDayStart,
         isHalfDayEnd: data.isHalfDayEnd,
         reason: data.reason,
-        totalHours,
+        totalDays,
         status: submit ? 'Submitted' : request.status,
       };
 
@@ -287,7 +299,7 @@ export default function RequestDetail() {
                 Available PTO
               </Typography>
               <Typography variant="h6" fontWeight={600}>
-                {balance.availableHours}h
+                {availablePtoDays} days
               </Typography>
             </Box>
             <Box>
@@ -295,7 +307,7 @@ export default function RequestDetail() {
                 This Request
               </Typography>
               <Typography variant="h6" fontWeight={600}>
-                {request.totalHours}h
+                {requestTotalDays} {requestTotalDays === 1 ? 'day' : 'days'}
               </Typography>
             </Box>
             <Box>
@@ -305,13 +317,13 @@ export default function RequestDetail() {
               <Typography
                 variant="h6"
                 fontWeight={600}
-                color={balance.availableHours - request.totalHours < 0 ? 'error.main' : 'success.main'}
+                color={availablePtoDays - requestTotalDays < 0 ? 'error.main' : 'success.main'}
               >
-                {balance.availableHours - request.totalHours}h
+                {availablePtoDays - requestTotalDays} days
               </Typography>
             </Box>
           </Stack>
-          {balance.availableHours - request.totalHours < 0 && (
+          {availablePtoDays - requestTotalDays < 0 && (
             <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
               ⚠️ This request exceeds your available PTO balance
             </Typography>
@@ -337,10 +349,10 @@ export default function RequestDetail() {
 
               <Grid size={{ xs: 12, sm: 6 }}>
                 <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                  Total Hours
+                  Total Days
                 </Typography>
                 <Typography variant="body1">
-                  {request.totalHours} hours ({request.totalHours / 8} day{request.totalHours !== 8 ? 's' : ''})
+                  {requestTotalDays} {requestTotalDays === 1 ? 'day' : 'days'}
                 </Typography>
               </Grid>
 
@@ -529,9 +541,9 @@ export default function RequestDetail() {
                 />
               </Stack>
 
-              {totalHours > 0 && (
+              {totalDays > 0 && (
                 <Alert severity="info">
-                  Total hours: {totalHours} ({totalHours / 8} day{totalHours !== 8 ? 's' : ''})
+                  Total: {totalDays} {totalDays === 1 ? 'day' : 'days'}
                 </Alert>
               )}
 

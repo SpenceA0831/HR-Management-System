@@ -73,7 +73,7 @@ export async function createPtoRequest(data: {
       endDate: data.endDate,
       isHalfDayStart: data.isHalfDayStart,
       isHalfDayEnd: data.isHalfDayEnd,
-      totalHours: 0, // Will be calculated by backend normally
+      totalDays: 0, // Will be calculated by backend normally
       reason: data.reason,
       status: (data.status as any) || 'Draft', // Use the provided status or default to Draft
       approverId: '',

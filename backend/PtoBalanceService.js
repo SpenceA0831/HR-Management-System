@@ -1,6 +1,6 @@
 /**
  * PTO Balance Service
- * Calculates and manages PTO balances for users
+ * Calculates and manages PTO balances for users (in days)
  */
 
 /**
@@ -17,8 +17,8 @@ function handleGetPtoBalance(currentUser, payload) {
 
   // Authorization: Can view own balance, managers can view direct reports, admins can view all
   const canView = currentUser.id === userId ||
-                  isAdmin(currentUser) ||
-                  (isManager(currentUser) && getDirectReportIds(currentUser.id).includes(userId));
+    isAdmin(currentUser) ||
+    (isManager(currentUser) && getDirectReportIds(currentUser.id).includes(userId));
 
   if (!canView) {
     return errorResponse('Unauthorized: Cannot access this user\'s balance', 'UNAUTHORIZED');
@@ -37,7 +37,7 @@ function handleGetPtoBalance(currentUser, payload) {
  * Calculate PTO balance for a user and year
  * @param {string} userId - User ID
  * @param {number} year - Year
- * @returns {Object} Balance object {userId, year, availableHours, usedHours, pendingHours}
+ * @returns {Object} Balance object {userId, year, availableDays, usedDays, pendingDays}
  */
 function calculatePtoBalance(userId, year) {
   // Get user
@@ -50,10 +50,10 @@ function calculatePtoBalance(userId, year) {
   const configResponse = handleGetSystemConfig(user);
   const config = configResponse.data;
 
-  // Determine available hours based on employment type
-  let baseHours = user.employmentType === EMPLOYMENT_TYPES.FULL_TIME
-    ? config.defaultFullTimeHours
-    : config.defaultPartTimeHours;
+  // Determine available days based on employment type
+  let baseDays = user.employmentType === EMPLOYMENT_TYPES.FULL_TIME
+    ? config.defaultFullTimeDays
+    : config.defaultPartTimeDays;
 
   // Prorate for hire date if applicable
   if (config.prorateByHireDate && user.hireDate) {
@@ -63,7 +63,7 @@ function calculatePtoBalance(userId, year) {
     if (hireYear === year) {
       // Prorate based on months worked in first year
       const monthsWorked = 12 - hireDate.getMonth();
-      baseHours = Math.round((baseHours / 12) * monthsWorked);
+      baseDays = Math.round((baseDays / 12) * monthsWorked);
     }
   }
 
@@ -71,16 +71,16 @@ function calculatePtoBalance(userId, year) {
   const allRequests = getSheetData(SHEET_NAMES.PTO_REQUESTS, COLUMN_MAPS.PTO_REQUESTS, rowToPtoRequest);
   const userRequests = allRequests.filter(req => req.userId === userId);
 
-  let usedHours = 0;
-  let pendingHours = 0;
+  let usedDays = 0;
+  let pendingDays = 0;
 
   for (const request of userRequests) {
     const requestYear = new Date(request.startDate).getFullYear();
     if (requestYear === year) {
       if (request.status === PTO_STATUSES.APPROVED) {
-        usedHours += request.totalHours;
+        usedDays += request.totalDays;
       } else if (request.status === PTO_STATUSES.SUBMITTED) {
-        pendingHours += request.totalHours;
+        pendingDays += request.totalDays;
       }
     }
   }
@@ -88,10 +88,10 @@ function calculatePtoBalance(userId, year) {
   return {
     userId,
     year,
-    totalHours: baseHours,
-    availableHours: baseHours, // Deprecated: keeping for backwards compatibility
-    usedHours,
-    pendingHours
+    totalDays: baseDays,
+    availableDays: baseDays, // Deprecated: keeping for backwards compatibility
+    usedDays,
+    pendingDays
   };
 }
 
@@ -124,9 +124,9 @@ function syncBalanceToSheet(userId, year) {
   const rowData = new Array(Object.keys(colMap).length);
   rowData[colMap.userId] = balance.userId;
   rowData[colMap.year] = balance.year;
-  rowData[colMap.availableHours] = balance.totalHours;  // Write totalHours to availableHours column
-  rowData[colMap.usedHours] = balance.usedHours;
-  rowData[colMap.pendingHours] = balance.pendingHours;
+  rowData[colMap.availableHours] = balance.totalDays;  // Write totalDays to availableHours column
+  rowData[colMap.usedHours] = balance.usedDays;
+  rowData[colMap.pendingHours] = balance.pendingDays;
 
   if (rowIndex > 0) {
     // Update existing record

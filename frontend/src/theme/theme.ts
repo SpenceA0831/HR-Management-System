@@ -6,17 +6,17 @@ export const getTheme = (mode: PaletteMode) => createTheme({
         mode,
         ...(mode === 'light'
             ? {
-                primary: { main: '#2563eb' }, // Modern blue
-                secondary: { main: '#7c3aed' }, // Purple
-                background: { default: '#f8fafc', paper: '#ffffff' },
+                primary: { main: '#6b1d7a' }, // LEV Purple
+                secondary: { main: '#e91e8c' }, // Pink accent
+                background: { default: '#f5f0f7', paper: '#ffffff' },
             }
             : {
-                primary: { main: '#60a5fa' },
-                secondary: { main: '#a78bfa' },
-                background: { default: '#0f172a', paper: '#1e293b' },
-                text: { primary: '#f1f5f9', secondary: '#94a3b8' },
-                action: { hover: 'rgba(255, 255, 255, 0.08)' },
-                divider: 'rgba(255, 255, 255, 0.12)',
+                primary: { main: '#9b4dca' }, // Lighter purple for dark mode
+                secondary: { main: '#f06292' }, // Pink accent
+                background: { default: '#1a0f1e', paper: '#2d1f33' },
+                text: { primary: '#f1f5f9', secondary: '#c4b1c9' },
+                action: { hover: 'rgba(155, 77, 202, 0.15)' },
+                divider: 'rgba(155, 77, 202, 0.2)',
             }),
     },
     typography: {

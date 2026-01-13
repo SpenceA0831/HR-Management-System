@@ -37,7 +37,7 @@ export default function ReimbursementDetail() {
   // Approval comment (optional)
   const [approvalComment, setApprovalComment] = useState('');
 
-  const isManager = user?.userRole === 'MANAGER' || user?.userRole === 'ADMIN';
+  const isAdmin = user?.userRole === 'ADMIN';
 
   const fetchData = async () => {
     if (!id) return;
@@ -150,7 +150,7 @@ export default function ReimbursementDetail() {
     );
   }
 
-  const canApprove = isManager && reimbursement.status === 'Pending';
+  const canApprove = isAdmin && reimbursement.status === 'Pending';
   const typeMap: { [key: string]: string } = {
     'Section 129 Plan - Dependent Care': 'Section 129',
     'Section 127 Plan - Educational Assistance': 'Section 127',

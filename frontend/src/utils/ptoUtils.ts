@@ -5,39 +5,33 @@ import {
     parseISO
 } from 'date-fns';
 
-export const calculatePtoHours = (
+export const calculatePtoDays = (
     startDate: Date,
     endDate: Date,
     isHalfDayStart: boolean,
     isHalfDayEnd: boolean
 ): number => {
     const days = eachDayOfInterval({ start: startDate, end: endDate });
-    let totalHours = 0;
+    let totalDays = 0;
 
     days.forEach((day, index) => {
         if (!isWeekend(day)) {
-            let dailyHours = 8;
+            let dailyValue = 1; // 1 full day
 
             // Check if it's the first day and half day
             if (index === 0 && isHalfDayStart) {
-                dailyHours = 4;
+                dailyValue = 0.5;
             }
             // Check if it's the last day and half day
-            // If it's the same day, we handle it elsewhere or here
             else if (index === days.length - 1 && isHalfDayEnd) {
-                dailyHours = 4;
+                dailyValue = 0.5;
             }
 
-            // Special case: if it's the same day and both are half day,
-            // the logic above might fail or double count.
-            // In reality, usually it's just one half day if it's a single day request.
-            // But let's keep it simple for now.
-
-            totalHours += dailyHours;
+            totalDays += dailyValue;
         }
     });
 
-    return totalHours;
+    return totalDays;
 };
 
 export const formatPtoDates = (start: string | Date, end: string | Date): string => {

@@ -32,7 +32,7 @@ export default function ReimbursementsList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const isManager = user?.userRole === 'MANAGER' || user?.userRole === 'ADMIN';
+  const isAdmin = user?.userRole === 'ADMIN';
 
   const fetchData = async () => {
     setLoading(true);
@@ -69,16 +69,16 @@ export default function ReimbursementsList() {
   }, [statusFilter, typeFilter, location.key]);
 
   const columns: GridColDef[] = [
-    ...(isManager
+    ...(isAdmin
       ? [
-          {
-            field: 'staffName',
-            headerName: 'Employee',
-            width: 150,
-            headerAlign: 'left' as const,
-            align: 'left' as const,
-          },
-        ]
+        {
+          field: 'staffName',
+          headerName: 'Employee',
+          width: 150,
+          headerAlign: 'left' as const,
+          align: 'left' as const,
+        },
+      ]
       : []),
     {
       field: 'expenseDate',
@@ -155,17 +155,17 @@ export default function ReimbursementsList() {
       align: 'center',
       valueFormatter: (value: string) => (value ? formatDisplayDate(value) : '-'),
     },
-    ...(isManager
+    ...(isAdmin
       ? [
-          {
-            field: 'reviewerName',
-            headerName: 'Reviewed By',
-            width: 150,
-            headerAlign: 'center' as const,
-            align: 'center' as const,
-            valueFormatter: (value: string) => value || '-',
-          },
-        ]
+        {
+          field: 'reviewerName',
+          headerName: 'Reviewed By',
+          width: 150,
+          headerAlign: 'center' as const,
+          align: 'center' as const,
+          valueFormatter: (value: string) => value || '-',
+        },
+      ]
       : []),
   ];
 
@@ -178,10 +178,10 @@ export default function ReimbursementsList() {
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Box>
           <Typography variant="h4" gutterBottom sx={{ fontWeight: 800 }}>
-            {isManager ? 'All Reimbursements' : 'My Reimbursements'}
+            {isAdmin ? 'All Reimbursements' : 'My Reimbursements'}
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            {isManager
+            {isAdmin
               ? 'View and manage employee reimbursement requests'
               : 'Track your expense reimbursement requests'}
           </Typography>
@@ -204,7 +204,7 @@ export default function ReimbursementsList() {
       )}
 
       {/* Summary Stats */}
-      {isManager && (
+      {isAdmin && (
         <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
           <Paper sx={{ p: 2, flex: 1 }}>
             <Typography variant="caption" color="text.secondary">

@@ -225,7 +225,6 @@ const COLUMN_MAPS = {
 // Shared
 const USER_ROLES = {
   STAFF: 'STAFF',
-  MANAGER: 'MANAGER',
   ADMIN: 'ADMIN'
 };
 

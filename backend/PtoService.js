@@ -89,8 +89,8 @@ function handleCreatePtoRequest(currentUser, payload) {
     // Get holidays for calculation
     const holidays = getSheetData(SHEET_NAMES.HOLIDAYS, COLUMN_MAPS.HOLIDAYS, rowToHoliday);
 
-    // Calculate total hours
-    const totalHours = calculateTotalHours(
+    // Calculate total days
+    const totalDays = calculateTotalDays(
       startDate,
       endDate,
       isHalfDayStart || false,
@@ -144,7 +144,7 @@ function handleCreatePtoRequest(currentUser, payload) {
     rowData[colMap.endDate] = endDate;
     rowData[colMap.isHalfDayStart] = isHalfDayStart || false;
     rowData[colMap.isHalfDayEnd] = isHalfDayEnd || false;
-    rowData[colMap.totalHours] = totalHours;
+    rowData[colMap.totalDays] = totalDays;
     rowData[colMap.reason] = reason || '';
     rowData[colMap.attachment] = attachment || '';
     rowData[colMap.status] = requestStatus;
@@ -210,7 +210,7 @@ function handleUpdatePtoRequest(currentUser, payload) {
     // Recalculate total hours if dates changed
     if (updates.startDate || updates.endDate || updates.isHalfDayStart !== undefined || updates.isHalfDayEnd !== undefined) {
       const holidays = getSheetData(SHEET_NAMES.HOLIDAYS, COLUMN_MAPS.HOLIDAYS, rowToHoliday);
-      rowData[colMap.totalHours] = calculateTotalHours(
+      rowData[colMap.totalDays] = calculateTotalDays(
         rowData[colMap.startDate],
         rowData[colMap.endDate],
         rowData[colMap.isHalfDayStart],
@@ -439,7 +439,7 @@ function addPtoToCalendar(request) {
 
     if (!calendarId) {
       Logger.log('No shared calendar ID configured. Skipping calendar event creation.');
-      return; 
+      return;
     }
 
     const calendar = CalendarApp.getCalendarById(calendarId);
@@ -457,12 +457,12 @@ function addPtoToCalendar(request) {
 
     // Create description with PTO details
     const description = 'PTO Type: ' + request.type + '\n' +
-                       'Total Hours: ' + request.totalHours + '\n' +
-                       (request.reason ? 'Reason: ' + request.reason : '');
+      'Total Days: ' + request.totalDays + '\n' +
+      (request.reason ? 'Reason: ' + request.reason : '');
 
     // Handle half-day events
     if (request.isHalfDayStart && request.isHalfDayEnd &&
-        startDate.toDateString() === endDate.toDateString()) {
+      startDate.toDateString() === endDate.toDateString()) {
       // Single half day - create 4-hour event
       const eventStart = new Date(startDate);
       eventStart.setHours(9, 0, 0, 0);

@@ -165,12 +165,17 @@ export default function RequestsList() {
         formatPtoDates(row.startDate, row.endDate),
     },
     {
-      field: 'totalHours',
-      headerName: 'Hours',
+      field: 'totalDays',
+      headerName: 'Days',
       width: 80,
       type: 'number',
       headerAlign: 'center',
       align: 'center',
+      valueGetter: (_value, row) => {
+        // Backward compatibility: use totalDays if present, else convert totalHours
+        const days = row.totalDays ?? (row.totalHours !== undefined ? row.totalHours / 8 : 0);
+        return days;
+      },
     },
     {
       field: 'status',
@@ -208,9 +213,10 @@ export default function RequestsList() {
       renderCell: (params: GridRenderCellParams) => {
         const request = params.row as PtoRequest;
         const isOwner = request.userId === currentUser?.id;
-        const isManager = currentUser?.userRole === 'MANAGER' || currentUser?.userRole === 'ADMIN';
+        const isAdmin = currentUser?.userRole === 'ADMIN';
         const canCancel = isOwner && ['Draft', 'Submitted'].includes(request.status);
-        const canApprove = isManager && request.status === 'Submitted';
+        const isAssignedApprover = request.approverId === currentUser?.id;
+        const canApprove = isAssignedApprover && !isOwner && request.status === 'Submitted';
 
         return (
           <Stack direction="row" spacing={0.5} alignItems="center" justifyContent="center">
